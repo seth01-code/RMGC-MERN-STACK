@@ -42,11 +42,11 @@ export const getUserData = async (req, res, next) => {
   try {
     // console.log("Fetching user data for userId:", req.user.id);  // Use req.user.id instead of req.userId
 
-    if (!req.user._id) {
+    if (!req.user.id) {
       return next(createError(401, "User ID is not found in token"));
     }
 
-    const user = await User.findById(req.user._id); // Use req.user.id here
+    const user = await User.findById(req.user.id); // Use req.user.id here
 
     if (!user) {
       // console.log("❌ User not found for ID:", req.user.id);
@@ -116,7 +116,6 @@ export const deleteUser = async (req, res, next) => {
   }
 };
 
-
 export const getSellers = async (req, res, next) => {
   try {
     const sellers = await User.find({ isSeller: true }).select("-password"); // Fetch only sellers without passwords
@@ -135,7 +134,6 @@ export const getUsers = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // In the controller where you handle profile update:
 export const updateUser = async (req, res, next) => {
@@ -158,7 +156,6 @@ export const updateUser = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // Get Seller Profile
 export const getUserProfile = async (req, res) => {
