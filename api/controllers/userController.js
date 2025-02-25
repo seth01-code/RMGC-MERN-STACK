@@ -42,11 +42,11 @@ export const getUserData = async (req, res, next) => {
   try {
     // console.log("Fetching user data for userId:", req.user.id);  // Use req.user.id instead of req.userId
 
-    if (!req.user.id) {
+    if (!req.user._id) {
       return next(createError(401, "User ID is not found in token"));
     }
 
-    const user = await User.findById(req.user.id); // Use req.user.id here
+    const user = await User.findById(req.user._id); // Use req.user.id here
 
     if (!user) {
       // console.log("❌ User not found for ID:", req.user.id);
