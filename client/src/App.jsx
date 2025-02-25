@@ -13,7 +13,7 @@ import AdminMessages from "./pages/Admin/AdminMessages";
 import MessageDetail from "./pages/Admin/MessageDetail";
 import Home from "./pages/home/Home";
 import Navbar from "./components/navbar/Navbar";
-import Footer from "./components/footer/Footer";
+import Footer from "./components/footer/Footer.jsx";
 import Gigs from "./pages/gigs/Gigs";
 import Gig from "./pages/gig/Gig";
 import MyGigs from "./pages/myGigs/MyGigs";
