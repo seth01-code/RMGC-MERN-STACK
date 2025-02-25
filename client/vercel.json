@@ -4,7 +4,9 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Prerender-Token", "value": "VN3i1Er0OnKphdok5ICr" }
+        { "key": "X-Prerender-Token", "value": "VN3i1Er0OnKphdok5ICr" },
+        { "key": "User-Agent", "value": "prerender" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     }
   ]

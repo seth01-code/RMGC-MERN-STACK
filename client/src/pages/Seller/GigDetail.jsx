@@ -11,9 +11,8 @@ import star from "../../../assets/images/star.png";
 import moment from "moment";
 import SellerReviews from "./SellerReviews";
 import { IoMdStar } from "react-icons/io";
-import Recycle from "../../../assets/images/recycle.png";
-import Clock from "../../../assets/images/clock.png";
-import { FaCheckDouble, FaClock, FaRecycle } from "react-icons/fa";
+import { FaCheckDouble, FaClock} from "react-icons/fa";
+import { BiRevision } from "react-icons/bi";
 
 const GigDetail = () => {
   const { id } = useParams();
@@ -245,7 +244,7 @@ const GigDetail = () => {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FaRecycle className="text-[1.25rem] text-black flex-shrink-0" />
+                <BiRevision className="text-[1.25rem] text-black flex-shrink-0" />
                 <span>
                   {data.revisionNumber} {t("revisions")}
                 </span>
