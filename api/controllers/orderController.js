@@ -81,7 +81,10 @@ export const intent = async (req, res, next) => {
         currency: buyerCurrency, // Use buyer's currency (USD or NGN)
         callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
         metadata: {
-          custom_fields: [{ display_name: "Gig Title", value: gig.title }],
+          custom_fields: [
+            { display_name: "Gig Title", value: gig.title },
+            { display_name: "Buyer Username", value: user.username }, // ✅ Added username
+          ],
         },
       },
       {

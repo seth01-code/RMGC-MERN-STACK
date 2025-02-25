@@ -6,8 +6,17 @@
       "headers": [
         { "key": "X-Prerender-Token", "value": "VN3i1Er0OnKphdok5ICr" },
         { "key": "User-Agent", "value": "prerender" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
 }
