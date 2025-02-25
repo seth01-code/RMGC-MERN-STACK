@@ -37,6 +37,7 @@
     "paypal-rest-sdk": "^1.8.1",
     "paystack-node": "^0.3.0",
     "postmark": "^4.0.5",
+    "prerender-node": "^3.8.0",
     "socket.io": "^4.8.1",
     "stripe": "^17.5.0",
     "twilio": "^5.4.4"

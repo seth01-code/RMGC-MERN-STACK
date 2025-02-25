@@ -12,6 +12,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import Message from "./models/messageModel.js";
 import Conversation from "./models/conversationModel.js";
+import prerender from "prerender-node";
 
 // Models
 import User from "./models/userModel.js";
@@ -23,6 +24,10 @@ const port = 3000;
 
 // Create an HTTP server and attach Express
 const server = createServer(app);
+
+// Prerender.io Middleware
+prerender.set("prerenderToken", "VN3i1Er0OnKphdok5ICr"); // Replace with your token
+app.use(prerender);
 
 // Initialize Socket.io
 export const io = new Server(server, {
