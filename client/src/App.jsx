@@ -48,9 +48,7 @@ import Announcements from "./Announcements.jsx";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [loading, setLoading] = useState(
-    sessionStorage.getItem("appLoaded") !== "true"
-  );
+  const [loading, setLoading] = useState(true); // ✅ Always start with loading state
 
   useEffect(() => {
     // ✅ Initialize AOS animations
@@ -59,7 +57,7 @@ const App = () => {
       easing: "ease-in-out",
       once: false,
     });
-
+  
     // ✅ Remove session data if user logs out
     const handleStorageChange = () => {
       if (!localStorage.getItem("currentUser")) {
@@ -67,21 +65,18 @@ const App = () => {
       }
     };
     window.addEventListener("storage", handleStorageChange);
-
-    // ✅ Show preloader only on first visit
-    if (loading) {
-      const timeout = setTimeout(() => {
-        setLoading(false);
-        sessionStorage.setItem("appLoaded", "true");
-      }, 2000); // ⏳ Shorter timeout (realistic feel)
-      return () => clearTimeout(timeout);
-    }
-
+  
+    // ✅ Show preloader when app is loading
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 2000); // ⏳ Adjust timeout if needed
+  
     return () => {
+      clearTimeout(timeout);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [loading]);
-
+  }, []);
+  
   if (loading) {
     return (
       <div className="preloader-container flex items-center justify-center h-screen bg-white">
@@ -89,6 +84,7 @@ const App = () => {
       </div>
     );
   }
+s  
 
   return (
     <QueryClientProvider client={queryClient}>
