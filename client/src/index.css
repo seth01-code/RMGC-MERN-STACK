@@ -1,0 +1,261 @@
+@import url("https://fonts.googleapis.com/css2?family=Merienda:wght@300..900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Starry Background */
+/* Custom Starry Background */
+
+@layer utilities {
+  /* Hide scrollbar */
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hidden {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  /* Modern custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #2d2d2d;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #888;
+  }
+
+  /* Firefox scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #555 #2d2d2d;
+  }
+}
+
+select {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark-toast-container .Toastify__toast {
+  background-color: #333; /* Dark background */
+  color: #fff; /* White text */
+  border-radius: 8px; /* Rounded corners */
+  padding: 12px 20px;
+  font-size: 14px;
+}
+
+.dark-toast-container .Toastify__toast-body {
+  font-family: Arial, sans-serif;
+}
+
+.stars-background {
+  background-color: #0f0f0f;
+  background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"%3E%3Ccircle cx="10" cy="10" r="3" fill="white" /%3E%3Ccircle cx="30" cy="30" r="3" fill="white" /%3E%3Ccircle cx="50" cy="50" r="3" fill="white" /%3E%3Ccircle cx="70" cy="70" r="3" fill="white" /%3E%3Ccircle cx="90" cy="90" r="3" fill="white" /%3E%3Ccircle cx="20" cy="40" r="3" fill="white" /%3E%3Ccircle cx="40" cy="60" r="3" fill="white" /%3E%3Ccircle cx="60" cy="20" r="3" fill="white" /%3E%3Ccircle cx="80" cy="80" r="3" fill="white" /%3E%3Ccircle cx="50" cy="20" r="3" fill="white" /%3E%3Ccircle cx="70" cy="40" r="3" fill="white" /%3E%3Ccircle cx="60" cy="80" r="3" fill="white" /%3E%3Ccircle cx="90" cy="50" r="3" fill="white" /%3E%3Ccircle cx="10" cy="70" r="3" fill="white" /%3E%3Ccircle cx="20" cy="90" r="3" fill="white" /%3E%3C/svg%3E');
+  background-repeat: repeat;
+  background-size: 50px 50px; /* Increase size for more stars */
+  animation: twinkle 2s infinite ease-in-out;
+}
+
+.cookies-consent-popup {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.cookies-consent-content p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.cookies-consent-actions {
+  margin-top: 10px;
+}
+
+.cookies-consent-actions button {
+  padding: 8px 15px;
+  margin: 0 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.cookies-consent-actions button:hover {
+  background-color: #45a049;
+}
+
+.cookies-consent-actions button:nth-child(2) {
+  background-color: #f44336;
+}
+
+.cookies-consent-actions button:nth-child(2):hover {
+  background-color: #e53935;
+}
+
+/* Custom Select Styling */
+.custom-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6"><path d="M0 0l5 5 5-5z" fill="%23000000"/></svg>');
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 10px;
+  padding-right: 30px; /* Adjust space for the custom arrow */
+}
+
+/* Optional: Hover and focus styles */
+.custom-select:hover {
+  border-color: #4b5563; /* Change hover border color */
+}
+
+.custom-select:focus {
+  border-color: #10b981; /* Change focus border color */
+  outline: none;
+}
+
+.input-field {
+  @apply p-4 border border-gray-300 rounded-md w-full;
+}
+
+.btn-green {
+  @apply p-4 bg-orange-500 text-white font-medium rounded-sm cursor-pointer hover:bg-orange-300;
+}
+
+.btn-red {
+  @apply p-2 bg-red-500 text-white text-sm rounded-md cursor-pointer hover:bg-red-600;
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+/* MyGigs Tailwind CSS */
+.myGigs {
+  @apply flex justify-center text-gray-700;
+
+  .container {
+    @apply w-full max-w-screen-xl p-12;
+  }
+
+  .title {
+    @apply flex justify-between mb-8;
+
+    button {
+      @apply bg-[#1dbf73] text-white font-medium py-2 px-4 rounded-md;
+    }
+  }
+
+  table {
+    @apply w-full table-auto;
+
+    tr {
+      @apply h-12;
+      th {
+        @apply text-left;
+      }
+      td {
+        sup {
+          @apply text-xs;
+        }
+
+        .image {
+          @apply w-12 h-6 object-cover;
+        }
+
+        .delete {
+          @apply w-5 cursor-pointer;
+        }
+      }
+
+      &:nth-child(even) {
+        @apply bg-[#1dbf730f];
+      }
+    }
+  }
+}
+
+.orders {
+  @apply flex justify-center text-gray-600;
+
+  .container {
+    @apply w-full max-w-screen-xl py-12;
+  }
+
+  .title {
+    @apply flex justify-between mb-8;
+
+    button {
+      @apply bg-[#1dbf73] text-white font-medium py-2 px-4 rounded-md;
+    }
+  }
+
+  table {
+    @apply w-full table-auto;
+
+    tr {
+      @apply h-12;
+
+      th {
+        @apply text-left;
+      }
+
+      td {
+        sup {
+          @apply text-xs;
+        }
+
+        .image {
+          @apply w-12 h-6 object-cover;
+        }
+
+        .message {
+          @apply w-6 cursor-pointer;
+        }
+      }
+
+      &:nth-child(even) {
+        @apply bg-[#1dbf730f];
+      }
+    }
+  }
+}
+
+.pay-container {
+  @apply flex justify-center items-center min-h-screen bg-gray-100 py-5;
+
+  .pay {
+    @apply bg-white shadow-lg rounded-lg p-5 w-full max-w-2xl;
+  }
+}

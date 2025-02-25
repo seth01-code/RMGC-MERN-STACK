@@ -1,0 +1,9 @@
+{
+  "language": "Español",
+  "navbar": {
+    "gigs": "Gigs",
+    "messages": "Mensajes",
+    "orders": "Órdenes",
+    "logout": "Cerrar sesión"
+  }
+}

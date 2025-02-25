@@ -1,0 +1,14 @@
+.chat-page {
+    display: flex;
+    height: 100vh;
+  }
+  
+  .no-conversation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    font-size: 1.2rem;
+    color: #777;
+  }
+  

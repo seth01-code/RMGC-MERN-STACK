@@ -1,0 +1,64 @@
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import newRequest from "../../utils/newRequest";
+import { useTranslation } from "react-i18next";
+
+const SellerReview = ({ review }) => {
+  const { t } = useTranslation();
+
+  const { isLoading, error, data } = useQuery({
+    queryKey: ["reviewUser", review.userId],
+    queryFn: () =>
+      newRequest.get(`/users/${review.userId}`).then((res) => res.data),
+    enabled: !!review.userId,
+  });
+
+  return (
+    <div className="flex flex-col gap-5 py-6 border-b border-gray-200 :border-gray-700">
+      {/* User Info */}
+      {isLoading ? (
+        <p className="text-gray-500 :text-gray-400">{t("review.loading")}</p>
+      ) : error ? (
+        <p className="text-red-500">{t("review.error")}</p>
+      ) : (
+        <div className="flex items-center gap-4">
+          <img
+            className="h-14 w-14 object-cover rounded-full border border-gray-600"
+            src={data.img || "/assets/images/noavatar.jpg"}
+            alt={data.username}
+          />
+          <div>
+            <span className="block text-lg font-semibold  text-black">
+              {data.username}
+            </span>
+            <span className="text-sm text-gray-400">
+              {data.country}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Star Rating */}
+      <div className="flex items-center gap-2">
+        {Array(review.star)
+          .fill()
+          .map((_, i) => (
+            <img
+              src="/assets/images/star.png"
+              alt="star"
+              key={i}
+              className="h-4 w-4"
+            />
+          ))}
+        <span className="font-semibold text-yellow-500 text-sm">
+          {review.star}
+        </span>
+      </div>
+
+      {/* Review Description */}
+      <p className="text-gray-700 text-sm leading-relaxed">{review.desc}</p>
+    </div>
+  );
+};
+
+export default SellerReview;

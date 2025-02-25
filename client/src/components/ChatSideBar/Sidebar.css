@@ -1,0 +1,34 @@
+.sidebar {
+  width: 300px;
+  height: 100vh;
+  background-color: #f4f4f4;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.conversation {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+}
+
+.conversation:hover {
+  background-color: #e9e9e9;
+}
+
+.conversation-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.conversation-info h4 {
+  margin: 0;
+}
+
+.conversation-info p {
+  color: #555;
+}
