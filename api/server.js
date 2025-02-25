@@ -27,7 +27,10 @@ const server = createServer(app);
 // Initialize Socket.io
 export const io = new Server(server, {
   cors: {
-    origin: "https://rmgc-mern-stack.vercel.app", // Frontend URL
+    origin: [
+      "https://www.renewedmindsglobalconsult.com",
+      "https://renewedmindsglobalconsult.com",
+    ], // Custom Domains
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -51,7 +54,10 @@ const connect = async () => {
 // Set up CORS
 app.use(
   cors({
-    origin: "https://rmgc-mern-stack.vercel.app",
+    origin: [
+      "https://www.renewedmindsglobalconsult.com",
+      "https://renewedmindsglobalconsult.com",
+    ],
     methods: "GET,POST,PUT,DELETE,UPDATE,PATCH",
     credentials: true,
   })
