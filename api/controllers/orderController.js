@@ -80,10 +80,19 @@ export const intent = async (req, res, next) => {
         email: user.email,
         currency: buyerCurrency, // Use buyer's currency (USD or NGN)
         callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
+        name: user.username || "No Name", // ✅ Send username directly
+        phone: user.phone || "No Phone Number", // ✅ Send phone number directly
         metadata: {
           custom_fields: [
             { display_name: "Gig Title", value: gig.title },
-            { display_name: "Client Username", value: user.username }, // ✅ Added username
+            {
+              display_name: "Client Username",
+              value: user.username || "No Name",
+            },
+            {
+              display_name: "Client Phone",
+              value: user.phone || "No Phone Number",
+            },
           ],
         },
       },
