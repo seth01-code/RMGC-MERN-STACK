@@ -1,0 +1,7 @@
+{
+    "rewrites": [
+      { "source": "/payment-processing", "destination": "/index.html" },
+      { "source": "/gig/:id", "destination": "/index.html" }
+    ]
+  }
+  
