@@ -43,7 +43,7 @@ const GigSchema = new Schema(
       type: String,
       required: true,
     },
-    shortdesc: {
+    shortDesc: {
       type: String,
       required: true,
     },
@@ -63,6 +63,8 @@ const GigSchema = new Schema(
       type: Number,
       default: 0,
     },
+
+    salesRevenue: { type: Number, default: 0 },
   },
   {
     timestamps: true,

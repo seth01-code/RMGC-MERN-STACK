@@ -1,17 +1,17 @@
 import express from "express";
-import { verifyToken } from "../middleware/jwt.js";
 import {
+  createOrGetConversation,
   getConversations,
-  createConversation,
+  getAllConversations,
   getSingleConversation,
-  updateConversation,
 } from "../controllers/conversationController.js";
+import { verifyAdmin } from "../middleware/verifyAdmin.js";
 
 const router = express.Router();
 
-router.get("/", verifyToken, getConversations);
-router.post("/", verifyToken, createConversation);
-router.get("/single/:id", verifyToken, getSingleConversation);
-router.put("/:id", verifyToken, updateConversation);
+router.post("/", createOrGetConversation); // Create or get a conversation
+router.get("/:userId", getConversations); // Get all conversations for a specific user
+router.get("/", getAllConversations); // Admin-only route to fetch ALL conversations
+router.get("/single/:conversationId", getSingleConversation); // Get a single conversation by ID
 
 export default router;

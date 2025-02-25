@@ -1,24 +1,46 @@
 import mongoose from "mongoose";
-const { Schema } = mongoose;
 
-const MessageSchema = new Schema(
+const messageSchema = new mongoose.Schema(
   {
     conversationId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Conversation",
       required: true,
     },
-    userId: {
-      type: String,
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
-    desc: {
+    text: {
       type: String,
-      required: true,
+      trim: true,
     },
+    media: {
+      type: String, // URL to Cloudinary media file (image, video, document, etc.)
+      default: null, // Make it optional
+    },
+    messageStatus: {
+      type: String, // 'sent', 'delivered', 'seen'
+      default: "sent",
+    },
+    reactions: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        emoji: String,
+      },
+    ],
+
+    deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default mongoose.model("Message", MessageSchema);
+// Check if the model already exists, if so, don't redefine it
+const Message =
+  mongoose.models.Message || mongoose.model("Message", messageSchema);
+
+export default Message;

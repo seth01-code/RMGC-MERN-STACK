@@ -1,38 +1,24 @@
 import mongoose from "mongoose";
-const { Schema } = mongoose;
 
-const ConversationSchema = new Schema(
+const conversationSchema = new mongoose.Schema(
   {
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    sellerId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    buyerId: {
-      type: String,
-      required: true,
-    },
-    readBySeller: {
-      type: Boolean,
-      required: true,
-    },
-    readByBuyer: {
-      type: Boolean,
-      required: true,
-    },
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+    ],
     lastMessage: {
-      type: String,
-      required: false,
+      text: { type: String, default: "" },
+      mediaType: { type: String, enum: ["text", "image", "video", "audio", "document"], default: "text" },
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default mongoose.model("Conversation", ConversationSchema);
+const Conversation =
+  mongoose.models.Conversation ||
+  mongoose.model("Conversation", conversationSchema);
+
+export default Conversation;

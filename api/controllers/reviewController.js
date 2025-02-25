@@ -6,7 +6,7 @@ export const createReview = async (req, res, next) => {
   if (req.isSeller)
     return next(createError(403, "sellers can't create a review"));
   const newReview = new Review({
-    userId: req.userId,
+    userId: req.user.id,
     gigId: req.body.gigId,
     desc: req.body.desc,
     star: req.body.star,
@@ -14,7 +14,7 @@ export const createReview = async (req, res, next) => {
   try {
     const review = await Review.findOne({
       gigId: req.body.gigId,
-      userId: req.userId,
+      userId: req.user.id,
     });
 
     if (review)
