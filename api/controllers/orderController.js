@@ -83,7 +83,7 @@ export const intent = async (req, res, next) => {
         metadata: {
           custom_fields: [
             { display_name: "Gig Title", value: gig.title },
-            { display_name: "Buyer Username", value: user.username }, // ✅ Added username
+            { display_name: "Client Username", value: user.username }, // ✅ Added username
           ],
         },
       },
