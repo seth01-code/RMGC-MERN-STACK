@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.post("/send", upload.single("media"), sendMessage); // Send a message (with optional media)
 router.get("/:conversationId", getMessages); // Get messages for a conversation
-router.delete("/:messageId", verifyToken, deleteMessage);
+router.delete("/:messageId",  deleteMessage);
 
 export default router;

@@ -17,10 +17,10 @@ import {
 const router = express.Router();
 
 // Fetch all orders for logged-in user
-router.get("/", verifyToken, getOrder);
+router.get("/",  getOrder);
 
 // Payment intent for creating orders (for Paystack)
-router.post("/create-payment-intent/:id", verifyToken, intent);
+router.post("/create-payment-intent/:id",  intent);
 
 // Payment intent for PayPal (separate route)
 // router.post("/create-flutterwave-intent/:id", verifyToken, flutterWaveIntent);
@@ -35,13 +35,13 @@ router.post("/create-payment-intent/:id", verifyToken, intent);
 // router.get("/completed", verifyToken, verifySeller, getCompletedOrders);
 
 // Mark order as completed
-router.put("/:id/complete", verifyToken, completeOrder);
+router.put("/:id/complete",  completeOrder);
 
 router.patch("/:orderId", updateOrderStatus);
-router.get("/sales-revenue", verifyToken, verifySeller, getSalesRevenue);
-router.get("/seller-revenue", verifyToken, getSellerRevenue);
-router.get("/admin-revenue", verifyToken, verifyAdmin, getAdminRevenue);
-router.get("/completed", verifyToken, verifySeller, getCompletedOrders);
-router.get("/all-completed", verifyToken, verifyAdmin, getAllCompletedOrders);
+router.get("/sales-revenue",  getSalesRevenue);
+router.get("/seller-revenue",  getSellerRevenue);
+router.get("/admin-revenue",  getAdminRevenue);
+router.get("/completed",  getCompletedOrders);
+router.get("/all-completed", getAllCompletedOrders);
 
 export default router;
