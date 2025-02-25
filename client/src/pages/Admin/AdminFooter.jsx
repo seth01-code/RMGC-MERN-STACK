@@ -3,7 +3,7 @@ import facebook from "../../../assets/images/facebook.png";
 import linkedin from "../../../assets/images/linkedin.png";
 import instagram from "../../../assets/images/instagram.png";
 import language from "../../../assets/images/language.png";
-import Accessibility from "../../../assets/images/Accessibility.png";
+import Accessibility from "../../../assets/images/accessibility.png";
 import { useTranslation } from "react-i18next";
 import { FcCurrencyExchange } from "react-icons/fc";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
