@@ -79,7 +79,7 @@ export const intent = async (req, res, next) => {
         amount: convertedPrice * 100, // Convert to kobo/cent
         email: user.email,
         currency: buyerCurrency, // Use buyer's currency (USD or NGN)
-        callback_url: `http://localhost:5173/payment-processing`,
+        callback_url: `https://rmgc-mern-stack-7.onrender.com/payment-processing`,
         metadata: {
           custom_fields: [{ display_name: "Gig Title", value: gig.title }],
         },
