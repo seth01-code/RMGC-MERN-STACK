@@ -27,7 +27,7 @@ const server = createServer(app);
 // Initialize Socket.io
 export const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Frontend URL
+    origin: "https://rmgc-mern-stack-7.onrender.com", // Frontend URL
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -51,7 +51,7 @@ const connect = async () => {
 // Set up CORS
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://rmgc-mern-stack-7.onrender.com",
     methods: "GET,POST,PUT,DELETE,UPDATE,PATCH",
     credentials: true,
   })
@@ -73,7 +73,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     },
   })
@@ -142,7 +142,7 @@ app.get(
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.redirect("http://localhost:5173");
+    res.redirect("https://rmgc-mern-stack-7.onrender.com");
   }
 );
 
@@ -226,9 +226,9 @@ io.on("connection", (socket) => {
         { status: "seen" },
         { new: true }
       );
-  
+
       if (!message) return;
-  
+
       // Update last message in the conversation
       await Conversation.findByIdAndUpdate(conversationId, {
         lastMessage: {
@@ -236,7 +236,7 @@ io.on("connection", (socket) => {
           mediaType: message.mediaType || "text",
         },
       });
-  
+
       // Notify sender that the message has been seen
       io.to(onlineUsers.get(senderId)).emit("messageSeen", {
         messageId,
@@ -248,7 +248,6 @@ io.on("connection", (socket) => {
       console.error("Error updating message status:", error);
     }
   });
-  
 
   // Message reactions
   socket.on("reactToMessage", ({ messageId, reaction }) => {

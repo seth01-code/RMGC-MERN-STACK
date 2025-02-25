@@ -13,6 +13,8 @@ import newRequest from "../../utils/newRequest";
 import { FaTiktok } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
 import BackgroundVideo from "../../../assets/images/background.mp4"; // Import video
+import Logo from "../../../assets/logoo.webp";
+
 
 const AdminFooter = () => {
   const { t } = useTranslation();
@@ -52,7 +54,7 @@ const AdminFooter = () => {
           <div className="flex flex-col space-y-4">
             <img
               className="w-24 rounded-lg"
-              src="../../../assets/logoo.webp"
+              src={Logo}
               alt="Renewed Minds Logo"
             />
           </div>

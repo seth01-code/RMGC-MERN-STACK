@@ -13,6 +13,7 @@ import newRequest from "../../utils/newRequest";
 import { FaTiktok } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
 import BackgroundVideo from "../../../assets/images/background.mp4"; // Import video
+import Logo from "../../../assets/logoo.webp";
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -20,7 +21,7 @@ const Footer = () => {
 
   const { countryCurrency } = useExchangeRate(currentUser?.country);
 
-  const { isLoading, data } = useQuery({
+  const { data } = useQuery({
     queryKey: ["authenticatedUser"],
     queryFn: () => newRequest.get("/users/me").then((res) => res.data),
   });
@@ -52,7 +53,7 @@ const Footer = () => {
           <div className="flex flex-col space-y-4">
             <img
               className="w-24 rounded-lg"
-              src="../../../assets/logoo.webp"
+              src={Logo}
               alt="Renewed Minds Logo"
             />
           </div>

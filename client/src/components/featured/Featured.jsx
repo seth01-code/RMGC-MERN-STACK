@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Man from "../../../assets/images/mman.png";
+import Search from "../../../assets/images/search.png";
 import BackgroundVideo from "../../../assets/images/serve.mp4"; // Import video
 import { useTranslation } from "react-i18next";
 
@@ -78,7 +79,7 @@ function Featured() {
           <div className="flex items-center bg-white rounded-md w-full">
             <div className="flex items-center gap-2 px-4 py-2 flex-grow">
               <img
-                src="../../../assets/images/search.png"
+                src={Search}
                 alt={t("featured.searchAlt")}
                 className="w-5 h-5"
               />
