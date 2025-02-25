@@ -22,7 +22,7 @@ const ChatSidebar = ({
   const navigate = useNavigate();
 
   useEffect(() => {
-    socket.current = io("http://localhost:3000");
+    socket.current = io("https://rmgc-mern-stack-6.onrender.com");
 
     const fetchConversations = async () => {
       try {

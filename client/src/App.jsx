@@ -31,7 +31,7 @@ import SellerDashboard from "./pages/Seller/SellerDashboard";
 import PaymentProcessing from "./pages/Payment Processing/PaymentProcessing";
 import SellerLayout from "./pages/Seller/SellerLayout";
 import Preloader from "./components/Preloader/Preloader.jsx";
-import OTPVerification from "./pages/register/OtpVerification.jsx";
+import OTPVerification from "./pages/register/OTPVerification.jsx";
 import TermsPrivacy from "./pages/TermsPrivacy.jsx";
 import AllGig from "./pages/AllGigs/AllGig.jsx";
 // import { ChatProvider } from "./context/chatContext.jsx";
@@ -134,6 +134,7 @@ const Layout = () => {
   const isLoginPage = location.pathname === "/login";
   const isRegister = location.pathname === "/register";
   const isTerms = location.pathname === "/terms-privacy";
+  const isOTP = location.pathname === "/verify-otp";
   const isMessage = location.pathname === "/chat";
   const isPay = location.pathname.startsWith("/pay/");
   const isProcessing = location.pathname.startsWith("/payment-processing");
@@ -156,7 +157,8 @@ const Layout = () => {
         !isMessage &&
         !isTerms &&
         !isPay &&
-        !isProcessing && (
+        !isProcessing &&
+        !isOTP && (
           <>
             {showAnnouncement && <Announcements />}
             <Navbar />
@@ -168,7 +170,8 @@ const Layout = () => {
         !isMessage &&
         !isTerms &&
         !isPay &&
-        !isProcessing && <Footer />}
+        !isProcessing &&
+        !isOTP && <Footer />}
     </div>
   );
 };

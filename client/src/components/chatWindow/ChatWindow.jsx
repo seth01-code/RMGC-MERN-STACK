@@ -36,7 +36,7 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
   const recordingInterval = useRef(null);
 
   useEffect(() => {
-    socket.current = io("http://localhost:3000");
+    socket.current = io("https://rmgc-mern-stack-6.onrender.com");
     socket.current.emit("join", userId);
 
     socket.current.on("onlineStatus", ({ userId: onlineUserId, status }) => {
