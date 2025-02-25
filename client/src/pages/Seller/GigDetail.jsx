@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import star from "../../../assets/images/star.png";
 import moment from "moment";
 import SellerReviews from "./SellerReviews";
+import { IoMdStar } from "react-icons/io";
 
 const GigDetail = () => {
   const { id } = useParams();
@@ -95,12 +96,7 @@ const GigDetail = () => {
                     {Array(Math.round(data.totalStars / data.starNumber))
                       .fill()
                       .map((_, i) => (
-                        <img
-                          src={star}
-                          alt="star"
-                          key={i}
-                          className="w-4 h-4"
-                        />
+                        <IoMdStar key={i} className="text-[#FF8C00] text-sm" />
                       ))}
                     <span className="text-sm">
                       {Math.round(data.totalStars / data.starNumber)}

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import newRequest from "../../utils/newRequest";
 import { useTranslation } from "react-i18next";
+import { IoMdStar } from "react-icons/io";
 
 const SellerReview = ({ review }) => {
   const { t } = useTranslation();
@@ -31,9 +32,7 @@ const SellerReview = ({ review }) => {
             <span className="block text-lg font-semibold  text-black">
               {data.username}
             </span>
-            <span className="text-sm text-gray-400">
-              {data.country}
-            </span>
+            <span className="text-sm text-gray-400">{data.country}</span>
           </div>
         </div>
       )}
@@ -43,12 +42,7 @@ const SellerReview = ({ review }) => {
         {Array(review.star)
           .fill()
           .map((_, i) => (
-            <img
-              src="/assets/images/star.png"
-              alt="star"
-              key={i}
-              className="h-4 w-4"
-            />
+            <IoMdStar key={i} className="text-[#FF8C00] text-sm" />
           ))}
         <span className="font-semibold text-yellow-500 text-sm">
           {review.star}
