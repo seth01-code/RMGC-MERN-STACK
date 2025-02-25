@@ -14,19 +14,19 @@ import { verifyAdmin } from "../middleware/verifyAdmin.js";
 
 const router = express.Router();
 
-router.get("/me", getUserData);
-router.get("/profile", getUserProfile);
-router.get("/", getUsers); // Fetch all users route
+router.get("/me", verifyToken, getUserData);
+router.get("/profile", verifyToken, verifySeller, getUserProfile);
+router.get("/", verifyToken, getUsers); // Fetch all users route
 router.get("/sellers", getSellers); // Fetch all Sellers route
-router.get("/:id", getUser);
-router.delete("/:id", deleteUser);
+router.get("/:id", verifyToken, getUser);
+router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
 
 // Get user profile info
 
 // Update user profile info
-router.patch("/profile", updateUser);
+router.patch("/profile", verifyToken, verifySeller, updateUser);
 
 // Get total revenue (earnings) for the seller
-router.get("/revenue", getTotalRevenue);
+router.get("/revenue", verifySeller, getTotalRevenue);
 
 export default router;
