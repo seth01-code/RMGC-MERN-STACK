@@ -13,7 +13,7 @@ import SellerReviews from "./SellerReviews";
 import { IoMdStar } from "react-icons/io";
 import Recycle from "../../../assets/images/recycle.png";
 import Clock from "../../../assets/images/clock.png";
-import { FaCheckDouble } from "react-icons/fa";
+import { FaCheckDouble, FaClock, FaRecycle } from "react-icons/fa";
 
 const GigDetail = () => {
   const { id } = useParams();
@@ -239,13 +239,13 @@ const GigDetail = () => {
             {/* Delivery Time & Revisions */}
             <div className="flex justify-between text-sm text-gray-700 mt-3">
               <div className="flex items-center gap-2">
-                <img src={Clock} alt="" className="w-5 flex-shrink-0" />
+                <FaClock className="text-[1.25rem] text-black flex-shrink-0" />
                 <span>
                   {data.deliveryTime} {t("daysDelivery")}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <img src={Recycle} alt="" className="w-5 flex-shrink-0" />
+                <FaRecycle className="text-[1.25rem] text-black flex-shrink-0" />
                 <span>
                   {data.revisionNumber} {t("revisions")}
                 </span>
