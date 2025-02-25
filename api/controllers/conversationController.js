@@ -1,4 +1,4 @@
-import Conversation from "../models/ConversationModel.js";
+import Conversation from "../models/conversationModel.js";
 import mongoose from "mongoose";
 
 // Create or get an existing conversation
@@ -7,7 +7,10 @@ export const createOrGetConversation = async (req, res) => {
   try {
     let { userId, otherUserId } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(otherUserId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(otherUserId)
+    ) {
       return res.status(400).json({ error: "Invalid user ID format." });
     }
 
@@ -29,10 +32,11 @@ export const createOrGetConversation = async (req, res) => {
 
     res.status(200).json(conversation);
   } catch (error) {
-    res.status(500).json({ error: "Error creating conversation: " + error.message });
+    res
+      .status(500)
+      .json({ error: "Error creating conversation: " + error.message });
   }
 };
-
 
 export const getConversations = async (req, res) => {
   const { userId } = req.params;
@@ -64,11 +68,9 @@ export const getConversations = async (req, res) => {
   }
 };
 
-
 export const getAllConversations = async (req, res) => {
   try {
     // Ensure only admins can access this route
-   
 
     // Fetch all conversations, including participants
     const conversations = await Conversation.find({})
@@ -77,7 +79,9 @@ export const getAllConversations = async (req, res) => {
 
     res.status(200).json(conversations);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching all conversations: " + error.message });
+    res
+      .status(500)
+      .json({ error: "Error fetching all conversations: " + error.message });
   }
 };
 
@@ -99,6 +103,8 @@ export const getSingleConversation = async (req, res) => {
 
     res.status(200).json(conversation);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching conversation: " + error.message });
+    res
+      .status(500)
+      .json({ error: "Error fetching conversation: " + error.message });
   }
 };
