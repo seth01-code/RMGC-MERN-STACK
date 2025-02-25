@@ -83,8 +83,7 @@ const App = () => {
         <Preloader />
       </div>
     );
-  }
-s  
+  }  
 
   return (
     <QueryClientProvider client={queryClient}>
