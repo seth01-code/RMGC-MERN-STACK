@@ -79,7 +79,7 @@ export const intent = async (req, res, next) => {
         amount: convertedPrice * 100, // Convert to kobo/cent
         email: user.email,
         currency: buyerCurrency, // Use buyer's currency (USD or NGN)
-        callback_url: `https://rmgc-mern-stack-7.onrender.com/payment-processing`,
+        callback_url: `https://rmgc-mern-stack.vercel.app/payment-processing`,
         metadata: {
           custom_fields: [{ display_name: "Gig Title", value: gig.title }],
         },
@@ -382,7 +382,6 @@ export const getSellerRevenue = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 export const getAdminRevenue = async (req, res) => {
   try {

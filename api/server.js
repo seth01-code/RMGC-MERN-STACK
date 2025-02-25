@@ -27,7 +27,7 @@ const server = createServer(app);
 // Initialize Socket.io
 export const io = new Server(server, {
   cors: {
-    origin: "https://rmgc-mern-stack-7.onrender.com", // Frontend URL
+    origin: "https://rmgc-mern-stack.vercel.app", // Frontend URL
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -51,7 +51,7 @@ const connect = async () => {
 // Set up CORS
 app.use(
   cors({
-    origin: "https://rmgc-mern-stack-7.onrender.com",
+    origin: "https://rmgc-mern-stack.vercel.app",
     methods: "GET,POST,PUT,DELETE,UPDATE,PATCH",
     credentials: true,
   })
