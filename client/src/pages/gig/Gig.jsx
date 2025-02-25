@@ -12,6 +12,8 @@ import moment from "moment";
 import { FaCheckDouble } from "react-icons/fa6";
 import { IoMdStar } from "react-icons/io";
 import { MdMessage } from "react-icons/md";
+import Recycle from "../../../assets/images/recycle.png";
+import Clock from "../../../assets/images/clock.png";
 
 const Gig = () => {
   const { id } = useParams();
@@ -86,8 +88,7 @@ const Gig = () => {
     }
   };
 
-    const date = moment(dataUser?.createdAt).format("DD MMMM, YYYY");
-  
+  const date = moment(dataUser?.createdAt).format("DD MMMM, YYYY");
 
   return (
     <div className="p-4 md:p-8 lg:p-12">
@@ -117,7 +118,7 @@ const Gig = () => {
             ) : (
               <div className="flex items-center gap-3 mb-4">
                 <img
-                  className="w-12 h-12 rounded-full"
+                  className="object-cover w-12 h-12 rounded-full"
                   src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
                   alt="Profile"
                 />
@@ -175,7 +176,7 @@ const Gig = () => {
                   <img
                     src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
                     alt="Seller"
-                    className="w-16 h-16 rounded-full"
+                    className="object-cover w-16 h-16 rounded-full"
                   />
                   <div>
                     <span className="block font-medium">
@@ -272,21 +273,13 @@ const Gig = () => {
 
             <div className="flex justify-between text-sm text-gray-700 mt-3">
               <div className="flex items-center gap-2">
-                <img
-                  src="../../../assets/images/clock.png"
-                  alt=""
-                  className="w-5"
-                />
+                <img src={Clock} alt="" className="w-5" />
                 <span>
                   {data.deliveryTime} {t("daysDelivery")}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <img
-                  src="../../../assets/images/recycle.png"
-                  alt=""
-                  className="w-5"
-                />
+                <img src={Recycle} alt="" className="w-5" />
                 <span>
                   {data.revisionNumber} {t("revisions")}
                 </span>

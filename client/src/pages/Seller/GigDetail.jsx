@@ -11,6 +11,9 @@ import star from "../../../assets/images/star.png";
 import moment from "moment";
 import SellerReviews from "./SellerReviews";
 import { IoMdStar } from "react-icons/io";
+import Recycle from "../../../assets/images/recycle.png";
+import Clock from "../../../assets/images/clock.png";
+import { FaCheckDouble } from "react-icons/fa";
 
 const GigDetail = () => {
   const { id } = useParams();
@@ -236,21 +239,13 @@ const GigDetail = () => {
             {/* Delivery Time & Revisions */}
             <div className="flex justify-between text-sm text-gray-700 mt-3">
               <div className="flex items-center gap-2">
-                <img
-                  src="../../../assets/images/clock.png"
-                  alt=""
-                  className="w-5 flex-shrink-0"
-                />
+                <img src={Clock} alt="" className="w-5 flex-shrink-0" />
                 <span>
                   {data.deliveryTime} {t("daysDelivery")}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <img
-                  src="../../../assets/images/recycle.png"
-                  alt=""
-                  className="w-5 flex-shrink-0"
-                />
+                <img src={Recycle} alt="" className="w-5 flex-shrink-0" />
                 <span>
                   {data.revisionNumber} {t("revisions")}
                 </span>
@@ -264,11 +259,7 @@ const GigDetail = () => {
                   key={index}
                   className="flex items-center gap-2 text-gray-600 text-sm flex-grow"
                 >
-                  <img
-                    src="../../../assets/images/greencheck.png"
-                    alt=""
-                    className="w-4 flex-shrink-0"
-                  />
+                  <FaCheckDouble className="text-xl text-[#FF8C00]" />
                   <span className="flex-grow">{feature}</span>
                 </div>
               ))}
