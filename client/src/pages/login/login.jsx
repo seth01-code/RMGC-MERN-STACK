@@ -97,6 +97,11 @@ const Login = () => {
 
           {error && <p className="text-red-500 text-xs text-center">{error}</p>}
 
+          <p>
+            Forgot Your Password?{" "}
+            <Link to={`/forgot-password`}>Reset Password</Link>
+          </p>
+
           <button
             type="submit"
             className="w-full p-2 bg-blue-500 rounded-xl mt-3 hover:bg-blue-600 text-white text-sm md:text-base"

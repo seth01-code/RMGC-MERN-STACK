@@ -558,7 +558,7 @@ export const forgotPassword = async (req, res) => {
     await user.save();
 
     // Generate password reset link
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetLink = `https://www.renewedmindsglobalconsult.com/reset-password/${resetToken}`;
 
     // Send reset email
     await sendResetPasswordEmail(user.email, user.username, resetLink);

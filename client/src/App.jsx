@@ -44,6 +44,7 @@ import AOS from "aos"; // Import AOS
 import "aos/dist/aos.css";
 import ChatPage from "./pages/ChatPage/ChatPage.jsx";
 import Announcements from "./Announcements.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 
 const queryClient = new QueryClient();
 
@@ -57,7 +58,7 @@ const App = () => {
       easing: "ease-in-out",
       once: false,
     });
-  
+
     // ✅ Remove session data if user logs out
     const handleStorageChange = () => {
       if (!localStorage.getItem("currentUser")) {
@@ -65,25 +66,25 @@ const App = () => {
       }
     };
     window.addEventListener("storage", handleStorageChange);
-  
+
     // ✅ Show preloader when app is loading
     const timeout = setTimeout(() => {
       setLoading(false);
     }, 2000); // ⏳ Adjust timeout if needed
-  
+
     return () => {
       clearTimeout(timeout);
       window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
-  
+
   if (loading) {
     return (
       <div className="preloader-container flex items-center justify-center h-screen bg-white">
         <Preloader />
       </div>
     );
-  }  
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -215,6 +216,7 @@ const router = createBrowserRouter([
         ),
       },
       { path: "/login", element: <Login /> },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/register", element: <Register /> },
       {
         path: "/pay/:id",
