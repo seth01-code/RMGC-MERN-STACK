@@ -69,7 +69,7 @@ function Navbar() {
     try {
       // Send request to clear the accessToken cookie on the backend
       await newRequest.post("/auth/logout");
-  
+
       // Clear localStorage and reset the user context (if you're using one)
       localStorage.removeItem("currentUser");
       setCurrentUser(null); // Assuming you have a state for currentUser
@@ -79,7 +79,7 @@ function Navbar() {
       // Handle errors, possibly show a message to the user
     }
   };
-  
+
   // Detecting token expiration on any API call
   newRequest.interceptors.response.use(
     (response) => response, // If the response is successful, just return it
@@ -166,7 +166,7 @@ function Navbar() {
               </span>
             </div>
             {languageOpen && (
-              <div className="absolute top-12 right-0 p-5 bg-gradient-to-r from-[#000000] to-[#130F40] rounded-lg shadow-lg border flex flex-col gap-4 text-white w-[100px] transition-all ease-in-out">
+              <div className="absolute top-12 right-0 p-5 bg-gradient-to-r from-[#000000] to-[#130F40] rounded-lg shadow-lg border flex flex-col justify-center items-center gap-4 text-white w-[100px] transition-all ease-in-out">
                 <button
                   onClick={() => handleLanguageChange("en")}
                   className="p-2 flex items-center gap-2 hover:bg-white hover:text-[#1dbfb7] transition-all duration-300 rounded-md"
