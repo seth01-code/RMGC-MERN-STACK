@@ -33,13 +33,12 @@ const Login = () => {
     try {
       const res = await newRequest.post("/auth/login", { username, password });
       localStorage.setItem("currentUser", JSON.stringify(res.data));
-  
+
       window.location.href = "/"; // Redirect & reload
     } catch (err) {
       setError(err.response ? err.response.data.message : err.message);
     }
   };
-  
 
   return (
     <div

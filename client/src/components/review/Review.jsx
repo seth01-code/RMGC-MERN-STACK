@@ -15,10 +15,10 @@ const Review = ({ review }) => {
   });
 
   return (
-    <div className="flex flex-col gap-5 py-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col gap-5 py-6 border-b border-gray-200">
       {/* User Info */}
       {isLoading ? (
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-500">
           {t("review.loading")}
         </p>
       ) : error ? (
@@ -26,15 +26,15 @@ const Review = ({ review }) => {
       ) : (
         <div className="flex items-center gap-4">
           <img
-            className="h-14 w-14 object-cover rounded-full border border-gray-300 dark:border-gray-600"
+            className="h-14 w-14 object-cover rounded-full border border-gray-300"
             src={data.img || "/assets/images/noavatar.jpg"}
             alt={data.username}
           />
           <div>
-            <span className="block text-lg font-semibold text-gray-800 dark:text-white">
+            <span className="block text-lg font-semibold text-gray-800">
               {data.username}
             </span>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-gray-500">
               {data.country}
             </span>
           </div>

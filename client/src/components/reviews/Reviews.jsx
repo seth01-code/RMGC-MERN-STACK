@@ -57,7 +57,7 @@ const Reviews = ({ gigId }) => {
 
       {/* Add a Review */}
       <div className="mt-6 bg-gray-50  p-6 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t("reviews.addReviewTitle")}</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t("reviews.addReviewTitle")}</h3>
 
         <form className="mt-4 space-y-5" onSubmit={handleSubmit}>
           <textarea

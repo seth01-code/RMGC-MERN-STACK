@@ -42,10 +42,10 @@ const Gigs = () => {
   };
 
   return (
-    <div className="flex justify-center bg-gray-100 dark:bg-gray-900 min-h-screen px-4">
+    <div className="flex justify-center bg-gray-100 min-h-screen px-4">
       <div className="container max-w-7xl w-full py-8">
         {/* Breadcrumbs */}
-        <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <div className="text-sm text-gray-500 mb-4">
           {data && data.length > 0 ? (
             <span>
               {t("siteName")} &gt; {data[0].cat} &gt;
@@ -91,7 +91,7 @@ const Gigs = () => {
             <div className="relative">
               <button
                 onClick={() => setOpen(!open)}
-                className="flex items-center gap-2 bg-gray-100  px-4 py-2 rounded-lg transition"
+                className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg transition"
               >
                 <span className="font-medium text-gray-800 ">
                   {sort === "sales" ? t("bestSelling") : t("newest")}
@@ -100,7 +100,7 @@ const Gigs = () => {
               </button>
 
               {open && (
-                <div className="absolute right-0 top-12 w-40 bg-white  shadow-lg rounded-lg py-2">
+                <div className="absolute right-0 top-12 w-40 bg-white shadow-lg rounded-lg py-2">
                   <span
                     onClick={() =>
                       reSort(sort === "sales" ? "createdAt" : "sales")

@@ -168,9 +168,9 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
     }
   };
 
-  const handleEmojiClick = () => {
-    setShowEmojiPicker(false);
-  };
+  // const handleEmojiClick = () => {
+  //   setShowEmojiPicker(false);
+  // };
 
   const startRecording = () => {
     setIsRecording(true);
@@ -296,8 +296,8 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
 
   return (
     <div
-      className={`flex flex-col bg-gray-900 text-white transition-all ${
-        isSidebarOpen ? "w-[70%] md:w-[60%] lg:w-[100%]" : ""
+      className={`flex flex-col bg-gray-900 text-white transition-all h-screen w-full ${
+        isSidebarOpen ? "md:w-[60%] lg:w-[100%]" : "w-[70%]"
       }`}
     >
       {/* Header */}
