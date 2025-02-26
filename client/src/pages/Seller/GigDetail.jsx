@@ -88,7 +88,7 @@ const GigDetail = () => {
             ) : (
               <div className="flex items-center gap-3 mb-4">
                 <img
-                  className="w-12 h-12 rounded-full"
+                  className="w-12 h-12 rounded-full object-cover"
                   src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
                   alt="Profile"
                 />
@@ -146,7 +146,7 @@ const GigDetail = () => {
                   <img
                     src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
                     alt="Seller"
-                    className="w-16 h-16 rounded-full"
+                    className="w-16 h-16 object-cover rounded-full"
                   />
                   <div>
                     <span className="block font-medium">

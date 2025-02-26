@@ -72,58 +72,74 @@ const AdminMessages = () => {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        Client/S.P Conversations
+      <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+        Client & Service Provider Conversations
       </h1>
-      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-4">
+
+      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden">
         <ul className="divide-y divide-gray-200">
-          {conversations.map((conversation) => {
-            const client = conversation.participants[0];
-            const provider = conversation.participants[1];
-            const lastMessage = getLastMessageDisplay(conversation.lastMessage);
+          {conversations.length > 0 ? (
+            conversations.map((conversation) => {
+              const client = conversation.participants[0];
+              const provider = conversation.participants[1];
+              const lastMessage = getLastMessageDisplay(
+                conversation.lastMessage
+              );
 
-            return (
-              <li
-                key={conversation._id}
-                onClick={() => {
-                  setSelectedConversation(conversation._id);
-                  navigate(`/admin/messages/${conversation._id}`);
-                }}
-                className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center space-x-4 w-full">
-                  <img
-                    src={client.img || "/default-avatar.png"}
-                    alt={client.username}
-                    className="w-10 h-10 rounded-full border"
-                  />
-                  <div className="w-1/3">
-                    <p className="font-semibold text-gray-800">
-                      {client.username}
+              return (
+                <li
+                  key={conversation._id}
+                  onClick={() => {
+                    setSelectedConversation(conversation._id);
+                    navigate(`/admin/messages/${conversation._id}`);
+                  }}
+                  className="flex flex-col md:flex-row items-center p-4 cursor-pointer hover:bg-gray-50 transition duration-200"
+                >
+                  {/* Client Section */}
+                  <div className="flex items-center space-x-4 w-full md:w-1/2">
+                    <img
+                      src={client.img || "/default-avatar.png"}
+                      alt={client.username}
+                      className="w-12 h-12 rounded-full border border-gray-300 shadow-sm"
+                    />
+                    <div className="flex flex-col">
+                      <p className="font-semibold text-gray-800">
+                        {client.username}
+                      </p>
+                      <p className="text-sm text-gray-500">Client</p>
+                    </div>
+                  </div>
+
+                  {/* Service Provider Section */}
+                  <div className="flex items-center space-x-4 w-full md:w-1/2 mt-3 md:mt-0">
+                    <img
+                      src={provider.img || "/default-avatar.png"}
+                      alt={provider.username}
+                      className="w-12 h-12 rounded-full border border-gray-300 shadow-sm"
+                    />
+                    <div className="flex flex-col">
+                      <p className="font-semibold text-gray-800">
+                        {provider.username}
+                      </p>
+                      <p className="text-sm text-gray-500">Service Provider</p>
+                    </div>
+                  </div>
+
+                  {/* Last Message & Arrow */}
+                  <div className="flex justify-between items-center w-full md:w-auto mt-3 md:mt-0 md:ml-auto">
+                    <p className="text-sm text-gray-600 truncate max-w-[180px] md:max-w-[250px]">
+                      {lastMessage}
                     </p>
-                    <p className="text-sm text-gray-500">Client</p>
+                    <FaChevronRight className="text-gray-400 ml-4 hidden md:block" />
                   </div>
-
-                  <img
-                    src={provider.img || "/default-avatar.png"}
-                    alt={provider.username}
-                    className="w-10 h-10 rounded-full border"
-                  />
-                  <div className="w-1/3">
-                    <p className="font-semibold text-gray-800">
-                      {provider.username}
-                    </p>
-                    <p className="text-sm text-gray-500">Service Provider</p>
-                  </div>
-
-                  <div className="text-sm text-gray-600 truncate w-1/3 flex items-center space-x-2">
-                    {lastMessage}
-                  </div>
-                </div>
-                <FaChevronRight className="text-gray-500" />
-              </li>
-            );
-          })}
+                </li>
+              );
+            })
+          ) : (
+            <li className="p-6 text-center text-gray-500">
+              No conversations yet.
+            </li>
+          )}
         </ul>
       </div>
     </div>

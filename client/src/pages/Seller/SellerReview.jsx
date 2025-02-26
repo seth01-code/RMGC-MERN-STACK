@@ -15,10 +15,10 @@ const SellerReview = ({ review }) => {
   });
 
   return (
-    <div className="flex flex-col gap-5 py-6 border-b border-gray-200 :border-gray-700">
+    <div className="flex flex-col gap-5 py-6 border-b border-gray-200">
       {/* User Info */}
       {isLoading ? (
-        <p className="text-gray-500 :text-gray-400">{t("review.loading")}</p>
+        <p className="text-gray-500">{t("review.loading")}</p>
       ) : error ? (
         <p className="text-red-500">{t("review.error")}</p>
       ) : (
@@ -29,7 +29,7 @@ const SellerReview = ({ review }) => {
             alt={data.username}
           />
           <div>
-            <span className="block text-lg font-semibold  text-black">
+            <span className="block text-lg font-semibold text-black">
               {data.username}
             </span>
             <span className="text-sm text-gray-400">{data.country}</span>

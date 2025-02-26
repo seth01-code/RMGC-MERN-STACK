@@ -110,126 +110,150 @@ const MessageDetail = () => {
   // };
 
   return (
-    <div className="p-6 mx-auto bg-white rounded-lg shadow-lg h-[85vh] flex flex-col w-full xl:max-w-full lg:max-w-4xl md:max-w-3xl sm:max-w-2xl">
-      <h1 className="text-2xl font-semibold text-gray-900 border-b pb-3">
+    <div className="p-6 mx-auto bg-white rounded-lg shadow-lg h-[85vh] flex flex-col w-full max-w-5xl">
+      {/* Header Section */}
+      <h1 className="text-2xl font-semibold text-gray-900 border-b pb-3 text-center">
         Conversation
       </h1>
 
+      {/* User Info Bar */}
       <div className="flex items-center justify-between bg-gray-100 p-4 rounded-lg shadow-sm">
+        {/* Receiver */}
         <div className="flex items-center gap-3">
           <img
             src={receiver?.img || "/default-avatar.png"}
             alt="Receiver"
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover border border-gray-300 shadow-sm"
           />
           <div>
-            <p className="text-sm text-gray-500">S.P</p>
+            <p className="text-xs text-gray-500">Service Provider</p>
             <p className="font-semibold text-gray-800">{receiver?.username}</p>
           </div>
         </div>
+
+        {/* Sender */}
         <div className="flex items-center gap-3">
           <img
             src={sender?.img || "/default-avatar.png"}
             alt="Sender"
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover border border-gray-300 shadow-sm"
           />
           <div>
-            <p className="text-sm text-blue-500">Client</p>
+            <p className="text-xs text-blue-500">Client</p>
             <p className="font-semibold text-gray-800">{sender?.username}</p>
           </div>
         </div>
       </div>
 
+      {/* Chat Messages Section */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg._id}
-            className={`flex items-end gap-3 ${
-              msg.senderId._id === sender._id ? "justify-end" : "justify-start"
-            }`}
-          >
-            {msg.senderId._id !== sender._id && (
-              <img
-                src={receiver?.img || "/default-avatar.png"}
-                alt="User"
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            )}
+        {messages.length > 0 ? (
+          messages.map((msg) => {
+            const isSender = msg.senderId._id === sender._id;
 
-            <div className="flex flex-col max-w-[70%] space-y-2">
-              {/* Text message with background */}
-              {msg.text && (
-                <div
-                  className={`p-3 rounded-xl text-sm shadow-md ${
-                    msg.senderId._id === sender._id
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-900"
-                  }`}
-                >
-                  <p>{msg.text}</p>
-                </div>
-              )}
-
-              {/* Image message */}
-              {msg.media && msg.media.match(/\.(jpeg|jpg|png|gif)$/) && (
-                <ChatImage message={msg} />
-              )}
-
-              {/* Video message */}
-              {msg.media && msg.media.match(/\.(mp4|webm|ogg|mov|avi)$/) && (
-                <CustomVideoPlayer
-                  src={msg.media}
-                  fileExtension={msg.media.split(".").pop()}
-                />
-              )}
-
-              {/* Audio message */}
-              {msg.media &&
-                msg.media.match(/\.(mp3|wav|ogg|flac|aac|m4a)$/) && (
-                  <AudioMessagePlayer
-                    src={msg.media}
-                    fileExtension={msg.media.split(".").pop()}
-                    isSender={msg.senderId._id === sender._id}
+            return (
+              <div
+                key={msg._id}
+                className={`flex items-end gap-3 ${
+                  isSender ? "justify-end" : "justify-start"
+                }`}
+              >
+                {/* Show receiver avatar */}
+                {!isSender && (
+                  <img
+                    src={receiver?.img || "/default-avatar.png"}
+                    alt="User"
+                    className="w-10 h-10 rounded-full object-cover"
                   />
                 )}
 
-              {/* Document message styled like text message */}
-              {msg.media &&
-                msg.media.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/) && (
-                  <div
-                    className={`p-3 rounded-xl text-sm shadow-md flex items-center gap-2 ${
-                      msg.senderId._id === sender._id
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-900"
+                {/* Message Content */}
+                <div className="flex flex-col max-w-[75%] sm:max-w-[65%] lg:max-w-[50%] space-y-2">
+                  {/* Text Message */}
+                  {msg.text && (
+                    <div
+                      className={`p-3 rounded-xl text-sm shadow-md ${
+                        isSender
+                          ? "bg-blue-500 text-white rounded-br-none"
+                          : "bg-gray-200 text-gray-900 rounded-bl-none"
+                      }`}
+                    >
+                      <p>{msg.text}</p>
+                    </div>
+                  )}
+
+                  {/* Image Message */}
+                  {msg.media && msg.media.match(/\.(jpeg|jpg|png|gif)$/) && (
+                    <ChatImage message={msg} />
+                  )}
+
+                  {/* Video Message */}
+                  {msg.media &&
+                    msg.media.match(/\.(mp4|webm|ogg|mov|avi)$/) && (
+                      <CustomVideoPlayer
+                        src={msg.media}
+                        fileExtension={msg.media.split(".").pop()}
+                      />
+                    )}
+
+                  {/* Audio Message */}
+                  {msg.media &&
+                    msg.media.match(/\.(mp3|wav|ogg|flac|aac|m4a)$/) && (
+                      <AudioMessagePlayer
+                        src={msg.media}
+                        fileExtension={msg.media.split(".").pop()}
+                        isSender={isSender}
+                      />
+                    )}
+
+                  {/* Document Message */}
+                  {msg.media &&
+                    msg.media.match(
+                      /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/
+                    ) && (
+                      <div
+                        className={`p-3 rounded-xl text-sm shadow-md flex items-center gap-2 ${
+                          isSender
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 text-gray-900"
+                        }`}
+                      >
+                        {getFileIcon(msg.media)}
+                        <a
+                          href={msg.media}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline truncate"
+                        >
+                          {getFileName(msg.media)}
+                        </a>
+                      </div>
+                    )}
+
+                  {/* Timestamp */}
+                  <p
+                    className={`text-xs text-gray-400 mt-1 ${
+                      isSender ? "text-right" : "text-left"
                     }`}
                   >
-                    {getFileIcon(msg.media)}
-                    <a
-                      href={msg.media}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline truncate"
-                    >
-                      {getFileName(msg.media)}
-                    </a>
-                  </div>
+                    {new Date(msg.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
+
+                {/* Show sender avatar */}
+                {isSender && (
+                  <img
+                    src={sender?.img || "/default-avatar.png"}
+                    alt="User"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                 )}
-
-              {/* Timestamp */}
-              <p className="text-xs text-gray-400 mt-1 text-right">
-                {new Date(msg.createdAt).toLocaleString()}
-              </p>
-            </div>
-
-            {msg.senderId._id === sender._id && (
-              <img
-                src={sender?.img || "/default-avatar.png"}
-                alt="User"
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            )}
-          </div>
-        ))}
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-gray-500 text-center mt-6">No messages yet.</p>
+        )}
       </div>
     </div>
   );

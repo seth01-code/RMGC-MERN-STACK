@@ -1,12 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
 import newRequest from "../../utils/newRequest";
 import Review from "./SellerReview";
 import { useTranslation } from "react-i18next";
 
 const SellerReviews = ({ gigId }) => {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
   const { isLoading, error, data } = useQuery({
     queryKey: ["reviews", gigId],
@@ -14,36 +13,8 @@ const SellerReviews = ({ gigId }) => {
     enabled: !!gigId,
   });
 
-  const mutation = useMutation({
-    mutationFn: (review) => newRequest.post("/reviews", review),
-    onSuccess: () => queryClient.invalidateQueries(["reviews", gigId]),
-  });
-
-  const [desc, setDesc] = useState("");
-  const [star, setStar] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    mutation.mutate(
-      { gigId, desc, star },
-      {
-        onSuccess: () => {
-          setDesc("");
-          setStar(1);
-          setIsSubmitting(false);
-        },
-        onError: () => {
-          setIsSubmitting(false);
-        },
-      }
-    );
-  };
-
   return (
-    <div className="mt-12 p-6 bg-white  rounded-lg shadow-lg">
+    <div className="mt-12 p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-gray-900 ">
         {t("reviews.title")}
       </h2>
