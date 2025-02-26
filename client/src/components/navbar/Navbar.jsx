@@ -154,8 +154,8 @@ function Navbar() {
             className="relative cursor-pointer"
             onClick={() => setLanguageOpen(!languageOpen)}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-xl text-white">
+            <div className="flex items-center gap-2 md:text-xl lg:text-xl">
+              <span className="text-sm text-white">
                 <Flag
                   code={getFlagCode()}
                   style={{ width: "20px", height: "15px" }}
