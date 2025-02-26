@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import createError from "../utils/createError.js";
 import User from "../models/userModel.js";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -61,6 +62,47 @@ const sendOtpEmail = async (email, username, otp) => {
     console.log(`✅ OTP sent successfully to ${email}`);
   } catch (error) {
     console.error(`❌ Failed to send OTP to ${email}:`, error);
+  }
+};
+
+const sendResetPasswordEmail = async (email, username, resetLink) => {
+  console.log(`📧 Sending password reset link to ${email}...`);
+
+  try {
+    await transporter.sendMail({
+      from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
+      to: email,
+      subject: "Reset Your Password",
+      headers: {
+        "Message-ID": `<${Date.now()}@renewedmindsglobalconsult.com>`,
+        "In-Reply-To": null,
+        References: null,
+      },
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #ff9800;">Reset Your Password</h2>
+          <p>Dear <b>${username}</b>,</p>
+          <p>We received a request to reset your password. Click the button below to proceed:</p>
+          
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${resetLink}" style="background: #ff9800; color: #fff; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">
+              Reset Password
+            </a>
+          </div>
+
+          <p>If you didn’t request a password reset, please ignore this email.</p>
+
+          <p>This link is valid for <b>1 hour</b>.</p>
+
+          <p>Best Regards,<br>
+          <b>Renewed Minds Global Consult Team</b></p>
+        </div>
+      `,
+    });
+
+    console.log(`✅ Password reset email sent successfully to ${email}`);
+  } catch (error) {
+    console.error(`❌ Failed to send password reset email to ${email}:`, error);
   }
 };
 
@@ -488,11 +530,43 @@ export const resendOtp = async (req, res, next) => {
     // Send OTP via email
     await sendOtpEmail(email, username, otp);
 
-  
-
     return res.status(200).json({ message: "New OTP sent successfully" });
   } catch (err) {
     next(err);
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Generate a reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    // Set token and expiration (1 hour)
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // Generate password reset link
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    // Send reset email
+    await sendResetPasswordEmail(user.email, user.username, resetLink);
+
+    res.json({ message: "Password reset link sent to your email." });
+  } catch (err) {
+    console.error("❌ Forgot password error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 

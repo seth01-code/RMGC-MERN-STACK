@@ -31,7 +31,7 @@ const Review = ({ review }) => {
             alt={data.username}
           />
           <div>
-            <span className="block text-lg font-semibold text-gray-800">
+            <span className="block text-lg font-semibold text-black">
               {data.username}
             </span>
             <span className="text-sm text-gray-500">

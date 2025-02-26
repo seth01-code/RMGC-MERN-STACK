@@ -18,6 +18,9 @@ const UserSchema = new mongoose.Schema(
     otp: { type: String },
     otpExpires: { type: Date },
 
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
+
     // New fields added from your list
     fullName: { type: String },
     dob: { type: Date },
