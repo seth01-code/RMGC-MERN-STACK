@@ -20,7 +20,7 @@ const ForgotPasswordPage = () => {
         email,
       });
       setSuccess(response.data.message);
-      setTimeout(() => navigate("/login"), 3000); // Redirect to login after 3 seconds
+      setTimeout(() => navigate("/reset-password"), 3000); // Redirect to login after 3 seconds
     } catch (err) {
       setError(err.response?.data?.error || "Something went wrong!");
     } finally {

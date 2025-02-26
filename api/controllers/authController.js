@@ -570,6 +570,43 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
+export const resetPassword = async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+
+    // Hash the reset token sent from the client
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }, // Check if token is not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    // Hash new password and save it
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Reset user password and clear the reset token
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: "Password has been successfully reset" });
+  } catch (err) {
+    console.error("❌ Reset password error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 // ✅ Logout
 export const logout = async (req, res) => {
   res.clearCookie("accessToken", {

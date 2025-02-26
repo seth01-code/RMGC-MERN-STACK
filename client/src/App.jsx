@@ -45,6 +45,7 @@ import "aos/dist/aos.css";
 import ChatPage from "./pages/ChatPage/ChatPage.jsx";
 import Announcements from "./Announcements.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 
 const queryClient = new QueryClient();
 
@@ -217,6 +218,7 @@ const router = createBrowserRouter([
       },
       { path: "/login", element: <Login /> },
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/register", element: <Register /> },
       {
         path: "/pay/:id",

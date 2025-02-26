@@ -6,6 +6,7 @@ import {
   verifyOtp,
   resendOtp,
   forgotPassword,
+  resetPassword,
   // verifyEditOtp,
 } from "../controllers/authController.js";
 
@@ -18,5 +19,6 @@ router.post("/verify-otp", verifyOtp);
 // router.post("/verify-edit-otp", verifyEditOtp);
 router.post("/resend-otp", resendOtp);
 router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 export default router;
