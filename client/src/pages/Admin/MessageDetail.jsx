@@ -110,7 +110,7 @@ const MessageDetail = () => {
   // };
 
   return (
-    <div className="p-6 mx-auto bg-white rounded-lg shadow-lg h-[85vh] flex flex-col w-full max-w-5xl">
+    <div className="p-6 mx-auto bg-white rounded-lg shadow-lg h-[85vh] flex flex-col w-full">
       {/* Header Section */}
       <h1 className="text-2xl font-semibold text-gray-900 border-b pb-3 text-center">
         Conversation
