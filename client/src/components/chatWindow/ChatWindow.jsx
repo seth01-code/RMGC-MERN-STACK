@@ -384,7 +384,7 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
       )}
 
       {/* Chat Input */}
-      <div className="flex w-full items-center gap-2 p-4 bg-gray-800 border-t border-gray-700">
+      <div className="relative flex w-full items-center gap-2 p-4 bg-gray-800 border-t border-gray-700">
         <button
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           className="text-xl p-2 rounded-full hover:bg-gray-700"
