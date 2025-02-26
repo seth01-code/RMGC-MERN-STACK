@@ -133,7 +133,9 @@ const Layout = () => {
   const isTerms = location.pathname === "/terms-privacy";
   const isOTP = location.pathname === "/verify-otp";
   const isMessage = location.pathname === "/chat";
+  const isForgotPassword = location.pathname === "/forgot-password";
   const isPay = location.pathname.startsWith("/pay/");
+  const isResetPassword = location.pathname.startsWith("/reset-password/");
   const isProcessing = location.pathname.startsWith("/payment-processing");
 
   const [showAnnouncement, setShowAnnouncement] = useState(true);
@@ -155,7 +157,9 @@ const Layout = () => {
         !isTerms &&
         !isPay &&
         !isProcessing &&
-        !isOTP && (
+        !isOTP &&
+        !isForgotPassword &&
+        !isResetPassword && (
           <>
             {showAnnouncement && <Announcements />}
             <Navbar />
@@ -168,7 +172,9 @@ const Layout = () => {
         !isTerms &&
         !isPay &&
         !isProcessing &&
-        !isOTP && <Footer />}
+        !isOTP &&
+        !isForgotPassword &&
+        !isResetPassword && <Footer />}
     </div>
   );
 };
