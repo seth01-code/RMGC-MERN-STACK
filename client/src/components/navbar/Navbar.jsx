@@ -166,7 +166,7 @@ function Navbar() {
               </span>
             </div>
             {languageOpen && (
-              <div className="absolute top-12 right-0 p-5 bg-gradient-to-r from-[#000000] to-[#130F40] rounded-lg shadow-lg border flex flex-col gap-4 text-white w-[220px] transition-all ease-in-out">
+              <div className="absolute top-12 right-0 p-5 bg-gradient-to-r from-[#000000] to-[#130F40] rounded-lg shadow-lg border flex flex-col gap-4 text-white transition-all ease-in-out">
                 <button
                   onClick={() => handleLanguageChange("en")}
                   className="p-2 flex items-center gap-2 hover:bg-white hover:text-[#1dbfb7] transition-all duration-300 rounded-md"
