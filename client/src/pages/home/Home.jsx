@@ -89,7 +89,7 @@ const Home = () => {
             </div>
 
             <Link to={`/about-us`}>
-              <motion.button className="mt-6 bg-[#FF8C00] hover:bg-[#FFA500] text-white py-3 animate-bounce px-8 rounded-lg text-lg transition duration-300 ease-in-out">
+              <motion.button className="mt-6 bg-[#FF8C00] hover:bg-[#FFA500] text-white py-3  px-8 rounded-lg text-lg transition duration-300 ease-in-out">
                 {t("exploreRMGC")}
               </motion.button>
             </Link>
