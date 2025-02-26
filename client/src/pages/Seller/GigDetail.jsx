@@ -43,7 +43,7 @@ const GigDetail = () => {
     enabled: !!data?.userId,
   });
 
-  const { isLoading: userLoading, data: userData } = useQuery({
+  const { data: userData } = useQuery({
     queryKey: ["authenticatedUser"],
     queryFn: () => newRequest.get("/users/me").then((res) => res.data),
   });

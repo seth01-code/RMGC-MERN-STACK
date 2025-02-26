@@ -4,7 +4,6 @@ import GigCard from "../../components/GigCards/GigCard";
 import { useQuery } from "@tanstack/react-query";
 import newRequest from "../../utils/newRequest";
 import { useTranslation } from "react-i18next";
-import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 const AllGig = () => {
   const { t } = useTranslation();

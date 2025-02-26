@@ -10,20 +10,10 @@ function Featured() {
   const { t } = useTranslation();
   const [input, setInput] = useState("");
   const navigate = useNavigate();
-  const [displayedText, setDisplayedText] = useState("");
+  // const [displayedText, setDisplayedText] = useState("");
   const fullText = `${t("featured.title1")} ${t("featured.title2")} ${t(
     "featured.title3"
   )}`;
-
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      setDisplayedText(fullText.slice(0, i));
-      i++;
-      if (i > fullText.length) clearInterval(interval);
-    }, 100); // Adjust typing speed
-    return () => clearInterval(interval);
-  }, [fullText]);
 
   const handleSubmit = () => {
     if (input.trim()) {
@@ -64,14 +54,14 @@ function Featured() {
         <div className="flex flex-col gap-8 w-full lg:w-1/2 order-last lg:order-none">
           <motion.h1
             className="text-3xl lg:text-5xl font-merienda text-center lg:text-left"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
+            initial={{ opacity: 0, y: 20 }} // Starts slightly lower
+            animate={{ opacity: 1, y: 0 }} // Moves up while fading in
+            transition={{ duration: 1, ease: "easeOut" }} // Smooth transition
           >
-            {displayedText}
+            {fullText}
             <motion.span
               className="font-light"
-              animate={{ opacity: [0, 1, 0] }}
+              animate={{ opacity: [0, 1, 0] }} // Blinking effect
               transition={{ repeat: Infinity, duration: 0.6 }}
             ></motion.span>
           </motion.h1>
