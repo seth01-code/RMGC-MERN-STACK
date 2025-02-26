@@ -171,22 +171,19 @@ function Navbar() {
                   onClick={() => handleLanguageChange("en")}
                   className="p-2 flex items-center gap-2 hover:bg-white hover:text-[#1dbfb7] transition-all duration-300 rounded-md"
                 >
-                  <Flag code="GB" style={{ width: "20px", height: "15px" }} />{" "}
-                  {t("navbar.english")}
+                  <Flag code="GB" style={{ width: "20px", height: "15px" }} />
                 </button>
                 <button
                   onClick={() => handleLanguageChange("es")}
                   className="p-2 flex items-center gap-2 hover:bg-white hover:text-[#1dbfb7] transition-all duration-300 rounded-md"
                 >
-                  <Flag code="ES" style={{ width: "20px", height: "15px" }} />{" "}
-                  {t("navbar.spanish")}
+                  <Flag code="ES" style={{ width: "20px", height: "15px" }} />
                 </button>
                 <button
                   onClick={() => handleLanguageChange("fr")}
                   className="p-2 flex items-center gap-2 hover:bg-white hover:text-[#1dbfb7] transition-all duration-300 rounded-md"
                 >
-                  <Flag code="FR" style={{ width: "20px", height: "15px" }} />{" "}
-                  {t("navbar.french")}
+                  <Flag code="FR" style={{ width: "20px", height: "15px" }} />
                 </button>
               </div>
             )}
