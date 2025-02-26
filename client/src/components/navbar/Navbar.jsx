@@ -13,8 +13,8 @@ import {
 import { HiOutlineShoppingCart } from "react-icons/hi";
 import Flag from "react-world-flags";
 import { FaTasks } from "react-icons/fa";
-import { GrBusinessService } from "react-icons/gr";
 import { LuLayoutDashboard } from "react-icons/lu";
+import { toast } from "react-toastify";
 
 function Navbar() {
   const { t, i18n } = useTranslation();
@@ -67,14 +67,32 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
+      // Send request to clear the accessToken cookie on the backend
       await newRequest.post("/auth/logout");
+  
+      // Clear localStorage and reset the user context (if you're using one)
       localStorage.removeItem("currentUser");
-      setCurrentUser(null);
-      navigate("/");
+      setCurrentUser(null); // Assuming you have a state for currentUser
+      navigate("/"); // Redirect to home or login page
     } catch (err) {
-      console.error(err);
+      console.error("Error logging out:", err);
+      // Handle errors, possibly show a message to the user
     }
   };
+  
+  // Detecting token expiration on any API call
+  newRequest.interceptors.response.use(
+    (response) => response, // If the response is successful, just return it
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        // Token expired or invalid, logout the user
+        handleLogout();
+        // Show the toast message when the user is logged out due to expired token
+        toast.error("Your session has expired. Please log in again.");
+      }
+      return Promise.reject(error); // Reject the error to handle it elsewhere if needed
+    }
+  );
 
   const closeMenu = () => {
     setOpen(false);

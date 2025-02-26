@@ -606,12 +606,11 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-
 // ✅ Logout
 export const logout = async (req, res) => {
   res.clearCookie("accessToken", {
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "None",
+    secure: true,
   });
   res.status(200).send("Logged out successfully.");
 };
