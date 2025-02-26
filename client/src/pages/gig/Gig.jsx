@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
@@ -18,7 +18,6 @@ import Clock from "../../../assets/images/clock.png";
 const Gig = () => {
   const { id } = useParams();
   const { t } = useTranslation();
-  const [userDetails, setUserDetails] = useState({});
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
@@ -28,10 +27,6 @@ const Gig = () => {
     enabled: !!id,
   });
 
-  const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => newRequest.get(`/users`).then((res) => res.data),
-  });
 
   const {
     isLoading: isLoadingUser,
