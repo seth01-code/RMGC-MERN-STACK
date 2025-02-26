@@ -296,7 +296,7 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
 
   return (
     <div
-      className={`flex flex-col bg-gray-900 text-white transition-all h-[100%] w-full ${
+      className={`flex flex-col bg-gray-900 text-white transition-all w-full ${
         isSidebarOpen ? "md:w-[60%] lg:w-[100%]" : "w-[70%]"
       }`}
     >
