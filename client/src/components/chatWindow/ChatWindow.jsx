@@ -334,32 +334,44 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
 
       {/* Chat Messages */}
       <div
-        className={`${isSidebarOpen ? "hidden" : "flex-1 p-4 overflow-y-auto"}`}
+        className={`${
+          isSidebarOpen
+            ? "hidden"
+            : "flex flex-col min-h-screen p-4 overflow-y-auto"
+        }`}
       >
-        {messages.map((msg, idx) => {
-          const isSender = msg.senderId._id === userId;
-          return (
-            <div
-              key={idx}
-              className={`flex ${isSender ? "justify-end" : "justify-start"}`}
-            >
-              <div className="p-3 rounded-lg max-w-[75%] sm:max-w-[65%] lg:max-w-[50%]">
-                {msg.media && renderMediaPreview(msg)}
-                {msg.text && (
-                  <p
-                    className={`p-2 rounded-lg break-words ${
-                      isSender ? "bg-green-600" : "bg-gray-700"
-                    }`}
-                  >
-                    {msg.text}
-                  </p>
-                )}
+        {messages.length > 0 ? (
+          messages.map((msg, idx) => {
+            const isSender = msg.senderId._id === userId;
+            return (
+              <div
+                key={idx}
+                className={`flex ${isSender ? "justify-end" : "justify-start"}`}
+              >
+                <div className="p-3 rounded-lg max-w-[75%] sm:max-w-[65%] lg:max-w-[50%]">
+                  {msg.media && renderMediaPreview(msg)}
+                  {msg.text && (
+                    <p
+                      className={`p-2 rounded-lg break-words ${
+                        isSender ? "bg-green-600" : "bg-gray-700"
+                      }`}
+                    >
+                      {msg.text}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        ) : (
+          // Empty state: Keeps height consistent even if there are no messages
+          <div className="flex-1 flex items-center justify-center text-gray-400">
+            No messages yet
+          </div>
+        )}
         <div ref={chatEndRef} />
       </div>
+
       {loadingFile && (
         <div className="p-2 w-full max-w-lg mx-auto flex flex-col items-center gap-2 bg-gray-800 rounded-lg shadow-md">
           {/* File Name (Truncated if too long) */}
