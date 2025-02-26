@@ -57,7 +57,7 @@ const Login = () => {
         <p className="text-xs md:text-sm text-gray-500 text-center">
           {t("noAccount")}{" "}
           <Link to={`/register`}>
-            <span className="text-white">{t("signUp")}</span>
+            <span className="text-orange-500 underline">{t("signUp")}</span>
           </Link>
         </p>
 
@@ -97,9 +97,11 @@ const Login = () => {
 
           {error && <p className="text-red-500 text-xs text-center">{error}</p>}
 
-          <p>
+          <p className="text-white flex justify-between items-center">
             Forgot Your Password?{" "}
-            <Link to={`/forgot-password`}>Reset Password</Link>
+            <Link className="text-orange-500 underline" to={`/forgot-password`}>
+              Reset Password
+            </Link>
           </p>
 
           <button
