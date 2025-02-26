@@ -393,7 +393,7 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
         </button>
 
         {showEmojiPicker && (
-          <div className="absolute bottom-20 left-4 z-20">
+          <div className="sticky bottom-20 left-4 z-20">
             <EmojiPicker
               onEmojiClick={(emoji) => setText((prev) => prev + emoji.emoji)}
             />
