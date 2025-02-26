@@ -296,7 +296,7 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
 
   return (
     <div
-      className={`flex flex-col bg-gray-900 text-white transition-all w-full ${
+      className={`flex flex-col bg-gray-900 text-white transition-all w-full  ${
         isSidebarOpen ? "md:w-[60%] lg:w-[100%]" : "w-[70%]"
       }`}
     >
@@ -384,7 +384,7 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
       )}
 
       {/* Chat Input */}
-      <div className="flex items-center gap-2 p-4 bg-gray-800 border-t border-gray-700">
+      <div className="flex w-fit items-center gap-2 p-4 bg-gray-800 border-t border-gray-700">
         <button
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           className="text-xl p-2 rounded-full hover:bg-gray-700"
