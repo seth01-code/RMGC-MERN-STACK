@@ -135,7 +135,7 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
         <p>You can access the admin dashboard using the button below:</p>
 
         <div style="text-align: center; margin-top: 20px;">
-          <a href="https://renewedmindsglobalconsult.com/admin" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🔑 Access Admin Dashboard
           </a>
         </div>
@@ -161,7 +161,7 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
         <p>Start by setting up your profile and publishing your first service!</p>
 
         <div style="text-align: center; margin-top: 20px;">
-          <a href="https://renewedmindsglobalconsult.com/seller" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🚀 Go to Your Dashboard
           </a>
         </div>
@@ -186,7 +186,7 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
         <p>Get started now by exploring our platform.</p>
 
         <div style="text-align: center; margin-top: 20px;">
-          <a href="https://renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🚀 Login to Your Account
           </a>
         </div>

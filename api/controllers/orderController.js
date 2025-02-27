@@ -122,6 +122,8 @@ export const verifyPayment = async (req, res, next) => {
       return next(createError(400, "Payment verification failed"));
     }
 
+    console.log("Payment verification response:", response.data);
+
     const { gigId, buyerId, sellerId, gigTitle, gigCover, gigPrice, currency } =
       paymentData.metadata;
 
