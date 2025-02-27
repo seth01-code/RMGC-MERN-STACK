@@ -40,26 +40,28 @@ const Pay = () => {
   };
 
   // Verify payment after returning from Paystack
+  // Verify payment after returning from Paystack
   useEffect(() => {
     const verifyPayment = async () => {
-      const transactionId = localStorage.getItem("transactionId");
       const queryParams = new URLSearchParams(location.search);
       const reference = queryParams.get("reference"); // Paystack reference
 
-      if (!transactionId || !reference) return;
+      if (!reference) return;
 
       try {
-        const res = await newRequest.get(`/orders/verify?transactionId=${transactionId}&reference=${reference}`);
+        const res = await newRequest.get(
+          `/orders/verify?reference=${reference}`
+        );
         if (res.data.status === "success") {
           alert(t("paymentSuccess"));
-          navigate("/success"); // Redirect to a success page
+          navigate("/payment-processing"); // Redirect to the correct page
         } else {
           setErrorMessage(t("paymentFailed"));
         }
       } catch (err) {
         setErrorMessage(err.response?.data?.message || t("unknownError"));
       } finally {
-        localStorage.removeItem("transactionId"); // Clear after verification
+        localStorage.removeItem("reference"); // Clear after verification
       }
     };
 
