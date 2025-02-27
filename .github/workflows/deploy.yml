@@ -3,7 +3,7 @@ name: Deploy to Vultr
 on:
   push:
     branches:
-      - main  # Change this if your main branch has a different name
+      - main
 
 jobs:
   deploy:
@@ -13,14 +13,24 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up SSH and Deploy to Vultr
+      - name: Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VULTR_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VULTR_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Debug SSH Connection
+        run: ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VULTR_USER }}@${{ secrets.VULTR_HOST }} "echo SSH Connection Successful"
+
+      - name: Deploy to Vultr
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VULTR_HOST }}
           username: ${{ secrets.VULTR_USER }}
           key: ${{ secrets.VULTR_SSH_KEY }}
           script: |
-            cd ~/RMGC-MERN-STACK/api  # Change this to your backend directory
+            cd ~/RMGC-MERN-STACK/api
             git pull origin main
             npm install
-            pm2 restart backend  # Make sure your app is started with PM2
+            pm2 restart backend
