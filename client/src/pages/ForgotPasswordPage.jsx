@@ -29,46 +29,48 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="p-6 flex items-center justify-center mx-auto bg-white rounded-lg shadow-lg max-w-lg">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-        Forgot Password
-      </h2>
-      <p className="mb-4 text-gray-600">
-        Enter your email to receive a password reset link.
-      </p>
+    <div className="flex items-center justify-center">
+      <div className="p-6 mx-auto bg-white rounded-lg shadow-lg max-w-lg">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          Forgot Password
+        </h2>
+        <p className="mb-4 text-gray-600">
+          Enter your email to receive a password reset link.
+        </p>
 
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      {success && <div className="text-green-500 mb-4">{success}</div>}
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {success && <div className="text-green-500 mb-4">{success}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-gray-700 font-medium mb-2"
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label
+              htmlFor="email"
+              className="block text-gray-700 font-medium mb-2"
+            >
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full p-3 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 text-white font-semibold rounded-md ${
+              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full p-3 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-3 text-white font-semibold rounded-md ${
-            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Sending..." : "Send Reset Link"}
-        </button>
-      </form>
+            {loading ? "Sending..." : "Send Reset Link"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
