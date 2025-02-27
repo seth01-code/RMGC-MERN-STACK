@@ -53,12 +53,21 @@ const App = () => {
   const [loading, setLoading] = useState(true); // ✅ Always start with loading state
 
   useEffect(() => {
-    // ✅ Initialize AOS animations
-    AOS.init({
-      duration: 1000,
-      easing: "ease-in-out",
-      once: false,
-    });
+    const initializeAOS = () => {
+      if (window.innerWidth >= 768) {
+        AOS.init({
+          duration: 1000,
+          easing: "ease-in-out",
+          once: false,
+        });
+      } else {
+        AOS.refreshHard(); // Ensures animations are removed on small screens
+      }
+    };
+
+    initializeAOS(); // Run on mount
+
+    window.addEventListener("resize", initializeAOS); // Handle screen resize
 
     // ✅ Remove session data if user logs out
     const handleStorageChange = () => {
@@ -66,6 +75,7 @@ const App = () => {
         sessionStorage.clear();
       }
     };
+
     window.addEventListener("storage", handleStorageChange);
 
     // ✅ Show preloader when app is loading
@@ -75,6 +85,7 @@ const App = () => {
 
     return () => {
       clearTimeout(timeout);
+      window.removeEventListener("resize", initializeAOS);
       window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
