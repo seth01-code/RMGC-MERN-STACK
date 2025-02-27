@@ -88,7 +88,6 @@ function Navbar() {
         // Token expired or invalid, logout the user
         handleLogout();
         // Show the toast message when the user is logged out due to expired token
-        toast.error("Your session has expired. Please log in again.");
       }
       return Promise.reject(error); // Reject the error to handle it elsewhere if needed
     }
