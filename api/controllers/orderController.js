@@ -51,16 +51,20 @@ export const intent = async (req, res, next) => {
     if (!user || !user.email || !user.country)
       return next(createError(400, "User details are incomplete"));
 
-    // Determine buyer's currency (Only USD & NGN are allowed)
-    const countryToCurrency = { Nigeria: "NGN" };
-    const buyerCurrency = countryToCurrency[user.country] || "USD";
-    const sellerCurrency = "USD";
+    // Update to only support USD and Naira (NGN)
+    const countryToCurrency = {
+      Nigeria: "NGN", // Naira for Nigeria
+    };
 
+    // If the user is from Nigeria, set to NGN, otherwise default to USD
+    const buyerCurrency = countryToCurrency[user.country] || "USD"; // Default to USD for non-Nigerian users
+    const sellerCurrency = "USD"; // Seller's currency is always USD
+
+    // Only proceed with valid currencies (USD and NGN)
     if (![buyerCurrency, sellerCurrency].includes(buyerCurrency)) {
       return next(createError(400, "Unsupported currency"));
     }
 
-    // Convert price if needed
     let convertedPrice = gig.price;
     if (buyerCurrency !== sellerCurrency) {
       const exchangeRate = await getExchangeRate(sellerCurrency, buyerCurrency);
@@ -74,16 +78,22 @@ export const intent = async (req, res, next) => {
       {
         amount: convertedPrice * 100, // Convert to kobo/cent
         email: user.email,
-        currency: buyerCurrency,
+        currency: buyerCurrency, // Use buyer's currency (USD or NGN)
         callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
+        name: user.username || "No Name", // ✅ Send username directly
+        phone: user.phone || "No Phone Number", // ✅ Send phone number directly
         metadata: {
-          gigId: gig._id,
-          buyerId: userId,
-          sellerId: gig.userId,
-          gigTitle: gig.title,
-          gigCover: gig.cover,
-          gigPrice: gig.price,
-          currency: sellerCurrency,
+          custom_fields: [
+            { display_name: "Gig Title", value: gig.title },
+            {
+              display_name: "Client Username",
+              value: user.username || "No Name",
+            },
+            {
+              display_name: "Client Phone",
+              value: user.phone || "No Phone Number",
+            },
+          ],
         },
       },
       {
@@ -96,53 +106,18 @@ export const intent = async (req, res, next) => {
     if (!response.data?.data?.authorization_url)
       return next(createError(500, "Failed to generate payment link"));
 
-    res.status(200).send({ paymentLink: response.data.data.authorization_url });
-  } catch (err) {
-    console.log("Error details:", err);
-    next(createError(500, "Error creating payment intent"));
-  }
-};
+    const paymentLink = response.data.data.authorization_url;
 
-export const verifyPayment = async (req, res, next) => {
-  try {
-    const { reference } = req.query;
-    if (!reference) return next(createError(400, "Missing payment reference"));
-
-    const response = await axios.get(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_LIVE_SECRET_KEY}`,
-        },
-      }
-    );
-
-    const paymentData = response.data?.data;
-    if (!paymentData || paymentData.status !== "success") {
-      return next(createError(400, "Payment verification failed"));
-    }
-
-    console.log("Payment verification response:", response.data);
-
-    const { gigId, buyerId, sellerId, gigTitle, gigCover, gigPrice, currency } =
-      paymentData.metadata;
-
-    // Ensure order does not already exist (prevent duplicate entries)
-    const existingOrder = await Order.findOne({ payment_intent: reference });
-    if (existingOrder) {
-      return res.status(200).json({ message: "Order already exists" });
-    }
-
-    // Create order after successful payment
+    // Save order in database
     const newOrder = new Order({
-      gigId,
-      img: gigCover,
-      title: gigTitle,
-      buyerId,
-      sellerId,
-      price: gigPrice,
-      currency,
-      payment_intent: reference,
+      gigId: gig._id,
+      img: gig.cover,
+      title: gig.title,
+      buyerId: userId,
+      sellerId: gig.userId,
+      price: gig.price, // Store price in USD
+      currency: sellerCurrency, // Always store USD
+      payment_intent: paymentLink,
       isCompleted: false,
     });
 
@@ -154,10 +129,10 @@ export const verifyPayment = async (req, res, next) => {
     // Update sales revenue
     await calculateSalesRevenue(gigId);
 
-    res.status(200).json({ message: "Payment verified and order created" });
+    res.status(200).send({ paymentLink });
   } catch (err) {
-    console.log("Error verifying payment:", err);
-    next(createError(500, "Error verifying payment"));
+    console.log("Error details:", err);
+    next(createError(500, "Error creating payment intent"));
   }
 };
 
