@@ -320,7 +320,11 @@ function Navbar() {
             </div>
           ) : (
             <>
-              <Link to="/login" className="link" onClick={closeMenu}>
+              <Link
+                to="/login"
+                className="text-white hover:text-orange-400"
+                onClick={closeMenu}
+              >
                 {t("navbar.signIn")}
               </Link>
             </>

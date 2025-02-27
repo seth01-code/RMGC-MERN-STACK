@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link,  useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import newRequest from "../../utils/newRequest";
 import { IoLogOutOutline } from "react-icons/io5";
@@ -174,7 +174,11 @@ function AdminNavbar() {
             </div>
           ) : (
             <>
-              <Link to="/login" className="link" onClick={closeMenu}>
+              <Link
+                to="/login"
+                className="text-white hover:text-orange-400"
+                onClick={closeMenu}
+              >
                 {t("navbar.signIn")}
               </Link>
             </>
