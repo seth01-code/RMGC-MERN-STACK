@@ -67,29 +67,27 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
-      // Send request to clear the accessToken cookie on the backend
       await newRequest.post("/auth/logout");
-
-      // Clear localStorage and reset the user context (if you're using one)
       localStorage.removeItem("currentUser");
       setCurrentUser(null); // Assuming you have a state for currentUser
-      navigate("/"); // Redirect to home or login page
+      navigate("/login"); // Redirect to login page
     } catch (err) {
       console.error("Error logging out:", err);
-      // Handle errors, possibly show a message to the user
     }
   };
 
-  // Detecting token expiration on any API call
+  // Detecting any 40X errors on API calls
   newRequest.interceptors.response.use(
-    (response) => response, // If the response is successful, just return it
+    (response) => response,
     (error) => {
-      if (error.response && error.response.status === 401) {
-        // Token expired or invalid, logout the user
+      if (
+        error.response &&
+        error.response.status >= 400 &&
+        error.response.status < 500
+      ) {
         handleLogout();
-        // Show the toast message when the user is logged out due to expired token
       }
-      return Promise.reject(error); // Reject the error to handle it elsewhere if needed
+      return Promise.reject(error);
     }
   );
 
