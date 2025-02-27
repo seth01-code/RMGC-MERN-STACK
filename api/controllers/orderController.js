@@ -112,7 +112,7 @@ export const verifyPayment = async (req, res, next) => {
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_LIVE_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.PAYSTACK_TEST_SECRET_KEY}`,
         },
       }
     );
@@ -158,7 +158,6 @@ export const verifyPayment = async (req, res, next) => {
     next(createError(500, "Error verifying payment"));
   }
 };
-
 
 // Flutterwave Intent
 // export const flutterWaveIntent = async (req, res, next) => {
