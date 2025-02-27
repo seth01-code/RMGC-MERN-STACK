@@ -462,26 +462,34 @@ export const login = async (req, res, next) => {
   try {
     const { email, username, password } = req.body;
 
+    // Find the user by email or username
     const user = await User.findOne({ $or: [{ email }, { username }] });
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // Check if the password matches
     const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
-    if (!user.isVerified)
-      return res.status(400).json({ error: "Please verify your email first" });
+    if (!isMatch) return res.status(400).json({ error: "Incorrect password" });
 
+    // Check if the user is verified
+    if (!user.isVerified) {
+      return res.status(400).json({ error: "Please verify your email first" });
+    }
+
+    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, isSeller: user.isSeller, isAdmin: user.isAdmin },
       process.env.JWT_KEY,
       { expiresIn: "1d" }
     );
 
+    // Set the cookie with the token
     res.cookie("accessToken", token, {
       httpOnly: true,
       sameSite: "None",
       secure: true,
     });
 
+    // Respond with the user data and token
     res.status(200).json({
       id: user._id,
       username: user.username,
@@ -494,6 +502,8 @@ export const login = async (req, res, next) => {
       portfolioLink: user.portfolioLink || "",
     });
   } catch (err) {
+    // Log the error for debugging purposes and send a generic message
+    console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -36,7 +36,16 @@ const Login = () => {
 
       window.location.href = "/"; // Redirect & reload
     } catch (err) {
-      setError(err.response ? err.response.data.message : err.message);
+      // Check for specific error messages from the backend
+      if (err.response) {
+        if (err.response.data.error === "Incorrect password") {
+          setError("Incorrect password. Please try again.");
+        } else {
+          setError(err.response.data.error || "Something went wrong.");
+        }
+      } else {
+        setError(err.message);
+      }
     }
   };
 
