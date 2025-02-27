@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link,  useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import newRequest from "../../utils/newRequest";
 import { IoLogOutOutline } from "react-icons/io5";
@@ -17,7 +17,7 @@ function AdminNavbar() {
     setProfileOpen(false);
   };
 
-  const { pathname } = useLocation();
+  // const { pathname } = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -154,22 +154,13 @@ function AdminNavbar() {
                       </Link>
                     </>
                   )}
-                  <Link
-                    to="/admin/"
-                    className={`text-white`}
-                  >
+                  <Link to="/admin/" className={`text-white`}>
                     Dashboard
                   </Link>
-                  <Link
-                    to="/admin/messages"
-                    className={`text-white`}
-                  >
+                  <Link to="/admin/messages" className={`text-white`}>
                     Messages
                   </Link>
-                  <Link
-                    to="/admin/sellers"
-                    className={`text-white`}
-                  >
+                  <Link to="/admin/sellers" className={`text-white`}>
                     Sellers
                   </Link>
                   <button
@@ -185,11 +176,6 @@ function AdminNavbar() {
             <>
               <Link to="/login" className="link" onClick={closeMenu}>
                 {t("navbar.signIn")}
-              </Link>
-              <Link to="/register" className="link" onClick={closeMenu}>
-                <button className="bg-[#008080] text-white py-2 px-4 rounded hover:bg-transparent hover:border hover:border-[#008080]">
-                  {t("navbar.join")}
-                </button>
               </Link>
             </>
           )}

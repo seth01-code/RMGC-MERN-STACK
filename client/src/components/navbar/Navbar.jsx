@@ -323,11 +323,6 @@ function Navbar() {
               <Link to="/login" className="link" onClick={closeMenu}>
                 {t("navbar.signIn")}
               </Link>
-              <Link to="/register" className="link" onClick={closeMenu}>
-                <button className="bg-[#008080] text-white py-2 px-4 rounded hover:bg-transparent hover:border hover:border-[#008080]">
-                  {t("navbar.join")}
-                </button>
-              </Link>
             </>
           )}
         </div>
