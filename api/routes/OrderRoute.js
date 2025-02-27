@@ -12,6 +12,7 @@ import {
   getAdminRevenue,
   getCompletedOrders,
   getAllCompletedOrders,
+  verifyPayment,
 } from "../controllers/orderController.js";
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.get("/", verifyToken, getOrder);
 
 // Payment intent for creating orders (for Paystack)
 router.post("/create-payment-intent/:id", verifyToken, intent);
+router.get("/verify", verifyToken, verifyPayment);
 
 // Payment intent for PayPal (separate route)
 // router.post("/create-flutterwave-intent/:id", verifyToken, flutterWaveIntent);
