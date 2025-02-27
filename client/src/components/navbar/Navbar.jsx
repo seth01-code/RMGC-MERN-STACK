@@ -14,7 +14,7 @@ import { HiOutlineShoppingCart } from "react-icons/hi";
 import Flag from "react-world-flags";
 import { FaTasks } from "react-icons/fa";
 import { LuLayoutDashboard } from "react-icons/lu";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 
 function Navbar() {
   const { t, i18n } = useTranslation();
@@ -322,7 +322,11 @@ function Navbar() {
             <>
               <Link
                 to="/login"
-                className="text-white hover:text-orange-400"
+                className={`${
+                  active || pathname !== "/"
+                    ? "text-black hover:text-gray-500"
+                    : "text-white hover:text-orange-400"
+                }`}
                 onClick={closeMenu}
               >
                 {t("navbar.signIn")}
