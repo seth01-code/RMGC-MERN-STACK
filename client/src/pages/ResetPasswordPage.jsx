@@ -46,62 +46,64 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="p-6 flex items-center justify-center mx-auto bg-white rounded-lg shadow-lg max-w-lg">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-        Reset Password
-      </h2>
-      <p className="mb-4 text-gray-600">Enter your new password below.</p>
+    <div className="w-full h-screen flex items-center justify-center">
+      <div className="p-6 flex items-center justify-center mx-auto bg-white rounded-lg shadow-lg max-w-lg">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          Reset Password
+        </h2>
+        <p className="mb-4 text-gray-600">Enter your new password below.</p>
 
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      {success && <div className="text-green-500 mb-4">{success}</div>}
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {success && <div className="text-green-500 mb-4">{success}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label
-            htmlFor="newPassword"
-            className="block text-gray-700 font-medium mb-2"
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label
+              htmlFor="newPassword"
+              className="block text-gray-700 font-medium mb-2"
+            >
+              New Password
+            </label>
+            <input
+              type="password"
+              id="newPassword"
+              name="newPassword"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              className="w-full p-3 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-gray-700 font-medium mb-2"
+            >
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="w-full p-3 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 text-white font-semibold rounded-md ${
+              loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            New Password
-          </label>
-          <input
-            type="password"
-            id="newPassword"
-            name="newPassword"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            className="w-full p-3 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="confirmPassword"
-            className="block text-gray-700 font-medium mb-2"
-          >
-            Confirm Password
-          </label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            className="w-full p-3 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-3 text-white font-semibold rounded-md ${
-            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Resetting..." : "Reset Password"}
-        </button>
-      </form>
+            {loading ? "Resetting..." : "Reset Password"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
