@@ -32,7 +32,7 @@ const Home = () => {
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50"></div>
 
         <div
-          data-aos="fade-up"
+          {...(window.innerWidth >= 768 ? { "data-aos": "fade-up" } : {})}
           className="relative container max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12 px-6 md:px-12"
         >
           {/* Left Content */}

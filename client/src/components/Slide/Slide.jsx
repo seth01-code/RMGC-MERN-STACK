@@ -52,7 +52,7 @@ const Slide = () => {
   return (
     <div className="bg-[#f1f1f1] py-6 px-10 sm:px-6 md:px-12 text-white lg:px-20">
       <Swiper
-        data-aos="fade-up"
+        {...(window.innerWidth >= 768 ? { "data-aos": "fade-up" } : {})}
         spaceBetween={15}
         slidesPerGroup={1}
         modules={[Autoplay]}
