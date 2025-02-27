@@ -185,7 +185,7 @@ function SellerNavbar() {
             <>
               <Link
                 to="/login"
-                className="bg-[#008080] text-white py-2 px-4 rounded hover:bg-transparent hover:border hover:border-[#008080]"
+                className="text-white hover:text-orange-400"
                 onClick={closeMenu}
               >
                 {t("navbar.signIn")}
