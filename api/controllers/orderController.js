@@ -75,7 +75,7 @@ export const intent = async (req, res, next) => {
         amount: convertedPrice * 100, // Convert to kobo/cent
         email: user.email,
         currency: buyerCurrency,
-        callback_url: `https://www.renewedmindsglobalconsult.com/api/payment/verify`,
+        callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
         metadata: {
           gigId: gig._id,
           buyerId: userId,
@@ -112,7 +112,7 @@ export const verifyPayment = async (req, res, next) => {
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_TEST_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.PAYSTACK_LIVE_SECRET_KEY}`,
         },
       }
     );
