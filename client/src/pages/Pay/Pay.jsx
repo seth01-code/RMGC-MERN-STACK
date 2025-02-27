@@ -87,7 +87,7 @@ const Pay = () => {
         </div>
 
         {/* International Payment - Flutterwave */}
-        <div
+        {/* <div
           onClick={() => handlePayment("flutterwave")}
           className="mt-4 cursor-pointer p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row items-center justify-between bg-white bg-opacity-20 backdrop-blur-md shadow-lg hover:shadow-2xl hover:bg-opacity-30 transition-all duration-300"
         >
@@ -118,7 +118,7 @@ const Pay = () => {
               className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
             />
           </div>
-        </div>
+        </div> */}
 
         {/* Loading Spinner */}
         {processing && (
