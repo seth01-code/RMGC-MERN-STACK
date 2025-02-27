@@ -84,7 +84,7 @@ function Navbar() {
   newRequest.interceptors.response.use(
     (response) => response, // If the response is successful, just return it
     (error) => {
-      if (error.response && error.response.status === 401) {
+      if (error.response && error.response.status === 403) {
         // Token expired or invalid, logout the user
         handleLogout();
         // Show the toast message when the user is logged out due to expired token
