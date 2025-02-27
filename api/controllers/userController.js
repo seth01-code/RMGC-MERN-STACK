@@ -56,7 +56,7 @@ export const getUserData = async (req, res, next) => {
     const language = getLanguageFromCountry(user.country);
 
     res.status(200).send({
-      username: user.usernam,
+      username: user.username,
       email: user.email,
       country: user.country,
       language: language,

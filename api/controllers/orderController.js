@@ -98,7 +98,7 @@ export const intent = async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_TEST_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.PAYSTACK_LIVE_SECRET_KEY}`,
         },
       }
     );
