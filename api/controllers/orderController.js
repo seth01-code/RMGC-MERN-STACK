@@ -103,25 +103,6 @@ export const intent = async (req, res, next) => {
   }
 };
 
-import Order from "../models/Order.js";
-import Gig from "../models/Gig.js";
-import crypto from "crypto";
-import axios from "axios";
-import { createError } from "../utils/error.js";
-import { calculateSalesRevenue } from "../utils/revenue.js";
-
-// Exchange Rate Function
-const getExchangeRate = async (fromCurrency, toCurrency) => {
-  try {
-    const response = await axios.get(
-      `https://api.exchangerate-api.com/v4/latest/${fromCurrency}`
-    );
-    return response.data.rates[toCurrency] || null;
-  } catch (error) {
-    console.error("❌ Error fetching exchange rate:", error);
-    return null;
-  }
-};
 
 export const paystackWebhook = async (req, res, next) => {
   try {
