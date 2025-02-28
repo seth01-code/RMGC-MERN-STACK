@@ -103,6 +103,26 @@ export const intent = async (req, res, next) => {
   }
 };
 
+import Order from "../models/Order.js";
+import Gig from "../models/Gig.js";
+import crypto from "crypto";
+import axios from "axios";
+import { createError } from "../utils/error.js";
+import { calculateSalesRevenue } from "../utils/revenue.js";
+
+// Exchange Rate Function
+const getExchangeRate = async (fromCurrency, toCurrency) => {
+  try {
+    const response = await axios.get(
+      `https://api.exchangerate-api.com/v4/latest/${fromCurrency}`
+    );
+    return response.data.rates[toCurrency] || null;
+  } catch (error) {
+    console.error("❌ Error fetching exchange rate:", error);
+    return null;
+  }
+};
+
 export const paystackWebhook = async (req, res, next) => {
   try {
     const paystackSecret = process.env.PAYSTACK_TEST_SECRET_KEY;
@@ -122,22 +142,29 @@ export const paystackWebhook = async (req, res, next) => {
       if (status !== "success") return res.sendStatus(400);
 
       // Extract metadata
-      const { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } =
+      let { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } =
         metadata;
 
       // Ensure gig exists
       const gig = await Gig.findById(gigId);
       if (!gig) return res.status(400).send("Gig not found");
 
-      // Create order in database
+      // Convert price to USD if needed
+      let priceInUSD = price;
+      if (currency !== "USD") {
+        const exchangeRate = await getExchangeRate(currency, "USD");
+        priceInUSD = exchangeRate ? (price / exchangeRate).toFixed(2) : price;
+      }
+
+      // Create order in database with converted price
       const newOrder = new Order({
         gigId,
         img: gigCover,
         title: gigTitle,
         buyerId,
         sellerId,
-        price,
-        currency,
+        price: priceInUSD, // Store price in USD
+        currency: "USD", // Always store orders in USD
         payment_intent: reference, // Store Paystack transaction reference
         isCompleted: false,
       });
