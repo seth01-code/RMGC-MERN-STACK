@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 import aboutBg from "../../../assets/images/aboutUs.jpg";
 import founderImg from "../../../assets/images/mi.jpg";
-import ctoImg from "../../../assets/images/cto.jpg";
+import ctoImg from "../../../assets/images/12.jpg";
 
 const AboutUs = () => {
   return (
