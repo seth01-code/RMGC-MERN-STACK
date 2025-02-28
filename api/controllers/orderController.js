@@ -103,7 +103,6 @@ export const intent = async (req, res, next) => {
   }
 };
 
-
 export const paystackWebhook = async (req, res, next) => {
   try {
     const paystackSecret = process.env.PAYSTACK_TEST_SECRET_KEY;
@@ -123,29 +122,22 @@ export const paystackWebhook = async (req, res, next) => {
       if (status !== "success") return res.sendStatus(400);
 
       // Extract metadata
-      let { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } =
+      const { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } =
         metadata;
 
       // Ensure gig exists
       const gig = await Gig.findById(gigId);
       if (!gig) return res.status(400).send("Gig not found");
 
-      // Convert price to USD if needed
-      let priceInUSD = price;
-      if (currency !== "USD") {
-        const exchangeRate = await getExchangeRate(currency, "USD");
-        priceInUSD = exchangeRate ? (price / exchangeRate).toFixed(2) : price;
-      }
-
-      // Create order in database with converted price
+      // Create order in database
       const newOrder = new Order({
         gigId,
         img: gigCover,
         title: gigTitle,
         buyerId,
         sellerId,
-        price: priceInUSD, // Store price in USD
-        currency: "USD", // Always store orders in USD
+        price,
+        currency,
         payment_intent: reference, // Store Paystack transaction reference
         isCompleted: false,
       });
