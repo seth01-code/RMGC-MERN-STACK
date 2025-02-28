@@ -53,7 +53,7 @@ export const intent = async (req, res, next) => {
       return next(createError(400, "User details are incomplete"));
 
     // Determine buyer currency (USD or NGN)
-    const countryToCurrency = { Nigeria: "NGN" };
+    const countryToCurrency = { USA: "USD", Nigeria: "NGN" };
     const buyerCurrency = countryToCurrency[user.country] || "USD";
 
     if (!["USD", "NGN"].includes(buyerCurrency)) {
