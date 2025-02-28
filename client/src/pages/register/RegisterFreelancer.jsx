@@ -50,30 +50,29 @@ function RegisterFreelancer() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-  
+
     // Always update the state
     setUser((prev) => ({ ...prev, [name]: value }));
-  
+
     // Age restriction for DOB
     if (name === "dob") {
       const birthDate = new Date(value);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
-      
+
       // Check if birthday has occurred this year
       const monthDiff = today.getMonth() - birthDate.getMonth();
       const dayDiff = today.getDate() - birthDate.getDate();
       if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
         age--; // Adjust age if birthday hasn’t happened yet this year
       }
-  
+
       if (age < 18) {
         toast.error("You must be at least 18 years old to register.");
         setUser((prev) => ({ ...prev, dob: "" })); // Clear invalid DOB
       }
     }
   };
-  
 
   const handleNextOfKinChange = (e) => {
     setUser((prev) => ({
@@ -299,7 +298,8 @@ function RegisterFreelancer() {
             {portfolioLink.map((link, index) => (
               <span
                 key={index}
-                className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-sm"
+                className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-sm max-w-full md:max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap"
+                title={link} // Shows full link on hover
               >
                 {link}
               </span>
@@ -320,7 +320,8 @@ function RegisterFreelancer() {
             {languages.map((lang, index) => (
               <span
                 key={index}
-                className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-sm"
+                className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-sm max-w-full md:max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap"
+                title={lang}
               >
                 {lang}
               </span>
@@ -341,7 +342,8 @@ function RegisterFreelancer() {
             {services.map((service, index) => (
               <span
                 key={index}
-                className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg text-sm"
+                className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-lg text-sm max-w-full md:max-w-[250px] overflow-hidden text-ellipsis whitespace-nowrap"
+                title={service}
               >
                 {service}
               </span>
