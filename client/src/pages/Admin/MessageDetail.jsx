@@ -52,13 +52,13 @@ const MessageDetail = () => {
     const extension = filename.split(".").pop().toLowerCase();
 
     const icons = {
-      pdf: <FaFilePdf className="text-red-500 text-xl" />,
-      doc: <FaFileWord className="text-blue-500 text-xl" />,
-      docx: <FaFileWord className="text-blue-500 text-xl" />,
-      xls: <FaFileExcel className="text-green-500 text-xl" />,
-      xlsx: <FaFileExcel className="text-green-500 text-xl" />,
-      ppt: <FaFilePowerpoint className="text-orange-500 text-xl" />,
-      pptx: <FaFilePowerpoint className="text-orange-500 text-xl" />,
+      pdf: <FaFilePdf className="text-red-700 text-xl" />,
+      doc: <FaFileWord className="text-blue-900 text-xl" />,
+      docx: <FaFileWord className="text-blue-900 text-xl" />,
+      xls: <FaFileExcel className="text-green-600 text-xl" />,
+      xlsx: <FaFileExcel className="text-green-600 text-xl" />,
+      ppt: <FaFilePowerpoint className="text-orange-600 text-xl" />,
+      pptx: <FaFilePowerpoint className="text-orange-600 text-xl" />,
       txt: <FaFileAlt className="text-gray-500 text-xl" />,
     };
 

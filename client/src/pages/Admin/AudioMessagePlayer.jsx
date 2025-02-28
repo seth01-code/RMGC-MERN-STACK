@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import WaveSurfer from "wavesurfer.js";
-import { FaDownload, FaPause, FaPlay } from "react-icons/fa";
+import { FaPlay, FaPause } from "react-icons/fa";
 
-let currentlyPlayingAudio = null;
+let currentlyPlaying = null;
 
 const AudioMessagePlayer = ({ src, fileExtension, fileName, isSender }) => {
   const [progress, setProgress] = useState(0);
@@ -30,7 +30,10 @@ const AudioMessagePlayer = ({ src, fileExtension, fileName, isSender }) => {
       waveSurferRef.current.load(src);
       waveSurferRef.current.on("ready", () => setDuration(formatTime(waveSurferRef.current.getDuration())));
       waveSurferRef.current.on("audioprocess", () => setCurrentTime(formatTime(waveSurferRef.current.getCurrentTime())));
-      waveSurferRef.current.on("finish", () => setIsPlaying(false));
+      waveSurferRef.current.on("finish", () => {
+        setIsPlaying(false);
+        currentlyPlaying = null;
+      });
 
       return () => {
         if (waveSurferRef.current) {
@@ -58,15 +61,16 @@ const AudioMessagePlayer = ({ src, fileExtension, fileName, isSender }) => {
     };
 
     const handlePlay = () => {
-      if (currentlyPlayingAudio && currentlyPlayingAudio !== audio) {
-        currentlyPlayingAudio.pause();
+      if (currentlyPlaying && currentlyPlaying !== audio) {
+        if (currentlyPlaying.pause) currentlyPlaying.pause();
+        if (currentlyPlaying.stop) currentlyPlaying.stop();
       }
-      currentlyPlayingAudio = audio;
+      currentlyPlaying = audio;
       setIsPlaying(true);
     };
 
     const handlePause = () => {
-      if (currentlyPlayingAudio === audio) currentlyPlayingAudio = null;
+      if (currentlyPlaying === audio) currentlyPlaying = null;
       setIsPlaying(false);
     };
 
@@ -91,13 +95,31 @@ const AudioMessagePlayer = ({ src, fileExtension, fileName, isSender }) => {
   };
 
   const togglePlay = () => {
+    if (currentlyPlaying && currentlyPlaying !== (fileExtension === "wav" ? waveSurferRef.current : audioRef.current)) {
+      if (currentlyPlaying.pause) currentlyPlaying.pause();
+      if (currentlyPlaying.stop) currentlyPlaying.stop();
+    }
+
     if (fileExtension === "wav") {
-      isPlaying ? waveSurferRef.current.pause() : waveSurferRef.current.play();
+      if (isPlaying) {
+        waveSurferRef.current.pause();
+      } else {
+        waveSurferRef.current.play();
+        currentlyPlaying = waveSurferRef.current;
+      }
       setIsPlaying(!isPlaying);
       return;
     }
+
     const audio = audioRef.current;
-    if (audio) isPlaying ? audio.pause() : audio.play();
+    if (audio) {
+      if (isPlaying) {
+        audio.pause();
+      } else {
+        audio.play();
+        currentlyPlaying = audio;
+      }
+    }
   };
 
   const handleDownload = () => {
