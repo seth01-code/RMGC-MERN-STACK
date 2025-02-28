@@ -13,9 +13,7 @@ const Orders = () => {
   const { t } = useTranslation();
   const [userDetails, setUserDetails] = useState({});
 
-  const { currencySymbol, convertPrice } = useExchangeRate(
-    currentUser?.country
-  );
+  const { currencySymbol } = useExchangeRate(currentUser?.country);
 
   const { isLoading, error, data } = useQuery({
     queryKey: ["orders"],

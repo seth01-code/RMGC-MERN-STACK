@@ -127,7 +127,7 @@ const isAdmin = currentUser?.isAdmin;
 
 // 🛑 Protected Route Component
 const ProtectedRoute = ({ allowedRoles, children }) => {
-  if (!currentUser) return <Navigate to="/" replace />;
+  if (!currentUser) return <Navigate to="/login" replace />;
   if (!allowedRoles.includes("admin") && isAdmin)
     return <Navigate to="/" replace />;
   if (!allowedRoles.includes("seller") && isSeller)
