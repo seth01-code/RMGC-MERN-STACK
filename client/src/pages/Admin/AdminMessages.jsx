@@ -100,7 +100,7 @@ const AdminMessages = () => {
                     <img
                       src={client.img || "/default-avatar.png"}
                       alt={client.username}
-                      className="w-12 h-12 rounded-full border border-gray-300 shadow-sm"
+                      className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
                     />
                     <div className="flex flex-col">
                       <p className="font-semibold text-gray-800">
@@ -115,7 +115,7 @@ const AdminMessages = () => {
                     <img
                       src={provider.img || "/default-avatar.png"}
                       alt={provider.username}
-                      className="w-12 h-12 rounded-full border border-gray-300 shadow-sm"
+                      className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
                     />
                     <div className="flex flex-col">
                       <p className="font-semibold text-gray-800">
