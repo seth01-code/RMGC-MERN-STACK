@@ -54,99 +54,104 @@ const Register = () => {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
-      {/* Sidebar with Video Background */}
-      <div className="relative p-7 w-full lg:w-1/3 lg:h-auto overflow-hidden">
-        {/* Video Background */}
-        <video
-          autoPlay
-          loop
-          muted
-          className="absolute top-0 left-0 w-full h-full object-cover"
-        >
-          <source src={video} type="video/mp4" />
-        </video>
+  {/* Sidebar with Video Background */}
+  <div className="relative p-7 w-full lg:w-1/3 lg:h-auto overflow-hidden flex flex-col justify-between">
+    {/* Video Background */}
+    <video
+      autoPlay
+      loop
+      muted
+      className="absolute top-0 left-0 w-full h-full object-cover"
+    >
+      <source src={video} type="video/mp4" />
+    </video>
 
-        {/* Overlay for better contrast */}
-        <div className="absolute inset-0 bg-black/50"></div>
+    {/* Overlay for better contrast */}
+    <div className="absolute inset-0 bg-black/50"></div>
 
-        {/* Logo & Role Selection */}
-        <div className="relative z-10 flex flex-col items-center text-center mx-6 lg:mx-10 pt-10 lg:pt-20">
-          {/* Logo */}
-          <img
-            src={logo}
-            alt="Logo"
-            className="w-28 h-28 rounded-full object-contain mb-6"
-          />
+    {/* Logo & Role Selection */}
+    <div className="relative z-10 flex flex-col items-center text-center mx-6 lg:mx-10 pt-10 lg:pt-20">
+      {/* Logo */}
+      <img
+        src={logo}
+        alt="Logo"
+        className="w-28 h-28 rounded-full object-contain mb-6"
+      />
 
-          {/* Dynamic Role-Based Text */}
-          <p className="text-white text-lg lg:text-2xl font-bold mb-4 px-4 lg:px-8 leading-relaxed">
-            {roleText[role]}
-          </p>
+      {/* Dynamic Role-Based Text */}
+      <p className="text-white text-lg lg:text-2xl font-bold mb-4 px-4 lg:px-8 leading-relaxed">
+        {roleText[role]}
+      </p>
 
-          {/* Framer Motion Fade-in Details Text */}
-          <motion.div
-            key={role} // Re-render on role change
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col gap-2 items-center text-orange-400 text-lg lg:text-2xl font-semibold uppercase px-4 lg:px-8"
-          >
-            {fadeText.map((text, index) => (
-              <motion.span
-                key={index}
-                variants={fadeInVariant}
-                custom={index}
-                className="inline-block"
-              >
-                {text}
-              </motion.span>
-            ))}
-          </motion.div>
-
-          {/* Role Selection Buttons (Row on mobile, Column on large screens) */}
-          <div className="flex flex-row lg:flex-col gap-4 lg:gap-8 mt-6">
-            {[
-              { key: "client", label: t("registerAsClient") },
-              { key: "freelancer", label: t("registerAsFreelancer") },
-              { key: "admin", label: t("registerAsAdmin") },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                className={`px-4 py-3 text-lg font-semibold rounded-lg border text-white transition-all duration-300 
-                  ${
-                    role === key
-                      ? "bg-orange-500 text-white shadow-lg scale-105"
-                      : "bg-transparent hover:bg-orange-500"
-                  }`}
-                onClick={() => setRole(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <p className="text-sm text-gray-400">
-          Already have an account{" "}
-          <Link className="text-orange-500" to={`/login`}>
-            Sign In
-          </Link>
-        </p>
-      </div>
-
-      {/* Main content area for the selected form */}
+      {/* Framer Motion Fade-in Details Text */}
       <motion.div
-        key={role} // Ensures animation plays on role change
-        initial={{ opacity: 0, x: 30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex-1 p-6 flex justify-center items-center"
+        key={role} // Re-render on role change
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col gap-2 items-center text-orange-400 text-lg lg:text-2xl font-semibold uppercase px-4 lg:px-8"
       >
-        <div className="max-w-3xl mx-auto w-full rounded-lg p-6">
-          {role === "client" && <RegisterClient />}
-          {role === "freelancer" && <RegisterFreelancer />}
-          {role === "admin" && <RegisterAdmin />}
-        </div>
+        {fadeText.map((text, index) => (
+          <motion.span
+            key={index}
+            variants={fadeInVariant}
+            custom={index}
+            className="inline-block"
+          >
+            {text}
+          </motion.span>
+        ))}
       </motion.div>
+
+      {/* Role Selection Buttons (Row on mobile, Column on large screens) */}
+      <div className="flex flex-row lg:flex-col gap-4 lg:gap-8 mt-6">
+        {[
+          { key: "client", label: t("registerAsClient") },
+          { key: "freelancer", label: t("registerAsFreelancer") },
+          { key: "admin", label: t("registerAsAdmin") },
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            className={`px-4 py-3 text-lg font-semibold rounded-lg border text-white transition-all duration-300 
+              ${
+                role === key
+                  ? "bg-orange-500 text-white shadow-lg scale-105"
+                  : "bg-transparent hover:bg-orange-500"
+              }`}
+            onClick={() => setRole(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
+
+    {/* Sign-in Link at the Bottom */}
+    <div className="relative z-10 flex justify-center items-center pb-6">
+      <p className="text-sm text-gray-300 text-center">
+        Already have an account?{" "}
+        <Link className="text-orange-500 font-semibold hover:underline" to={`/login`}>
+          Sign In
+        </Link>
+      </p>
+    </div>
+  </div>
+
+  {/* Main content area for the selected form */}
+  <motion.div
+    key={role} // Ensures animation plays on role change
+    initial={{ opacity: 0, x: 30 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ duration: 0.5 }}
+    className="flex-1 p-6 flex justify-center items-center"
+  >
+    <div className="max-w-3xl mx-auto w-full rounded-lg p-6">
+      {role === "client" && <RegisterClient />}
+      {role === "freelancer" && <RegisterFreelancer />}
+      {role === "admin" && <RegisterAdmin />}
+    </div>
+  </motion.div>
+</div>
+
   );
 };
 
