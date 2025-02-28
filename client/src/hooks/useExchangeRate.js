@@ -8,7 +8,7 @@ const countryToCurrencyMap = {
 };
 
 // Replace with your actual API key from ExchangeRate-API
-const EXCHANGE_RATE_API_KEY = "902808eb79568366ee7009e6";
+// const EXCHANGE_RATE_API_KEY = "902808eb79568366ee7009e6";
 const BASE_CURRENCY = "USD"; // Base currency for conversion
 
 export const useExchangeRate = (country) => {
@@ -23,14 +23,11 @@ export const useExchangeRate = (country) => {
     const fetchExchangeRate = async () => {
       try {
         const res = await axios.get(
-          `https://v6.exchangerate-api.com/v6/${EXCHANGE_RATE_API_KEY}/latest/${BASE_CURRENCY}`
+          `https://open.er-api.com/v6/latest/${BASE_CURRENCY}`
         );
 
-        if (
-          res.data.conversion_rates &&
-          res.data.conversion_rates[countryCurrency]
-        ) {
-          const rate = res.data.conversion_rates[countryCurrency];
+        if (res.data.rates && res.data.rates[countryCurrency]) {
+          const rate = res.data.rates[countryCurrency];
           setExchangeRate(rate);
           setCurrencySymbol(getCurrencySymbol(countryCurrency));
         } else {
@@ -43,6 +40,8 @@ export const useExchangeRate = (country) => {
         setCurrencySymbol("$");
       }
     };
+
+    fetchExchangeRate();
 
     fetchExchangeRate();
   }, [countryCurrency]);
