@@ -23,7 +23,7 @@ export const useExchangeRate = (country) => {
     const fetchExchangeRate = async () => {
       try {
         const res = await axios.get(
-          `https://open.er-api.com/v6/latest/${BASE_CURRENCY}`
+          `https://api.exchangerate-api.com/v4/latest/${BASE_CURRENCY}`
         );
 
         if (res.data.rates && res.data.rates[countryCurrency]) {
