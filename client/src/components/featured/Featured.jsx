@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import Man from "../../../assets/images/pp.png";
+import Man from "../../../assets/images/ok.png";
 import Search from "../../../assets/images/search.png";
 import BackgroundVideo from "../../../assets/images/serve.mp4"; // Import video
 import { useTranslation } from "react-i18next";
