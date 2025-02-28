@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-// import Man from "../../../assets/images/mman.png";
+import Man from "../../../assets/images/pp.png";
 import Search from "../../../assets/images/search.png";
 import BackgroundVideo from "../../../assets/images/serve.mp4"; // Import video
 import { useTranslation } from "react-i18next";
@@ -103,13 +103,13 @@ function Featured() {
           </div>
         </div>
         {/* Right Section (Image) */}
-        {/* <div className="w-full lg:w-1/2 flex justify-center lg:justify-end order-first lg:order-none">
+        <div className="w-full lg:w-1/2 flex justify-center lg:justify-end order-first lg:order-none">
           <img
             src={Man}
             alt={t("featured.manAlt")}
             className="h-[300px] sm:h-[400px] md:h-[500px] lg:h-full object-contain max-w-full"
           />
-        </div> */}
+        </div>
       </div>
     </div>
   );
