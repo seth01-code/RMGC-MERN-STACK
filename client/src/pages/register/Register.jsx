@@ -6,6 +6,7 @@ import RegisterAdmin from "./RegisterAdmin.jsx";
 import { useTranslation } from "react-i18next";
 import video from "../../../assets/images/reg.mp4"; // Import video
 import logo from "../../../assets/logoo.webp"; // Import logo
+import { Link } from "react-router-dom";
 
 const Register = () => {
   const [role, setRole] = useState("client"); // "client", "freelancer", or "admin"
@@ -139,6 +140,12 @@ const Register = () => {
           {role === "admin" && <RegisterAdmin />}
         </div>
       </motion.div>
+      <p className="text-sm text-gray-400">
+        Already have an account{" "}
+        <Link className="text-orange-500" to={`/login`}>
+          Sign In
+        </Link>
+      </p>
     </div>
   );
 };
