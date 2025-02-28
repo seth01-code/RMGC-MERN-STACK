@@ -76,10 +76,10 @@ const AdminMessages = () => {
         Client & Service Provider Conversations
       </h1>
 
-      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden">
-        <ul className="divide-y divide-gray-200">
-          {conversations.length > 0 ? (
-            conversations.map((conversation) => {
+      <div className="w-full max-w-5xl bg-white shadow-lg rounded-lg overflow-hidden p-4">
+        {conversations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {conversations.map((conversation) => {
               const client = conversation.participants[0];
               const provider = conversation.participants[1];
               const lastMessage = getLastMessageDisplay(
@@ -87,60 +87,63 @@ const AdminMessages = () => {
               );
 
               return (
-                <li
+                <div
                   key={conversation._id}
                   onClick={() => {
                     setSelectedConversation(conversation._id);
                     navigate(`/admin/messages/${conversation._id}`);
                   }}
-                  className="flex flex-col md:flex-row items-center p-4 cursor-pointer hover:bg-gray-50 transition duration-200"
+                  className="flex flex-col bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition duration-200 shadow-sm"
                 >
-                  {/* Client Section */}
-                  <div className="flex items-center space-x-4 w-full md:w-1/2">
-                    <img
-                      src={client.img || "/default-avatar.png"}
-                      alt={client.username}
-                      className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
-                    />
-                    <div className="flex flex-col">
-                      <p className="font-semibold text-gray-800">
-                        {client.username}
-                      </p>
-                      <p className="text-sm text-gray-500">Client</p>
+                  {/* Client & Provider Info */}
+                  <div className="flex items-center justify-between">
+                    {/* Client Section */}
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <img
+                        src={client.img || "/default-avatar.png"}
+                        alt={client.username}
+                        className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800 truncate">
+                          {client.username}
+                        </p>
+                        <p className="text-sm text-gray-500">Client</p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Service Provider Section */}
-                  <div className="flex items-center space-x-4 w-full md:w-1/2 mt-3 md:mt-0">
-                    <img
-                      src={provider.img || "/default-avatar.png"}
-                      alt={provider.username}
-                      className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
-                    />
-                    <div className="flex flex-col">
-                      <p className="font-semibold text-gray-800">
-                        {provider.username}
-                      </p>
-                      <p className="text-sm text-gray-500">Service Provider</p>
+                    {/* Service Provider Section */}
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <img
+                        src={provider.img || "/default-avatar.png"}
+                        alt={provider.username}
+                        className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800 truncate">
+                          {provider.username}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Service Provider
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Last Message & Arrow */}
-                  <div className="flex justify-between items-center w-full md:w-auto mt-3 md:mt-0 md:ml-auto">
-                    <p className="text-sm text-gray-600 truncate max-w-[180px] md:max-w-[250px]">
+                  <div className="flex justify-between items-center mt-4">
+                    <p className="text-sm text-gray-600 truncate max-w-[200px] md:max-w-full">
                       {lastMessage}
                     </p>
-                    <FaChevronRight className="text-gray-400 ml-4 hidden md:block" />
+                    <FaChevronRight className="text-gray-400" />
                   </div>
-                </li>
+                </div>
               );
-            })
-          ) : (
-            <li className="p-6 text-center text-gray-500">
-              No conversations yet.
-            </li>
-          )}
-        </ul>
+            })}
+          </div>
+        ) : (
+          <p className="p-6 text-center text-gray-500">No conversations yet.</p>
+        )}
       </div>
     </div>
   );
