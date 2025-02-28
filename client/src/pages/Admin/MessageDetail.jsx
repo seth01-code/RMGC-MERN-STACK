@@ -181,22 +181,22 @@ const MessageDetail = () => {
                       <p>{msg.text}</p>
                     </div>
                   )}
-
                   {/* Image Message */}
-                  {msg.media && msg.media.match(/\.(jpeg|jpg|png|gif)$/) && (
-                    <ChatImage message={msg} />
-                  )}
-
-                  {/* Video Message */}
                   {msg.media &&
-                    msg.media.match(/\.(mp4|webm|ogg|mov|avi)$/) && (
+                    msg.media.match(
+                      /\.(jpeg|jpg|png|gif|webp|svg|bmp|tiff|tif|ico|heic|heif|avif)$/
+                    ) && <ChatImage message={msg} />}
+                  {/* Video Message  */}
+                  {msg.media &&
+                    msg.media.match(
+                      /\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv)$/
+                    ) && (
                       <CustomVideoPlayer
                         src={msg.media}
                         fileExtension={msg.media.split(".").pop()}
                       />
                     )}
-
-                  {/* Audio Message */}
+                  {/* Audio Message  */}
                   {msg.media &&
                     msg.media.match(/\.(mp3|wav|ogg|flac|aac|m4a)$/) && (
                       <AudioMessagePlayer
@@ -205,11 +205,10 @@ const MessageDetail = () => {
                         isSender={isSender}
                       />
                     )}
-
                   {/* Document Message */}
                   {msg.media &&
                     msg.media.match(
-                      /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/
+                      /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|mp3|wav|ogg|flac|aac|m4a|mp4|webm|ogg|mov|avi|mkv|flv|wmv|jpeg|jpg|png|gif|webp|svg|bmp|tiff|tif|ico|heic|heif|avif)$/
                     ) && (
                       <div
                         className={`p-3 rounded-xl text-sm shadow-md flex items-center gap-2 ${
@@ -229,7 +228,6 @@ const MessageDetail = () => {
                         </a>
                       </div>
                     )}
-
                   {/* Timestamp */}
                   <p
                     className={`text-xs text-gray-400 mt-1 ${

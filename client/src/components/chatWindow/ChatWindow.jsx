@@ -36,7 +36,7 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
   const recordingInterval = useRef(null);
 
   useEffect(() => {
-    socket.current = io("https://rmgc-mern-stack-6.onrender.com");
+    socket.current = io("https://api.renewedmindsglobalconsult.com");
     socket.current.emit("join", userId);
 
     socket.current.on("onlineStatus", ({ userId: onlineUserId, status }) => {
@@ -256,10 +256,95 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
     const fileName = message.display_name || message.media.split("/").pop(); // Use display_name if available, otherwise fallback to URL
     // Use actual file name from DB"""
 
-    const imageTypes = ["jpg", "jpeg", "png", "gif", "webp"];
-    const videoTypes = ["mp4", "webm", "mov"];
-    const audioTypes = ["mp3", "wav", "ogg", "m4a"];
-    const documentTypes = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
+    const imageTypes = [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "svg",
+      "bmp",
+      "tiff",
+      "tif",
+      "ico",
+      "heic",
+      "heif",
+      "avif",
+    ];
+
+    const videoTypes = [
+      "mp4",
+      "webm",
+      "mov",
+      "avi",
+      "mkv",
+      "flv",
+      "wmv",
+      "m4v",
+      "mpeg",
+      "3gp",
+      "ogv",
+    ];
+
+    const audioTypes = [
+      "mp3",
+      "wav",
+      "ogg",
+      "m4a",
+      "aac",
+      "flac",
+      "wma",
+      "aiff",
+      "opus",
+      "alac",
+    ];
+
+    const documentTypes = [
+      // Document formats
+      "pdf",
+      "doc",
+      "docx",
+      "xls",
+      "xlsx",
+      "ppt",
+      "pptx",
+      "txt",
+      "csv",
+      "rtf",
+      "odt",
+
+      // Image formats
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "svg",
+      "bmp",
+      "tiff",
+      "tif",
+      "ico",
+      "heic",
+      "heif",
+      "avif",
+
+      // Video formats
+      "mp4",
+      "webm",
+      "mov",
+      "mkv",
+      "avi",
+      "flv",
+      "wmv",
+
+      // Audio formats
+      "mp3",
+      "wav",
+      "ogg",
+      "m4a",
+      "flac",
+      "aac",
+    ];
 
     if (imageTypes.includes(fileExtension)) {
       return <WhatsAppImage message={message} />;
