@@ -51,49 +51,38 @@ export const intent = async (req, res, next) => {
     if (!user || !user.email || !user.country)
       return next(createError(400, "User details are incomplete"));
 
-    // Update to only support USD and Naira (NGN)
-    const countryToCurrency = {
-      Nigeria: "NGN", // Naira for Nigeria
-    };
+    // Determine buyer currency (USD or NGN)
+    const countryToCurrency = { Nigeria: "NGN" };
+    const buyerCurrency = countryToCurrency[user.country] || "USD";
 
-    // If the user is from Nigeria, set to NGN, otherwise default to USD
-    const buyerCurrency = countryToCurrency[user.country] || "USD"; // Default to USD for non-Nigerian users
-    const sellerCurrency = "USD"; // Seller's currency is always USD
-
-    // Only proceed with valid currencies (USD and NGN)
-    if (![buyerCurrency, sellerCurrency].includes(buyerCurrency)) {
+    if (!["USD", "NGN"].includes(buyerCurrency)) {
       return next(createError(400, "Unsupported currency"));
     }
 
     let convertedPrice = gig.price;
-    if (buyerCurrency !== sellerCurrency) {
-      const exchangeRate = await getExchangeRate(sellerCurrency, buyerCurrency);
+    if (buyerCurrency !== "USD") {
+      const exchangeRate = await getExchangeRate("USD", buyerCurrency);
       convertedPrice = exchangeRate
         ? (gig.price * exchangeRate).toFixed(2)
         : gig.price;
     }
 
+    // Generate Paystack Payment Link
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
-        amount: convertedPrice * 100, // Convert to kobo/cent
+        amount: convertedPrice * 100, // Convert to kobo/cents
         email: user.email,
-        currency: buyerCurrency, // Use buyer's currency (USD or NGN)
+        currency: buyerCurrency,
         callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
-        name: user.username || "No Name", // ✅ Send username directly
-        phone: user.phone || "No Phone Number", // ✅ Send phone number directly
         metadata: {
-          custom_fields: [
-            { display_name: "Gig Title", value: gig.title },
-            {
-              display_name: "Client Username",
-              value: user.username || "No Name",
-            },
-            {
-              display_name: "Client Phone",
-              value: user.phone || "No Phone Number",
-            },
-          ],
+          gigId: gig._id,
+          buyerId: userId,
+          sellerId: gig.userId,
+          price: gig.price,
+          currency: buyerCurrency,
+          gigTitle: gig.title,
+          gigCover: gig.cover,
         },
       },
       {
@@ -106,33 +95,67 @@ export const intent = async (req, res, next) => {
     if (!response.data?.data?.authorization_url)
       return next(createError(500, "Failed to generate payment link"));
 
-    const paymentLink = response.data.data.authorization_url;
-
-    // Save order in database
-    const newOrder = new Order({
-      gigId: gig._id,
-      img: gig.cover,
-      title: gig.title,
-      buyerId: userId,
-      sellerId: gig.userId,
-      price: gig.price, // Store price in USD
-      currency: sellerCurrency, // Always store USD
-      payment_intent: paymentLink,
-      isCompleted: false,
-    });
-
-    await newOrder.save();
-
-    // Increment gig sales count
-    await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
-
-    // Update sales revenue
-    await calculateSalesRevenue(gigId);
-
-    res.status(200).send({ paymentLink });
+    res.status(200).send({ paymentLink: response.data.data.authorization_url });
   } catch (err) {
-    console.log("Error details:", err);
+    console.error("Error details:", err);
     next(createError(500, "Error creating payment intent"));
+  }
+};
+
+export const paystackWebhook = async (req, res, next) => {
+  try {
+    const paystackSecret = process.env.PAYSTACK_LIVE_SECRET_KEY;
+    const hash = crypto
+      .createHmac("sha512", paystackSecret)
+      .update(JSON.stringify(req.body))
+      .digest("hex");
+
+    // Verify Paystack signature
+    if (hash !== req.headers["x-paystack-signature"]) {
+      return res.status(400).send("Invalid signature");
+    }
+
+    const event = req.body;
+    if (event.event === "charge.success") {
+      const { metadata, status, reference } = event.data;
+      if (status !== "success") return res.sendStatus(400);
+
+      // Extract metadata
+      const { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } =
+        metadata;
+
+      // Ensure gig exists
+      const gig = await Gig.findById(gigId);
+      if (!gig) return res.status(400).send("Gig not found");
+
+      // Create order in database
+      const newOrder = new Order({
+        gigId,
+        img: gigCover,
+        title: gigTitle,
+        buyerId,
+        sellerId,
+        price,
+        currency,
+        payment_intent: reference, // Store Paystack transaction reference
+        isCompleted: false,
+      });
+
+      await newOrder.save();
+
+      // Increment gig sales count
+      await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
+
+      // Update revenue tracking
+      await calculateSalesRevenue(gigId);
+
+      res.sendStatus(200);
+    } else {
+      res.sendStatus(400);
+    }
+  } catch (err) {
+    console.error("Webhook Error:", err);
+    next(createError(500, "Error processing payment webhook"));
   }
 };
 

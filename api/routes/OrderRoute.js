@@ -12,6 +12,7 @@ import {
   getAdminRevenue,
   getCompletedOrders,
   getAllCompletedOrders,
+  paystackWebhook,
 } from "../controllers/orderController.js";
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.get("/", verifyToken, getOrder);
 
 // Payment intent for creating orders (for Paystack)
 router.post("/create-payment-intent/:id", verifyToken, intent);
+router.post("/paystack-webhook", paystackWebhook);
 // router.get("/verify", verifyToken, verifyPayment);
 
 // Payment intent for PayPal (separate route)
