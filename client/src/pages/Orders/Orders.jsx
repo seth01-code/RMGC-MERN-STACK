@@ -146,9 +146,7 @@ const Orders = () => {
                                   <td className="p-3">{order.title}</td>
                                   <td className="p-3">
                                     {currencySymbol}{" "}
-                                    {formatPrice(
-                                      convertPrice(order.price, order.currency)
-                                    )}
+                                    {formatPrice(order.price, order.currency)}
                                   </td>
                                   <td className="p-3">
                                     {user?.username || "N/A"}
