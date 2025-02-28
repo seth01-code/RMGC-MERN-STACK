@@ -4,7 +4,7 @@ import RegisterClient from "./RegisterClient";
 import RegisterFreelancer from "./RegisterFreelancer";
 import RegisterAdmin from "./RegisterAdmin.jsx";
 import { useTranslation } from "react-i18next";
-import video from "../../../assets/images/serve.mp4"; // Import video
+import video from "../../../assets/images/reg.mp4"; // Import video
 import logo from "../../../assets/logoo.webp"; // Import logo
 
 const Register = () => {
