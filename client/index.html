@@ -17,7 +17,6 @@
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-
       gtag("config", "G-MMRP5Q1KVX");
     </script>
     <!-- Google Tag Manager -->
@@ -36,8 +35,9 @@
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <!-- ✅ SEO Meta Tags -->
-    <title>Renewed Minds Global Consult - Unlocking Possibiities</title>
+    <title>Renewed Minds Global Consult - Unlocking Possibilities</title>
     <meta
       name="description"
       content="Renewed Minds Global Consult provides expert consulting services to help businesses and individuals achieve their goals."
@@ -47,11 +47,12 @@
       content="business consulting, career coaching, professional growth, entrepreneurship strategy"
     />
     <meta name="author" content="Renewed Minds Global Consult" />
+    <meta name="robots" content="index, follow" />
 
     <!-- ✅ Open Graph (OG) for Social Media Sharing -->
     <meta
       property="og:title"
-      content="Renewed Minds Global Consult - Unlocking Possibiities"
+      content="Renewed Minds Global Consult - Unlocking Possibilities"
     />
     <meta
       property="og:description"
@@ -61,6 +62,7 @@
       property="og:image"
       content="https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp"
     />
+    <meta property="og:image:alt" content="Renewed Minds Global Consult Logo" />
     <meta
       property="og:url"
       content="https://www.renewedmindsglobalconsult.com"
@@ -71,7 +73,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Renewed Minds Global Consult - Unlocking Possibiities"
+      content="Renewed Minds Global Consult - Unlocking Possibilities"
     />
     <meta
       name="twitter:description"
@@ -81,10 +83,15 @@
       name="twitter:image"
       content="https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp"
     />
+    <meta
+      name="twitter:image:alt"
+      content="Renewed Minds Global Consult Logo"
+    />
 
+    <!-- ✅ Structured Data (Schema.org) -->
     <script type="application/ld+json">
       {
-        "@context": "http://schema.org",
+        "@context": "https://schema.org",
         "@type": "Organization",
         "name": "Renewed Minds Global Consult",
         "url": "https://www.renewedmindsglobalconsult.com",
@@ -93,7 +100,12 @@
           "@type": "ContactPoint",
           "email": "support@renewedmindsglobalconsult.com",
           "contactType": "Support Team"
-        }
+        },
+        "sameAs": [
+          "https://www.facebook.com/RMGC",
+          "https://www.linkedin.com/company/renewed-minds-global-consult",
+          "https://twitter.com/RMGC"
+        ]
       }
     </script>
 
@@ -108,14 +120,25 @@
 
     <link
       rel="icon"
-      type="image/png"
+      type="image/webp"
       href="https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp"
     />
     <link
       rel="apple-touch-icon"
       href="https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp"
     />
+
+    <!-- ✅ Dynamic Canonical Tag to Avoid Duplicate Pages -->
     <link rel="canonical" href="https://www.renewedmindsglobalconsult.com/" />
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        let canonicalTag = document.querySelector("link[rel='canonical']");
+        if (canonicalTag) {
+          canonicalTag.setAttribute("href", window.location.href.split("?")[0]);
+        }
+      });
+    </script>
+
     <style>
       * {
         padding: 0;
@@ -125,20 +148,17 @@
     </style>
   </head>
   <body>
-    <!-- RMGC -->
-    <!-- <script>
-      (adsbygoogle = window.adsbygoogle || []).push({});
-    </script> -->
     <!-- Google Tag Manager (noscript) -->
-    <noscript
-      ><iframe
+    <noscript>
+      <iframe
         src="https://www.googletagmanager.com/ns.html?id=GTM-K7DXXWKT"
         height="0"
         width="0"
         style="display: none; visibility: hidden"
-      ></iframe
-    ></noscript>
+      ></iframe>
+    </noscript>
     <!-- End Google Tag Manager (noscript) -->
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
