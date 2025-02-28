@@ -124,6 +124,12 @@ const Register = () => {
             ))}
           </div>
         </div>
+        <p className="text-sm text-gray-400">
+          Already have an account{" "}
+          <Link className="text-orange-500" to={`/login`}>
+            Sign In
+          </Link>
+        </p>
       </div>
 
       {/* Main content area for the selected form */}
@@ -140,12 +146,6 @@ const Register = () => {
           {role === "admin" && <RegisterAdmin />}
         </div>
       </motion.div>
-      <p className="text-sm text-gray-400">
-        Already have an account{" "}
-        <Link className="text-orange-500" to={`/login`}>
-          Sign In
-        </Link>
-      </p>
     </div>
   );
 };
