@@ -80,12 +80,8 @@ function Navbar() {
   newRequest.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (
-        error.response &&
-        error.response.status >= 400 &&
-        error.response.status < 500
-      ) {
-        handleLogout();
+      if (error.response && error.response.status === 401) {
+        handleLogout(); // Only logs out on unauthorized errors
       }
       return Promise.reject(error);
     }
