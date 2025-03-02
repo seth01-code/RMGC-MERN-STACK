@@ -52,23 +52,7 @@ const queryClient = new QueryClient();
 const App = () => {
   const [loading, setLoading] = useState(true); // ✅ Always start with loading state
 
-  const location = useLocation(); // Get current route
-
-  useEffect(() => {
-    const restrictedRoutes = ["/chat"];  // Add routes where chat should be disabled
-
-    if (restrictedRoutes.includes(location.pathname)) {
-      // Hide or remove the Tawk widget
-      if (window.Tawk_API) {
-        window.Tawk_API.hide(); // Hides the widget instead of removing it
-      }
-    } else {
-      // Show the Tawk widget again when navigating back
-      if (window.Tawk_API) {
-        window.Tawk_API.show();
-      }
-    }
-  }, [location.pathname]);
+  // const location = useLocation(); // Get current route
 
   useEffect(() => {
     const initializeAOS = () => {
@@ -177,6 +161,22 @@ const Layout = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const restrictedRoutes = ["/chat"]; // Add routes where chat should be disabled
+
+    if (restrictedRoutes.includes(location.pathname)) {
+      // Hide or remove the Tawk widget
+      if (window.Tawk_API) {
+        window.Tawk_API.hide(); // Hides the widget instead of removing it
+      }
+    } else {
+      // Show the Tawk widget again when navigating back
+      if (window.Tawk_API) {
+        window.Tawk_API.show();
+      }
+    }
+  }, [location.pathname]);
 
   return (
     <div className="app">
