@@ -165,17 +165,33 @@ const Layout = () => {
   useEffect(() => {
     const restrictedRoutes = ["/chat"]; // Add routes where chat should be disabled
 
-    if (restrictedRoutes.includes(location.pathname)) {
-      // Hide or remove the Tawk widget
-      if (window.Tawk_API) {
-        window.Tawk_API.hide(); // Hides the widget instead of removing it
+    const checkTawkAvailability = () => {
+      if (window.Tawk_API && typeof window.Tawk_API.show === "function") {
+        if (restrictedRoutes.includes(location.pathname)) {
+          window.Tawk_API.hide(); // Hide the widget
+        } else {
+          window.Tawk_API.show(); // Show the widget
+        }
       }
+    };
+
+    let interval; // Declare interval outside so it's accessible
+
+    if (window.Tawk_API && window.Tawk_API.onLoad) {
+      window.Tawk_API.onLoad = checkTawkAvailability;
     } else {
-      // Show the Tawk widget again when navigating back
-      if (window.Tawk_API) {
-        window.Tawk_API.show();
-      }
+      // Wait for Tawk.to to load
+      interval = setInterval(() => {
+        if (window.Tawk_API && window.Tawk_API.onLoad) {
+          window.Tawk_API.onLoad = checkTawkAvailability;
+          clearInterval(interval);
+        }
+      }, 500); // Check every 500ms
     }
+
+    return () => {
+      if (interval) clearInterval(interval); // Ensure interval exists before clearing
+    };
   }, [location.pathname]);
 
   return (
