@@ -66,7 +66,7 @@ const Login = () => {
         <p className="text-xs md:text-sm text-gray-500 text-center">
           {t("noAccount")}{" "}
           <Link to={`/register`}>
-            <span className="text-gray-500 underline">{t("signUp")}</span>
+            <span className="text-red-500 underline">{t("signUp")}</span>
           </Link>
         </p>
 
