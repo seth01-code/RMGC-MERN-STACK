@@ -27,7 +27,6 @@ const Gig = () => {
     enabled: !!id,
   });
 
-
   const {
     isLoading: isLoadingUser,
     error: errorUser,
@@ -195,7 +194,7 @@ const Gig = () => {
                     <button
                       key="contact-button"
                       className="flex items-center gap-2 text-blue-500 hover:text-blue-700 focus:outline-none px-4 py-2 rounded-lg border border-blue-500 hover:bg-blue-100 transition-colors"
-                      onClick={handleContact} // Call handleContact directly
+                      onClick={handleContact}
                     >
                       <MdMessage className="text-xl" />
                       <span className="text-sm font-medium">Contact me</span>
@@ -212,7 +211,7 @@ const Gig = () => {
                     {dataUser?.desc || t("defaultCountry")}
                   </p>
                   <p>
-                    <strong>Portfolio/Resume LInk:</strong>{" "}
+                    <strong>Portfolio/Resume Link:</strong>{" "}
                     {dataUser.portfolioLink && dataUser.portfolioLink.length > 0
                       ? dataUser.portfolioLink.map((link, index) => (
                           <a
@@ -235,13 +234,19 @@ const Gig = () => {
                     {dataUser.languages && dataUser.languages.length > 0
                       ? dataUser.languages.map((lang, index) => (
                           <p
-                            className="text-sm font-[cursive] italic text-gray-600"
+                            className="text-sm font-merienda italic text-gray-600"
                             key={index}
                           >
                             {lang}
                           </p>
                         ))
                       : "No Languages To Display"}
+                  </p>
+                  <p>
+                    <strong>Years of Experience:</strong>{" "}
+                    {dataUser?.yearsOfExperience
+                      ? `${dataUser.yearsOfExperience}`
+                      : "Not Provided"}
                   </p>
                 </div>
               </div>
