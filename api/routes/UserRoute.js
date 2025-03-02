@@ -9,12 +9,16 @@ import {
   updateUser,
   getTotalRevenue, // Import the new function
 } from "../controllers/userController.js";
-import { verifySeller, verifyToken } from "../middleware/jwt.js";
+import {
+  verifySeller,
+  verifyToken,
+  verifyTokenOptional,
+} from "../middleware/jwt.js";
 import { verifyAdmin } from "../middleware/verifyAdmin.js";
 
 const router = express.Router();
 
-router.get("/me",  getUserData);
+router.get("/me", verifyTokenOptional, getUserData);
 router.get("/profile", verifyToken, verifySeller, getUserProfile);
 router.get("/", verifyToken, getUsers); // Fetch all users route
 router.get("/sellers", getSellers); // Fetch all Sellers route

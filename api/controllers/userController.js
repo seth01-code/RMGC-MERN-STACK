@@ -43,27 +43,34 @@ export const getUserData = async (req, res, next) => {
     let user = null;
 
     // Check if user is authenticated
-    if (req.user && req.user.id) {
+    if (req.user?.id) {
       user = await User.findById(req.user.id);
     }
 
     if (!user) {
-      // Return default values when no user is found
-      return res.status(200).send({
+      return res.status(200).json({
+        id: null,
         username: "Guest",
         email: "N/A",
         country: "Unknown",
         language: "English", // Default language
+        isSeller: false,
+        img: "https://example.com/default-avatar.png",
+        portfolioLink: [],
       });
     }
 
     const language = getLanguageFromCountry(user.country);
 
-    res.status(200).send({
+    res.status(200).json({
+      id: user._id,
       username: user.username,
       email: user.email,
       country: user.country,
       language: language,
+      isSeller: user.isSeller,
+      img: user.img,
+      portfolioLink: user.portfolioLink,
     });
   } catch (err) {
     console.error("Error fetching user data:", err);

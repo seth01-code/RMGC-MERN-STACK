@@ -27,12 +27,32 @@ export const verifyToken = (req, res, next) => {
   });
 };
 
+export const verifyTokenOptional = (req, res, next) => {
+  const token = req.cookies.accessToken;
 
+  if (!token) {
+    console.warn("⚠️ No token found. Proceeding as guest.");
+    req.user = null; // Allow as guest
+    return next();
+  }
 
+  jwt.verify(token, process.env.JWT_KEY, (err, payload) => {
+    if (err) {
+      console.warn("⚠️ Invalid token. Proceeding as guest.");
+      req.user = null; // Allow as guest
+      return next();
+    }
 
+    req.user = {
+      id: payload.id,
+      isSeller: payload.isSeller || false,
+      isAdmin: payload.isAdmin || false,
+    };
 
-
-
+    console.log("✅ Token Verified! User Authenticated:", req.user);
+    next();
+  });
+};
 
 
 // import User from "../models/userModel.js";
