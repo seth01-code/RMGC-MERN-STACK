@@ -40,17 +40,21 @@ const getLanguageFromCountry = (countryCode) => {
 
 export const getUserData = async (req, res, next) => {
   try {
-    // console.log("Fetching user data for userId:", req.user.id);  // Use req.user.id instead of req.userId
+    let user = null;
 
-    if (!req.user.id) {
-      return next(createError(401, "User ID is not found in token"));
+    // Check if user is authenticated
+    if (req.user && req.user.id) {
+      user = await User.findById(req.user.id);
     }
 
-    const user = await User.findById(req.user.id); // Use req.user.id here
-
     if (!user) {
-      // console.log("❌ User not found for ID:", req.user.id);
-      return next(createError(404, "User not found"));
+      // Return default values when no user is found
+      return res.status(200).send({
+        username: "Guest",
+        email: "N/A",
+        country: "Unknown",
+        language: "English", // Default language
+      });
     }
 
     const language = getLanguageFromCountry(user.country);
