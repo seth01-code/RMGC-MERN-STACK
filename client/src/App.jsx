@@ -167,7 +167,7 @@ const Layout = () => {
 
     const checkTawkAvailability = () => {
       if (window.Tawk_API && typeof window.Tawk_API.show === "function") {
-        if (!isMessage) {
+        if (isMessage) {
           window.Tawk_API.hide(); // Hide the widget
         } else {
           window.Tawk_API.show(); // Show the widget
