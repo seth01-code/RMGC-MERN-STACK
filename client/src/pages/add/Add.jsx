@@ -18,6 +18,7 @@ const Add = () => {
   const [singleFile, setSingleFile] = useState(undefined);
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [displayPrice, setDisplayPrice] = useState("");
   const [categoryInput, setCategoryInput] = useState(state.cat || ""); // Custom category input
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -62,18 +63,17 @@ const Add = () => {
     queryFn: () => newRequest.get(`/users/me`).then((res) => res.data),
     enabled: !!currentUser?.id, // Ensures query runs only when user is authenticated
   });
-  
+
   // Ensure the hook only runs when userData is available
   const [country, setCountry] = useState("United States");
-  
+
   useEffect(() => {
     if (userData?.country) {
       setCountry(userData.country);
     }
   }, [userData]);
-  
+
   const { exchangeRate } = useExchangeRate(country);
-  
 
   const handleCategoryChange = (e) => {
     const value = e.target.value;
@@ -149,13 +149,18 @@ const Add = () => {
       toast.error(t("gig_add_failed"));
     },
   });
-
   const handlePriceChange = (e) => {
-    const enteredPrice = e.target.value.replace(/\D/g, ""); // Ensure only numbers
+    let rawValue = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+
+    // Format number with commas
+    const formattedValue = rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
     dispatch({
       type: "CHANGE_INPUT",
-      payload: { name: "price", value: enteredPrice },
+      payload: { name: "price", value: rawValue }, // Store raw numeric value
     });
+
+    setDisplayPrice(formattedValue); // Update state for formatted display
   };
 
   const handleSubmit = (e) => {
@@ -324,20 +329,18 @@ const Add = () => {
 
             <label className="text-gray-500">{t("price")}</label>
             <input
-              type="number"
+              type="text"
               name="price"
               onChange={handlePriceChange}
-              value={state.price}
+              value={displayPrice} // Use formatted value for display
               className="input-field"
               placeholder={t("price_placeholder")}
             />
             <p className="text-gray-500">
               {t("converted_to_usd")}: $
               {state.price
-                ? (state.price / exchangeRate || 0)
-                    .toFixed(2)
-                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                : "0.00"}{" "}
+                ? Math.round(state.price / exchangeRate || 0).toLocaleString()
+                : "0"}{" "}
               USD
             </p>
 
