@@ -163,11 +163,11 @@ const Layout = () => {
   }, []);
 
   useEffect(() => {
-    const restrictedRoutes = ["/chat"]; // Add routes where chat should be disabled
+    // const restrictedRoutes = ["/chat"]; // Add routes where chat should be disabled
 
     const checkTawkAvailability = () => {
       if (window.Tawk_API && typeof window.Tawk_API.show === "function") {
-        if (restrictedRoutes.includes(location.pathname)) {
+        if (!isMessage) {
           window.Tawk_API.hide(); // Hide the widget
         } else {
           window.Tawk_API.show(); // Show the widget
