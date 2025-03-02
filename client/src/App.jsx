@@ -117,7 +117,6 @@ const App = () => {
         className="dark-toast-container overflow-hidden"
       />
       <CookiesConsent /> {/* Inserted here */}
-      <TawkToChat />
     </QueryClientProvider>
   );
 };
@@ -216,6 +215,7 @@ const Layout = () => {
         !isResetPassword && (
           <>
             {showAnnouncement && <Announcements />}
+            <TawkToChat />
             <Navbar />
           </>
         )}
