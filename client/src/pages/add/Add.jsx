@@ -1,4 +1,4 @@
-import React, { useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import { gigReducer, INITIAL_STATE } from "../../reducers/gigReducer";
 import upload from "../../utils/upload";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { useTranslation } from "react-i18next";
-import { MdArrowDropDown } from "react-icons/md";
+// import { MdArrowDropDown } from "react-icons/md";
 
 const Add = () => {
   const { t } = useTranslation();
@@ -58,13 +58,22 @@ const Add = () => {
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
   const { data: userData } = useQuery({
-    queryKey: ["userData", currentUser.id],
+    queryKey: ["userData", currentUser?.id],
     queryFn: () => newRequest.get(`/users/me`).then((res) => res.data),
+    enabled: !!currentUser?.id, // Ensures query runs only when user is authenticated
   });
-
-  const { exchangeRate, currencySymbol } = useExchangeRate(
-    userData?.country || "United States"
-  );
+  
+  // Ensure the hook only runs when userData is available
+  const [country, setCountry] = useState("United States");
+  
+  useEffect(() => {
+    if (userData?.country) {
+      setCountry(userData.country);
+    }
+  }, [userData]);
+  
+  const { exchangeRate } = useExchangeRate(country);
+  
 
   const handleCategoryChange = (e) => {
     const value = e.target.value;
@@ -89,15 +98,15 @@ const Add = () => {
     });
   };
 
-  const handleCustomCategorySubmit = () => {
-    if (categoryInput.trim() !== "") {
-      dispatch({
-        type: "CHANGE_INPUT",
-        payload: { name: "cat", value: categoryInput.trim() },
-      });
-      setShowDropdown(false);
-    }
-  };
+  // const handleCustomCategorySubmit = () => {
+  //   if (categoryInput.trim() !== "") {
+  //     dispatch({
+  //       type: "CHANGE_INPUT",
+  //       payload: { name: "cat", value: categoryInput.trim() },
+  //     });
+  //     setShowDropdown(false);
+  //   }
+  // };
 
   const handleChange = (e) => {
     dispatch({

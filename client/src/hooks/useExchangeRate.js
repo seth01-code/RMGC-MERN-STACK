@@ -23,7 +23,7 @@ export const useExchangeRate = (country) => {
     const fetchExchangeRate = async () => {
       try {
         const res = await axios.get(
-          `https://v6.exchangerate-api.com/v6/902808eb79568366ee7009e6/latest/${BASE_CURRENCY}`
+          `https://api.exchangerate-api.com/v4/latest/${BASE_CURRENCY}`
         );
 
         if (res.data.rates && res.data.rates[countryCurrency]) {
@@ -62,73 +62,8 @@ export const useExchangeRate = (country) => {
 // Function to get currency symbol based on currency code
 const getCurrencySymbol = (currencyCode) => {
   const currencySymbols = {
-    AFN: "؋",
-    ALL: "Lek",
-    DZD: "د.ج",
-    EUR: "€",
-    AOA: "Kz",
-    XCD: "$",
-    ARS: "$",
-    AMD: "դր.",
-    AUD: "$",
-    AZN: "ман.",
-    BSD: "$",
-    BHD: "د.ب",
-    BDT: "৳",
-    BBD: "$",
-    BYN: "Br",
-    BAM: "KM",
-    BWP: "P",
-    BRL: "R$",
-    BND: "$",
-    BGN: "лв.",
-    CFA: "CFA",
-    BIF: "FBu",
-    CVE: "$",
-    KHR: "៛",
-    CAD: "$",
-    CDF: "Fr",
-    CLP: "$",
-    CNY: "¥",
-    COP: "$",
-    CRC: "₡",
-    HRK: "kn",
-    CUP: "$",
-    CZK: "Kč",
-    DKK: "kr.",
-    DJF: "Fdj",
-    DOP: "$",
     USD: "$",
-    EGP: "ج.م",
-    GEL: "ლ",
-    GHS: "₵",
-    HUF: "Ft",
-    ISK: "kr",
-    INR: "₹",
-    IDR: "Rp",
-    ILS: "₪",
-    JMD: "$",
     NGN: "₦",
-    JPY: "¥",
-    KES: "KSh",
-    KRW: "₩",
-    KWD: "د.ك",
-    MYR: "RM",
-    MXN: "$",
-    MDL: "L",
-    PHP: "₱",
-    QAR: "QR",
-    RUB: "₽",
-    SAR: "ر.س",
-    SGD: "$",
-    ZAR: "R",
-    SEK: "kr",
-    CHF: "CHF",
-    TRY: "₺",
-    UAH: "₴",
-    AED: "د.إ",
-    GBP: "£",
-    VND: "₫",
   };
 
   return currencySymbols[currencyCode] || "$";
