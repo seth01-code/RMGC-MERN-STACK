@@ -303,16 +303,16 @@ function Navbar() {
             </div>
           ) : (
             <>
-              <Link
-                to="/login"
-                className={`${
-                  active || pathname !== "/"
-                    ? "text-black hover:text-gray-500"
-                    : "text-white hover:text-orange-400"
-                }`}
-                onClick={closeMenu}
-              >
-                {t("navbar.signIn")}
+              <Link to="/login" onClick={closeMenu}>
+                <button
+                  className={`${
+                    active || pathname !== "/"
+                      ? "bg-black text-white hover:bg-gray-700"
+                      : "bg-orange-400 text-white hover:bg-orange-500"
+                  } px-4 py-2 rounded-lg transition duration-300`}
+                >
+                  {t("navbar.signIn")}
+                </button>
               </Link>
             </>
           )}
