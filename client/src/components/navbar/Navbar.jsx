@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import newRequest from "../../utils/newRequest";
 // import { FiMenu, FiX } from "react-icons/fi";
@@ -27,7 +27,7 @@ function Navbar() {
   const [categories, setCategories] = useState([]);
 
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setActive(window.scrollY > 0);
@@ -70,22 +70,11 @@ function Navbar() {
       await newRequest.post("/auth/logout");
       localStorage.removeItem("currentUser");
       setCurrentUser(null); // Assuming you have a state for currentUser
-      navigate("/login"); // Redirect to login page
+      // navigate("/login"); // Redirect to login page
     } catch (err) {
       console.error("Error logging out:", err);
     }
   };
-
-  // Detecting any 40X errors on API calls
-  newRequest.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response && error.response.status === 401) {
-        handleLogout(); // Only logs out on unauthorized errors
-      }
-      return Promise.reject(error);
-    }
-  );
 
   const closeMenu = () => {
     setOpen(false);
