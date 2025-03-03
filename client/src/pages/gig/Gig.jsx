@@ -113,7 +113,10 @@ const Gig = () => {
               <div className="flex items-center gap-3 mb-4">
                 <img
                   className="object-cover w-12 h-12 rounded-full"
-                  src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
+                  src={
+                    dataUser?.img ||
+                    "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                  }
                   alt="Profile"
                 />
                 <span className="font-medium">{dataUser?.username}</span>
@@ -168,7 +171,10 @@ const Gig = () => {
                 <h2 className="text-lg font-semibold">{t("aboutSeller")}</h2>
                 <div className="flex items-center gap-4 mt-4">
                   <img
-                    src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
+                    src={
+                      dataUser?.img ||
+                      "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                    }
                     alt="Seller"
                     className="object-cover w-16 h-16 rounded-full"
                   />

@@ -100,7 +100,10 @@ const AdminMessages = () => {
                     {/* Client Section */}
                     <div className="flex items-center space-x-3 min-w-0">
                       <img
-                        src={client.img || "/default-avatar.png"}
+                        src={
+                          client.img ||
+                          "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                        }
                         alt={client.username}
                         className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
                       />
@@ -115,7 +118,10 @@ const AdminMessages = () => {
                     {/* Service Provider Section */}
                     <div className="flex items-center space-x-3 min-w-0">
                       <img
-                        src={provider.img || "/default-avatar.png"}
+                        src={
+                          provider.img ||
+                          "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                        }
                         alt={provider.username}
                         className="w-12 h-12 object-cover rounded-full border border-gray-300 shadow-sm"
                       />

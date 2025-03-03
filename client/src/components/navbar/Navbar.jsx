@@ -177,7 +177,10 @@ function Navbar() {
             >
               <div className="flex items-center gap-2">
                 <img
-                  src={currentUser.img || "/assets/images/noavatar.jpg"}
+                  src={
+                    currentUser.img ||
+                    "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                  }
                   alt="Avatar"
                   className="w-8 h-8 rounded-full object-cover"
                 />

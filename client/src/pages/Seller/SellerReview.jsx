@@ -25,7 +25,10 @@ const SellerReview = ({ review }) => {
         <div className="flex items-center gap-4">
           <img
             className="h-14 w-14 object-cover rounded-full border border-gray-600"
-            src={data.img || "/assets/images/noavatar.jpg"}
+            src={
+              data.img ||
+              "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+            }
             alt={data.username}
           />
           <div>

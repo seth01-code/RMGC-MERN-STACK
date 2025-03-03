@@ -111,146 +111,161 @@ const MessageDetail = () => {
 
   return (
     <div className="p-4 sm:p-6 mx-auto bg-white rounded-lg shadow-lg h-[85vh] flex flex-col w-full max-w-3xl">
-  {/* Header Section */}
-  <h1 className="text-2xl font-semibold text-gray-900 border-b pb-3 text-center">
-    Conversation
-  </h1>
+      {/* Header Section */}
+      <h1 className="text-2xl font-semibold text-gray-900 border-b pb-3 text-center">
+        Conversation
+      </h1>
 
-  {/* User Info Bar */}
-  <div className="flex flex-wrap items-center justify-between bg-gray-100 p-4 rounded-lg shadow-sm gap-4">
-    {/* Receiver */}
-    <div className="flex items-center gap-3">
-      <img
-        src={receiver?.img || "/default-avatar.png"}
-        alt="Receiver"
-        className="w-12 h-12 rounded-full object-cover border border-gray-300 shadow-sm"
-      />
-      <div>
-        <p className="text-xs text-gray-500">Service Provider</p>
-        <p className="font-semibold text-gray-800">{receiver?.username}</p>
+      {/* User Info Bar */}
+      <div className="flex flex-wrap items-center justify-between bg-gray-100 p-4 rounded-lg shadow-sm gap-4">
+        {/* Receiver */}
+        <div className="flex items-center gap-3">
+          <img
+            src={
+              receiver?.img ||
+              "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+            }
+            alt="Receiver"
+            className="w-12 h-12 rounded-full object-cover border border-gray-300 shadow-sm"
+          />
+          <div>
+            <p className="text-xs text-gray-500">Service Provider</p>
+            <p className="font-semibold text-gray-800">{receiver?.username}</p>
+          </div>
+        </div>
+
+        {/* Sender */}
+        <div className="flex items-center gap-3">
+          <img
+            src={
+              sender?.img ||
+              "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+            }
+            alt="Sender"
+            className="w-12 h-12 rounded-full object-cover border border-gray-300 shadow-sm"
+          />
+          <div>
+            <p className="text-xs text-blue-500">Client</p>
+            <p className="font-semibold text-gray-800">{sender?.username}</p>
+          </div>
+        </div>
       </div>
-    </div>
 
-    {/* Sender */}
-    <div className="flex items-center gap-3">
-      <img
-        src={sender?.img || "/default-avatar.png"}
-        alt="Sender"
-        className="w-12 h-12 rounded-full object-cover border border-gray-300 shadow-sm"
-      />
-      <div>
-        <p className="text-xs text-blue-500">Client</p>
-        <p className="font-semibold text-gray-800">{sender?.username}</p>
-      </div>
-    </div>
-  </div>
+      {/* Chat Messages Section */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length > 0 ? (
+          messages.map((msg) => {
+            const isSender = msg.senderId._id === sender._id;
 
-  {/* Chat Messages Section */}
-  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-    {messages.length > 0 ? (
-      messages.map((msg) => {
-        const isSender = msg.senderId._id === sender._id;
-
-        return (
-          <div
-            key={msg._id}
-            className={`flex items-end gap-3 ${
-              isSender ? "justify-end" : "justify-start"
-            }`}
-          >
-            {/* Show receiver avatar */}
-            {!isSender && (
-              <img
-                src={receiver?.img || "/default-avatar.png"}
-                alt="User"
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            )}
-
-            {/* Message Content */}
-            <div className="flex flex-col max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] space-y-2">
-              {/* Text Message */}
-              {msg.text && (
-                <div
-                  className={`p-3 text-sm shadow-md rounded-lg ${
-                    isSender
-                      ? "bg-blue-500 text-white rounded-br-none"
-                      : "bg-gray-200 text-gray-900 rounded-bl-none"
-                  }`}
-                >
-                  <p>{msg.text}</p>
-                </div>
-              )}
-              {/* Image Message */}
-              {msg.media &&
-                msg.media.match(
-                  /\.(jpeg|jpg|png|gif|webp|svg|bmp|tiff|tif|ico|heic|heif|avif)$/
-                ) && <ChatImage message={msg} />}
-              {/* Video Message */}
-              {msg.media &&
-                msg.media.match(/\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv)$/) && (
-                  <CustomVideoPlayer
-                    src={msg.media}
-                    fileExtension={msg.media.split(".").pop()}
-                  />
-                )}
-              {/* Audio Message */}
-              {msg.media &&
-                msg.media.match(/\.(mp3|wav|ogg|flac|aac|m4a)$/) && (
-                  <AudioMessagePlayer
-                    src={msg.media}
-                    fileExtension={msg.media.split(".").pop()}
-                    isSender={isSender}
-                  />
-                )}
-              {/* Document Message */}
-              {msg.media &&
-                msg.media.match(
-                  /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|mp3|wav|ogg|flac|aac|m4a|mp4|webm|ogg|mov|avi|mkv|flv|wmv|jpeg|jpg|png|gif|webp|svg|bmp|tiff|tif|ico|heic|heif|avif)$/
-                ) && (
-                  <div
-                    className={`p-3 text-sm shadow-md flex items-center gap-2 rounded-lg ${
-                      isSender ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
-                    }`}
-                  >
-                    {getFileIcon(msg.media)}
-                    <a
-                      href={msg.media}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline truncate"
-                    >
-                      {getFileName(msg.media)}
-                    </a>
-                  </div>
-                )}
-              {/* Timestamp */}
-              <p
-                className={`text-xs text-gray-400 mt-1 ${
-                  isSender ? "text-right" : "text-left"
+            return (
+              <div
+                key={msg._id}
+                className={`flex items-end gap-3 ${
+                  isSender ? "justify-end" : "justify-start"
                 }`}
               >
-                {new Date(msg.createdAt).toLocaleTimeString()}
-              </p>
-            </div>
+                {/* Show receiver avatar */}
+                {!isSender && (
+                  <img
+                    src={
+                      receiver?.img ||
+                      "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                    }
+                    alt="User"
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                )}
 
-            {/* Show sender avatar */}
-            {isSender && (
-              <img
-                src={sender?.img || "/default-avatar.png"}
-                alt="User"
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            )}
-          </div>
-        );
-      })
-    ) : (
-      <p className="text-gray-500 text-center mt-6">No messages yet.</p>
-    )}
-  </div>
-</div>
+                {/* Message Content */}
+                <div className="flex flex-col max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] space-y-2">
+                  {/* Text Message */}
+                  {msg.text && (
+                    <div
+                      className={`p-3 text-sm shadow-md rounded-lg ${
+                        isSender
+                          ? "bg-blue-500 text-white rounded-br-none"
+                          : "bg-gray-200 text-gray-900 rounded-bl-none"
+                      }`}
+                    >
+                      <p>{msg.text}</p>
+                    </div>
+                  )}
+                  {/* Image Message */}
+                  {msg.media &&
+                    msg.media.match(
+                      /\.(jpeg|jpg|png|gif|webp|svg|bmp|tiff|tif|ico|heic|heif|avif)$/
+                    ) && <ChatImage message={msg} />}
+                  {/* Video Message */}
+                  {msg.media &&
+                    msg.media.match(
+                      /\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv)$/
+                    ) && (
+                      <CustomVideoPlayer
+                        src={msg.media}
+                        fileExtension={msg.media.split(".").pop()}
+                      />
+                    )}
+                  {/* Audio Message */}
+                  {msg.media &&
+                    msg.media.match(/\.(mp3|wav|ogg|flac|aac|m4a)$/) && (
+                      <AudioMessagePlayer
+                        src={msg.media}
+                        fileExtension={msg.media.split(".").pop()}
+                        isSender={isSender}
+                      />
+                    )}
+                  {/* Document Message */}
+                  {msg.media &&
+                    msg.media.match(
+                      /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|mp3|wav|ogg|flac|aac|m4a|mp4|webm|ogg|mov|avi|mkv|flv|wmv|jpeg|jpg|png|gif|webp|svg|bmp|tiff|tif|ico|heic|heif|avif)$/
+                    ) && (
+                      <div
+                        className={`p-3 text-sm shadow-md flex items-center gap-2 rounded-lg ${
+                          isSender
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 text-gray-900"
+                        }`}
+                      >
+                        {getFileIcon(msg.media)}
+                        <a
+                          href={msg.media}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline truncate"
+                        >
+                          {getFileName(msg.media)}
+                        </a>
+                      </div>
+                    )}
+                  {/* Timestamp */}
+                  <p
+                    className={`text-xs text-gray-400 mt-1 ${
+                      isSender ? "text-right" : "text-left"
+                    }`}
+                  >
+                    {new Date(msg.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
 
+                {/* Show sender avatar */}
+                {isSender && (
+                  <img
+                    src={
+                      sender?.img ||
+                      "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                    }
+                    alt="User"
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-gray-500 text-center mt-6">No messages yet.</p>
+        )}
+      </div>
+    </div>
   );
 };
 

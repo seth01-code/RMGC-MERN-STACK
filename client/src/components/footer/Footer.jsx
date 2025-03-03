@@ -123,7 +123,7 @@ const Footer = () => {
             {/* Social Media Icons with Links */}
             <div className="flex items-center space-x-4">
               <a
-                href="https://tiktok.com"
+                href="https://www.tiktok.com/@rmgconsult?_t=ZM-8uMUlARof38&_r=1"
                 target="_blank"
                 rel="noopener noreferrer"
               >

@@ -205,7 +205,10 @@ const SellerDashboard = () => {
         <h2 className="text-2xl font-semibold mb-4">Profile</h2>
         <div className="flex flex-wrap gap-6">
           <img
-            src={user?.img || "/default-profile.png"}
+            src={
+              user?.img ||
+              "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+            }
             alt="Profile"
             className="w-24 h-24 rounded-full object-cover"
           />
@@ -220,20 +223,7 @@ const SellerDashboard = () => {
               <strong>Country:</strong> {user.country}
             </p>
             <p>
-              <strong>Portfolio/Resume:</strong>{" "}
-              {user.portfolioLink && user.portfolioLink.length > 0
-                ? user.languages.map((link, index) => (
-                    <a
-                      key={index}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline ml-2"
-                    >
-                      {link}
-                    </a>
-                  ))
-                : "No Portfolio Links Available"}
+              <strong>Country:</strong> {user.yearsOfExperience}
             </p>
             <p>
               <strong>Language(s):</strong>{" "}

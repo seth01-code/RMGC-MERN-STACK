@@ -144,7 +144,10 @@ const ChatSidebar = ({
               >
                 {otherParticipant?.img && (
                   <img
-                    src={otherParticipant.img}
+                    src={
+                      otherParticipant.img ||
+                      "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                    }
                     alt={otherParticipant.username}
                     className="w-12 h-12 rounded-full object-cover"
                   />

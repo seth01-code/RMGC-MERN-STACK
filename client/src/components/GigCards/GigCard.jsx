@@ -70,7 +70,10 @@ const GigCard = ({ item }) => {
         <div className="info px-[20px] py-[10px] flex flex-col gap-[15px]">
           <div className="user flex items-center gap-[10px]">
             <img
-              src={gigUserData?.img || "../../../assets/images/noavatar.jpg"}
+              src={
+                gigUserData?.img ||
+                "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+              }
               alt={gigUserData?.username}
               className="w-[26px] h-[26px] rounded-full"
             />

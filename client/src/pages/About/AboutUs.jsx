@@ -193,7 +193,7 @@ const AboutUs = () => {
 
         {/* WhatsApp for Service Providers */}
         <a
-          href="https://chat.whatsapp.com/service_providers" // Replace with actual WhatsApp group link
+          href="https://chat.whatsapp.com/DOc8WntKqOjDKeNhwcOowb" // Replace with actual WhatsApp group link
           target="_blank"
           rel="noopener noreferrer"
           className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition-transform transform hover:scale-105 flex items-center space-x-2 w-full md:w-auto justify-center"

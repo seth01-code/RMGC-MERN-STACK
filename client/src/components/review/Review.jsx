@@ -18,25 +18,24 @@ const Review = ({ review }) => {
     <div className="flex flex-col gap-5 py-6 border-b border-gray-200">
       {/* User Info */}
       {isLoading ? (
-        <p className="text-gray-500">
-          {t("review.loading")}
-        </p>
+        <p className="text-gray-500">{t("review.loading")}</p>
       ) : error ? (
         <p className="text-red-500">{t("review.error")}</p>
       ) : (
         <div className="flex items-center gap-4">
           <img
             className="h-14 w-14 object-cover rounded-full border border-gray-300"
-            src={data.img || "/assets/images/noavatar.jpg"}
+            src={
+              data.img ||
+              "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+            }
             alt={data.username}
           />
           <div>
             <span className="block text-lg font-semibold text-black">
               {data.username}
             </span>
-            <span className="text-sm text-gray-500">
-              {data.country}
-            </span>
+            <span className="text-sm text-gray-500">{data.country}</span>
           </div>
         </div>
       )}
@@ -46,7 +45,7 @@ const Review = ({ review }) => {
         {Array(review.star)
           .fill()
           .map((_, i) => (
-            <IoMdStar key={i} className="text-[#FF8C00] text-sm"/>
+            <IoMdStar key={i} className="text-[#FF8C00] text-sm" />
           ))}
         <span className="font-semibold text-[#FF8C00] text-sm">
           {review.star}

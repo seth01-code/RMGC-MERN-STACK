@@ -397,7 +397,10 @@ const ChatWindow = ({ userId, conversation, toggleSidebar, isSidebarOpen }) => {
           <div className="flex items-center gap-3">
             {conversation.otherParticipant?.img && (
               <img
-                src={conversation.otherParticipant.img}
+                src={
+                  conversation.otherParticipant.img ||
+                  "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                }
                 alt={conversation.otherParticipant.username}
                 className="w-10 h-10 rounded-full object-cover"
               />

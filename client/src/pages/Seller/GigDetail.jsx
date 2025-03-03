@@ -11,7 +11,7 @@ import star from "../../../assets/images/star.png";
 import moment from "moment";
 import SellerReviews from "./SellerReviews";
 import { IoMdStar } from "react-icons/io";
-import { FaCheckDouble, FaClock} from "react-icons/fa";
+import { FaCheckDouble, FaClock } from "react-icons/fa";
 import { BiRevision } from "react-icons/bi";
 
 const GigDetail = () => {
@@ -89,7 +89,10 @@ const GigDetail = () => {
               <div className="flex items-center gap-3 mb-4">
                 <img
                   className="w-12 h-12 rounded-full object-cover"
-                  src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
+                  src={
+                    dataUser?.img ||
+                    "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                  }
                   alt="Profile"
                 />
                 <span className="font-medium">{dataUser?.username}</span>
@@ -144,7 +147,10 @@ const GigDetail = () => {
                 <h2 className="text-lg font-semibold">{t("aboutSeller")}</h2>
                 <div className="flex items-center gap-4 mt-4">
                   <img
-                    src={dataUser?.img || "../../../assets/images/noavatar.jpg"}
+                    src={
+                      dataUser?.img ||
+                      "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                    }
                     alt="Seller"
                     className="w-16 h-16 object-cover rounded-full"
                   />
@@ -175,22 +181,6 @@ const GigDetail = () => {
                   <p>
                     <strong>{t("from")}:</strong>{" "}
                     {dataUser?.country || t("defaultCountry")}
-                  </p>
-                  <p>
-                    <strong>Portfolio/Resume LInk:</strong>{" "}
-                    {dataUser.portfolioLink && dataUser.portfolioLink.length > 0
-                      ? dataUser.portfolioLink.map((link, index) => (
-                          <a
-                            key={index}
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline ml-2"
-                          >
-                            {link}
-                          </a>
-                        ))
-                      : "No portfolio / Resume links available"}
                   </p>
                   <p>
                     <strong>{t("memberSince")}:</strong> {date}

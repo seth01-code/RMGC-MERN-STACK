@@ -325,7 +325,10 @@ const EditProfile = () => {
             {profile.img && typeof profile.img === "string" ? (
               <div className="mt-4 text-center">
                 <img
-                  src={profile.img}
+                  src={
+                    profile.img ||
+                    "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
+                  }
                   alt="Profile"
                   className="w-32 h-32 object-cover rounded-full mx-auto"
                 />

@@ -81,7 +81,8 @@ const Slide = () => {
                   <div className="info flex items-center gap-3 p-3 bg-white shadow-md rounded-b-lg flex-grow">
                     <img
                       src={
-                        gig.sellerImg || "../../../assets/images/noavatar.jpg"
+                        gig.sellerImg ||
+                        "https://miamistonesource.com/wp-content/uploads/2018/05/no-avatar-25359d55aa3c93ab3466622fd2ce712d1.jpg"
                       }
                       alt={t("slide.profileImageAlt")}
                       className="w-10 h-10 rounded-full object-cover"
