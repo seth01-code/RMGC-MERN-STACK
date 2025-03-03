@@ -47,6 +47,7 @@ import Announcements from "./Announcements.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import TawkToChat from "./components/TawkToChat.jsx";
+import ScrollToTop from "./ScrollToTop.jsx";
 
 const queryClient = new QueryClient();
 
@@ -163,47 +164,9 @@ const Layout = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // useEffect(() => {
-  //   const restrictedRoutes = ["/chat"]; // Add routes where chat should be disabled
-
-  //   const checkTawkAvailability = () => {
-  //     if (window.Tawk_API && typeof window.Tawk_API.show === "function") {
-  //       if (restrictedRoutes.includes(location.pathname)) {
-  //         window.Tawk_API.hide(); // Hide the widget
-  //       } else {
-  //         window.Tawk_API.show(); // Show the widget
-  //       }
-  //     }
-  //   };
-
-  //   let interval; // Declare interval outside so it's accessible
-
-  //   if (window.Tawk_API) {
-  //     // Use Tawk.to's status change event
-  //     window.Tawk_API.onStatusChange = () => {
-  //       checkTawkAvailability();
-  //     };
-  //     checkTawkAvailability(); // Run the function immediately
-  //   } else {
-  //     // Wait for Tawk.to to load
-  //     interval = setInterval(() => {
-  //       if (window.Tawk_API) {
-  //         window.Tawk_API.onStatusChange = () => {
-  //           checkTawkAvailability();
-  //         };
-  //         checkTawkAvailability();
-  //         clearInterval(interval);
-  //       }
-  //     }, 500); // Check every 500ms
-  //   }
-
-  //   return () => {
-  //     if (interval) clearInterval(interval); // Ensure interval exists before clearing
-  //   };
-  // }, [location.pathname]);
-
   return (
     <div className="app">
+      <ScrollToTop />
       <TawkToChat />
       {!isLoginPage &&
         !isRegister &&
@@ -235,7 +198,6 @@ const Layout = () => {
 
 const userId = currentUser?.id;
 
-
 const ChatPageWithReload = ({ userId }) => {
   if (!sessionStorage.getItem("hasReloaded")) {
     sessionStorage.setItem("hasReloaded", "true");
@@ -251,7 +213,6 @@ const ChatPageWithReload = ({ userId }) => {
 
   return <ChatPage userId={userId} />;
 };
-
 
 // 🟢 Router Setup
 const router = createBrowserRouter([
