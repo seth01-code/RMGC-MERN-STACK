@@ -237,22 +237,17 @@ const userId = currentUser?.id;
 
 
 const ChatPageWithReload = ({ userId }) => {
-  // const location = useLocation(); // Detects route changes
-  const [hasReloaded, setHasReloaded] = useState(
-    sessionStorage.getItem("hasReloaded") === "true"
-  );
+  if (!sessionStorage.getItem("hasReloaded")) {
+    sessionStorage.setItem("hasReloaded", "true");
+    window.location.reload();
+    return null; // Prevent rendering before reload
+  }
 
   useEffect(() => {
-    if (!hasReloaded) {
-      sessionStorage.setItem("hasReloaded", "true");
-      window.location.reload();
-    }
-
     return () => {
-      // Reset flag when leaving the chat page
-      sessionStorage.removeItem("hasReloaded");
+      sessionStorage.removeItem("hasReloaded"); // Reset when leaving chat
     };
-  }, [hasReloaded]);
+  }, []);
 
   return <ChatPage userId={userId} />;
 };
