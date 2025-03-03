@@ -217,22 +217,6 @@ const Gig = () => {
                     {dataUser?.desc || t("defaultCountry")}
                   </p>
                   <p>
-                    <strong>Portfolio/Resume Link:</strong>{" "}
-                    {dataUser.portfolioLink && dataUser.portfolioLink.length > 0
-                      ? dataUser.portfolioLink.map((link, index) => (
-                          <a
-                            key={index}
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline ml-2"
-                          >
-                            {link}
-                          </a>
-                        ))
-                      : "No portfolio / Resume links available"}
-                  </p>
-                  <p>
                     <strong>{t("memberSince")}:</strong> {date}
                   </p>
                   <p>

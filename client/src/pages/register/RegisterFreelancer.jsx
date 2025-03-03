@@ -8,7 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 function RegisterFreelancer() {
   const [file, setFile] = useState(null);
-  const [portfolioLink, setPortfolioLink] = useState([]);
+  // const [portfolioLink, setPortfolioLink] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [services, setServices] = useState([]); // New field for services
 
@@ -81,13 +81,13 @@ function RegisterFreelancer() {
     }));
   };
 
-  const handlePortfolioInput = (e) => {
-    const values = e.target.value
-      .split(",")
-      .map((link) => link.trim())
-      .filter((link) => link);
-    setPortfolioLink(values);
-  };
+  // const handlePortfolioInput = (e) => {
+  //   const values = e.target.value
+  //     .split(",")
+  //     .map((link) => link.trim())
+  //     .filter((link) => link);
+  //   setPortfolioLink(values);
+  // };
 
   const handleLanguagesInput = (e) => {
     const values = e.target.value
@@ -125,7 +125,7 @@ function RegisterFreelancer() {
     const userData = {
       ...user,
       img: imageUrl,
-      portfolioLink,
+      // portfolioLink,
       languages,
       services, // Include services in request
     };
@@ -284,7 +284,7 @@ function RegisterFreelancer() {
         </div>
 
         {/* Portfolio Links */}
-        <div className="flex flex-col gap-3">
+        {/* <div className="flex flex-col gap-3">
           <label className="font-medium text-gray-600">
             {t("portfolioLinks")}
           </label>
@@ -305,7 +305,7 @@ function RegisterFreelancer() {
               </span>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Languages */}
         <div className="flex flex-col gap-3">
