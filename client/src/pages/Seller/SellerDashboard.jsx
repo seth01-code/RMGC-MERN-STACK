@@ -223,7 +223,7 @@ const SellerDashboard = () => {
               <strong>Country:</strong> {user.country}
             </p>
             <p>
-              <strong>Country:</strong> {user.yearsOfExperience}
+              <strong>Years of Experience:</strong> {user.yearsOfExperience}
             </p>
             <p>
               <strong>Language(s):</strong>{" "}
