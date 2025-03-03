@@ -176,6 +176,24 @@ const EditProfile = () => {
             </div>
           </div>
 
+          <div>
+            <label
+              htmlFor="yearsofexperience"
+              className="block text-sm font-medium text-gray-700"
+            >
+              {`Years of Experience`}
+            </label>
+            <input
+              type="text"
+              id="yearsOfExperience"
+              name="yearsOfExperience"
+              value={profile.yearsOfExperience || ""}
+              onChange={handleChange}
+              className="w-full p-4 border rounded-md shadow-sm focus:ring-2 focus:ring-green-500"
+              placeholder="Your years of experience"
+            />
+          </div>
+
           {/* Password Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
