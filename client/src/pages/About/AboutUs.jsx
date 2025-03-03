@@ -172,7 +172,7 @@ const AboutUs = () => {
       </div>
 
       {/* Telegram Button */}
-      <div className="mt-12 flex justify-center">
+      <div className="my-12 flex justify-center">
         <a
           href="https://t.me/YOUR_TELEGRAM_CHANNEL" // Replace with your actual Telegram channel link
           target="_blank"

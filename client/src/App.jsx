@@ -236,11 +236,13 @@ const Layout = () => {
 const userId = currentUser?.id;
 
 const ChatPageWithReload = ({ userId }) => {
-  const [hasReloaded, setHasReloaded] = useState(false);
+  const [hasReloaded, setHasReloaded] = useState(
+    sessionStorage.getItem("hasReloaded") === "true"
+  );
 
   useEffect(() => {
     if (!hasReloaded) {
-      setHasReloaded(true);
+      sessionStorage.setItem("hasReloaded", "true");
       window.location.reload();
     }
   }, [hasReloaded]);
