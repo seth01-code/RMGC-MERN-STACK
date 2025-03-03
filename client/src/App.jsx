@@ -235,7 +235,11 @@ const Layout = () => {
 
 const userId = currentUser?.id;
 
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+
 const ChatPageWithReload = ({ userId }) => {
+  const location = useLocation(); // Detects route changes
   const [hasReloaded, setHasReloaded] = useState(
     sessionStorage.getItem("hasReloaded") === "true"
   );
@@ -245,10 +249,18 @@ const ChatPageWithReload = ({ userId }) => {
       sessionStorage.setItem("hasReloaded", "true");
       window.location.reload();
     }
+
+    return () => {
+      // Reset flag when leaving the chat page
+      sessionStorage.removeItem("hasReloaded");
+    };
   }, [hasReloaded]);
 
   return <ChatPage userId={userId} />;
 };
+
+export default ChatPageWithReload;
+
 
 // 🟢 Router Setup
 const router = createBrowserRouter([
