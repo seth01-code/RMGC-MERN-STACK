@@ -204,6 +204,7 @@ const Layout = () => {
 
   return (
     <div className="app">
+      <TawkToChat />
       {!isLoginPage &&
         !isRegister &&
         !isMessage &&
@@ -215,7 +216,6 @@ const Layout = () => {
         !isResetPassword && (
           <>
             {showAnnouncement && <Announcements />}
-            <TawkToChat />
             <Navbar />
           </>
         )}
@@ -236,7 +236,7 @@ const Layout = () => {
 const userId = currentUser?.id;
 
 const ChatPageWithReload = ({ userId }) => {
-    window.location.reload();
+  window.location.reload();
 
   return <ChatPage userId={userId} />;
 };
