@@ -235,6 +235,14 @@ const Layout = () => {
 
 const userId = currentUser?.id;
 
+const ChatPageWithReload = ({ userId }) => {
+  useEffect(() => {
+    window.location.reload();
+  }, []);
+
+  return <ChatPage userId={userId} />;
+};
+
 // 🟢 Router Setup
 const router = createBrowserRouter([
   {
@@ -303,7 +311,7 @@ const router = createBrowserRouter([
         path: "/chat",
         element: (
           <ProtectedRoute allowedRoles={["user", "seller"]}>
-            <ChatPage userId={userId} />
+            <ChatPageWithReload userId={userId} />
           </ProtectedRoute>
         ),
       },
