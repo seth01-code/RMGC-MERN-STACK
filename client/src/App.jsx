@@ -236,7 +236,14 @@ const Layout = () => {
 const userId = currentUser?.id;
 
 const ChatPageWithReload = ({ userId }) => {
-  window.location.reload();
+  const [hasReloaded, setHasReloaded] = useState(false);
+
+  useEffect(() => {
+    if (!hasReloaded) {
+      setHasReloaded(true);
+      window.location.reload();
+    }
+  }, [hasReloaded]);
 
   return <ChatPage userId={userId} />;
 };
