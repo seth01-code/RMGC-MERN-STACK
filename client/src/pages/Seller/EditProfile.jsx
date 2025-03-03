@@ -21,6 +21,7 @@ const EditProfile = () => {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+    yearsOfExperience: "",
   });
 
   // State to toggle password visibility
@@ -52,6 +53,7 @@ const EditProfile = () => {
         phone: user.phone || "",
         country: user.country || "",
         img: user.img || "", // Set the image URL if exists
+        yearsOfExperience: user.yearsOfExperience || "",
       });
     }
   }, [user]);
