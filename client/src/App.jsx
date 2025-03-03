@@ -235,11 +235,9 @@ const Layout = () => {
 
 const userId = currentUser?.id;
 
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 
 const ChatPageWithReload = ({ userId }) => {
-  const location = useLocation(); // Detects route changes
+  // const location = useLocation(); // Detects route changes
   const [hasReloaded, setHasReloaded] = useState(
     sessionStorage.getItem("hasReloaded") === "true"
   );
@@ -258,8 +256,6 @@ const ChatPageWithReload = ({ userId }) => {
 
   return <ChatPage userId={userId} />;
 };
-
-export default ChatPageWithReload;
 
 
 // 🟢 Router Setup
