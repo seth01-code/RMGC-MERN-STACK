@@ -165,7 +165,7 @@ const Add = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const priceInUSD = (state.price / exchangeRate).toFixed(2);
+    const priceInUSD = (state.price / exchangeRate).toFixed(0);
     mutation.mutate({ ...state, price: priceInUSD });
   };
 
@@ -334,7 +334,7 @@ const Add = () => {
               onChange={handlePriceChange}
               value={displayPrice} // Use formatted value for display
               className="input-field"
-              placeholder={t("price_placeholder")}
+              placeholder={t("price")}
             />
             <p className="text-gray-500">
               {t("converted_to_usd")}: $

@@ -18,6 +18,13 @@ const TawkToChat = () => {
 
     document.body.appendChild(script);
 
+    script.onload = () => {
+      if (window.Tawk_API) {
+        // Hide the chat widget on page load
+        window.Tawk_API.hide();
+      }
+    };
+
     return () => {
       document.body.removeChild(script);
     };

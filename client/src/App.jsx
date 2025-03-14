@@ -48,6 +48,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import TawkToChat from "./components/TawkToChat.jsx";
 import ScrollToTop from "./ScrollToTop.jsx";
+import AMPAdsense from "./components/AmpAdsense.jsx";
 
 const queryClient = new QueryClient();
 
@@ -168,6 +169,7 @@ const Layout = () => {
     <div className="app">
       <ScrollToTop />
       <TawkToChat />
+      <AMPAdsense />
       {!isLoginPage &&
         !isRegister &&
         !isMessage &&
