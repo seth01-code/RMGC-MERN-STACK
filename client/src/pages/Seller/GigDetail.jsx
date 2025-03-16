@@ -206,7 +206,7 @@ const GigDetail = () => {
           </div>
 
           {/* RIGHT SECTION */}
-          <div className="flex flex-col justify-between flex-1 border h-80 border-gray-300 p-5 rounded-md shadow-md lg:sticky top-36 min-w-[280px]">
+          <div className="flex flex-col justify-between flex-1 border border-gray-300 p-5 rounded-md shadow-md lg:sticky top-36 min-w-[280px]">
             {/* Title & Price */}
             <div className="flex flex-col items-start">
               <h3 className="text-md md:text-lg font-medium">
