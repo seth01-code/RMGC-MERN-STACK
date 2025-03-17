@@ -462,8 +462,14 @@ export const login = async (req, res, next) => {
   try {
     const { email, username, password } = req.body;
 
-    // Find the user by email or username
-    const user = await User.findOne({ $or: [{ email }, { username }] });
+    // Remove only trailing spaces from the username
+    const trimmedUsername = username?.replace(/\s+$/, "");
+
+    // Find the user by email or username (ignoring only trailing spaces)
+    const user = await User.findOne({
+      $or: [{ email }, { username: trimmedUsername }],
+    });
+
     if (!user) return res.status(404).json({ error: "User not found" });
 
     // Check if the password matches
@@ -502,7 +508,6 @@ export const login = async (req, res, next) => {
       portfolioLink: user.portfolioLink || "",
     });
   } catch (err) {
-    // Log the error for debugging purposes and send a generic message
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
