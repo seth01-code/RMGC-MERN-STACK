@@ -462,12 +462,15 @@ export const login = async (req, res, next) => {
   try {
     const { email, username, password } = req.body;
 
-    // Remove only trailing spaces from the username
+    // Remove only trailing spaces from the username in the request
     const trimmedUsername = username?.replace(/\s+$/, "");
 
-    // Find the user by email or username (ignoring only trailing spaces)
+    // Find the user by email or username (ignoring both leading/trailing spaces)
     const user = await User.findOne({
-      $or: [{ email }, { username: trimmedUsername }],
+      $or: [
+        { email },
+        { username: { $regex: `^${trimmedUsername}$`, $options: "i" } }, // Ignore spaces in the DB username as well
+      ],
     });
 
     if (!user) return res.status(404).json({ error: "User not found" });
