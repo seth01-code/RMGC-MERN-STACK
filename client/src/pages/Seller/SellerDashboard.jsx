@@ -4,7 +4,7 @@ import { Line, Bar, Pie } from "react-chartjs-2";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import newRequest from "../../utils/newRequest"; // Ensure correct import path
-import moment from "moment";
+// import moment from "moment";
 import { useExchangeRate } from "../../hooks/useExchangeRate"; // Import your custom hook
 import {
   Chart as ChartJS,
@@ -297,7 +297,9 @@ const SellerDashboard = () => {
                   <p className="text-sm font-bold">Service Title:</p>
                   <h3 className="font-semibold text-lg">{gig.shortTitle}</h3>
                 </span>
-                <p className="text-sm text-gray-700 mt-2">{gig.desc}</p>
+                <p className="text-sm text-gray-700 mt-2 line-clamp-3">
+                  {gig.desc}
+                </p>
                 <p className="text-md font-semibold mt-2 mb-2">
                   Price: {currencySymbol}{" "}
                   {new Intl.NumberFormat().format(convertPrice(gig.price))}
