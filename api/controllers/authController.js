@@ -267,7 +267,7 @@ export const register = async (req, res, next) => {
     const otpExpires = Date.now() + OTP_EXPIRATION_TIME;
 
     pendingUsers.set(email, {
-      username,
+      username: username?.replace(/\s+$/, ""),
       email,
       password: bcrypt.hashSync(password, 5),
       isSeller,
@@ -331,7 +331,7 @@ export const verifyOtp = async (req, res, next) => {
 
     // Save the user in the database
     const newUser = new User({
-      username: userData.username,
+      username: userData.username?.replace(/\s+$/, ""), // Remove only trailing spaces
       email: userData.email,
       password: userData.password,
       isSeller: userData.isSeller,
