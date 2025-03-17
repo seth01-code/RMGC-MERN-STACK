@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import newRequest from "../../utils/newRequest";
 import star from "../../../assets/images/star.png";
-import heart from "../../../assets/images/heart.png";
+// import heart from "../../../assets/images/heart.png";
 import { useExchangeRate } from "../../hooks/useExchangeRate"; // Import the hook
 import { useTranslation } from "react-i18next";
 
@@ -61,13 +61,13 @@ const GigCard = ({ item }) => {
 
   return (
     <Link to={`/gig/${item._id}`}>
-      <div className="gigCard w-[324px] border border-[#e8e8e8] mb-[25px]">
+      <div className="gigCard w-[324px] h-[400px] border border-[#e8e8e8] mb-[25px] flex flex-col">
         <img
           src={item.cover}
           alt="Gig Cover"
           className="w-full h-[200px] object-cover"
         />
-        <div className="info px-[20px] py-[10px] flex flex-col gap-[15px]">
+        <div className="info px-[20px] py-[10px] flex flex-col gap-[15px] flex-grow">
           <div className="user flex items-center gap-[10px]">
             <img
               src={
@@ -79,7 +79,10 @@ const GigCard = ({ item }) => {
             />
             <span>{gigUserData?.username}</span>
           </div>
-          <p className="text-[#111]">{item.desc}</p>
+          {/* Truncated description */}
+          <p className="text-[#111] line-clamp-3 overflow-hidden text-ellipsis">
+            {item.desc}
+          </p>
           <div className="star flex items-center gap-[5px]">
             <img src={star} alt="star" className="w-[14px] h-[14px]" />
             <span className="text-[#ffc108] font-bold text-[14px]">
@@ -90,11 +93,11 @@ const GigCard = ({ item }) => {
         </div>
         <hr className="border-0.5 border-[#e8e8e8]" />
         <div className="details px-[20px] py-[10px] flex items-center justify-between">
-          <img
+          {/* <img
             src={heart}
             alt="heart"
             className="w-[16px] h-[16px] cursor-pointer"
-          />
+          /> */}
           <div className="price">
             <span className="text-[#999] text-[12px]">
               {t("gigCard.startingAt")}
