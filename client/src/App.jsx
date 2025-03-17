@@ -166,7 +166,7 @@ const Layout = () => {
   }, []);
 
   return (
-    <div className="app">
+    <div className="app flex flex-col min-h-screen">
       <ScrollToTop />
       <TawkToChat />
       <AMPAdsense />
@@ -184,7 +184,9 @@ const Layout = () => {
             <Navbar />
           </>
         )}
-      <Outlet />
+      <div className="flex-1">
+        <Outlet />
+      </div>
       {!isLoginPage &&
         !isRegister &&
         !isMessage &&
