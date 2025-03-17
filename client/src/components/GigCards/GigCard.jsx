@@ -61,7 +61,7 @@ const GigCard = ({ item }) => {
 
   return (
     <Link to={`/gig/${item._id}`}>
-      <div className="gigCard w-[324px] h-[500px] border border-[#e8e8e8] mb-[25px] shadow-md flex flex-col">
+      <div className="gigCard w-[324px] h-[430px] border border-[#e8e8e8] mb-[25px] shadow-md flex flex-col">
         <img
           src={item.cover}
           alt="Gig Cover"
