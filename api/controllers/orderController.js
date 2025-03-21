@@ -291,49 +291,45 @@ export const flutterwaveWebhook = async (req, res, next) => {
     }
 
     const event = req.body;
-    if (
-      event.event === "charge.completed" &&
-      event.data.status === "successful"
-    ) {
-      const { meta, status, tx_ref } = event.data;
 
-      if (status !== "successful") return res.sendStatus(400);
+    // Ensure the transaction is successful
+    if (event.status === "successful") {
+      const { txRef, amount, currency, customer } = event;
 
-      // Extract metadata
-      let { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } =
-        meta;
+      // Fetch user and gig using email
+      const user = await User.findOne({ email: customer.email });
+      if (!user) return res.status(400).send("User not found");
 
-      // Ensure gig exists
-      const gig = await Gig.findById(gigId);
+      const gig = await Gig.findOne({ userId: user._id });
       if (!gig) return res.status(400).send("Gig not found");
 
       // Convert price to USD if needed
-      let priceInUSD = price;
+      let priceInUSD = amount;
       if (currency !== "USD") {
         const exchangeRate = await getExchangeRate(currency, "USD");
-        priceInUSD = exchangeRate ? (price / exchangeRate).toFixed(2) : price;
+        priceInUSD = exchangeRate ? (amount / exchangeRate).toFixed(2) : amount;
       }
 
-      // Create order in database with converted price
+      // Create order in database
       const newOrder = new Order({
-        gigId,
-        img: gigCover,
-        title: gigTitle,
-        buyerId,
-        sellerId,
+        gigId: gig._id,
+        img: gig.cover,
+        title: gig.title,
+        buyerId: user._id,
+        sellerId: gig.userId,
         price: priceInUSD,
         currency: "USD",
-        payment_intent: tx_ref,
+        payment_intent: txRef,
         isCompleted: false,
       });
 
       await newOrder.save();
 
       // Increment gig sales count
-      await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
+      await Gig.findByIdAndUpdate(gig._id, { $inc: { sales: 1 } });
 
       // Update revenue tracking
-      await calculateSalesRevenue(gigId);
+      await calculateSalesRevenue(gig._id);
 
       res.sendStatus(200);
     } else {
@@ -344,6 +340,8 @@ export const flutterwaveWebhook = async (req, res, next) => {
     next(createError(500, "Error processing payment webhook"));
   }
 };
+
+
 
 // Get Orders
 export const getOrder = async (req, res, next) => {
