@@ -212,20 +212,23 @@ export const flutterWaveIntent = async (req, res, next) => {
       Egypt: "EGP",
     };
     const buyerCurrency = countryToCurrency[user.country] || "USD";
-    const sellerCurrency = "USD";
+
+    if (!["USD", "NGN", "EUR", "GBP", "KES", "ZAR", "CAD", "INR", "GHS", "EGP"].includes(buyerCurrency)) {
+      return next(createError(400, "Unsupported currency"));
+    }
 
     let convertedPrice = gig.price;
-    if (buyerCurrency !== sellerCurrency) {
-      const exchangeRate = await getExchangeRate(sellerCurrency, buyerCurrency);
-      convertedPrice = exchangeRate
-        ? (gig.price * exchangeRate).toFixed(2)
-        : gig.price;
+    if (buyerCurrency !== "USD") {
+      const exchangeRate = await getExchangeRate("USD", buyerCurrency);
+      convertedPrice = exchangeRate ? (gig.price * exchangeRate).toFixed(2) : gig.price;
     }
+
+    const transactionReference = `txn_${Date.now()}`;
 
     const response = await axios.post(
       "https://api.flutterwave.com/v3/payments",
       {
-        tx_ref: `txn_${Date.now()}`,
+        tx_ref: transactionReference,
         amount: convertedPrice,
         currency: buyerCurrency,
         redirect_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
@@ -234,6 +237,15 @@ export const flutterWaveIntent = async (req, res, next) => {
           title: gig.title,
           description: "Payment for gig",
           logo: gig.cover,
+        },
+        meta: {
+          gigId: gig._id,
+          buyerId: userId,
+          sellerId: gig.userId,
+          price: gig.price,
+          currency: buyerCurrency,
+          gigTitle: gig.title,
+          gigCover: gig.cover,
         },
       },
       {
@@ -246,34 +258,72 @@ export const flutterWaveIntent = async (req, res, next) => {
     if (!response.data?.data?.link)
       return next(createError(500, "Failed to generate payment link"));
 
-    const paymentLink = response.data.data.link;
-
-    // Save order in database
-    const newOrder = new Order({
-      gigId: gig._id,
-      img: gig.cover,
-      title: gig.title,
-      buyerId: userId,
-      sellerId: gig.userId,
-      price: convertedPrice,
-      currency: buyerCurrency,
-      payment_intent: paymentLink,
-      isCompleted: false,
-    });
-
-    await newOrder.save();
-
-    // Increment gig sales count
-    await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
-
-    // Update sales revenue
-    await calculateSalesRevenue(gigId);
-
-    res.status(200).send({ paymentLink });
+    res.status(200).send({ paymentLink: response.data.data.link });
   } catch (err) {
     next(createError(500, "Error creating payment intent"));
   }
 };
+
+export const flutterwaveWebhook = async (req, res, next) => {
+  try {
+    const flutterwaveSecret = process.env.FLUTTERWAVE_SECRET_KEY;
+    const signature = req.headers["verif-hash"];
+
+    if (!signature || signature !== flutterwaveSecret) {
+      return res.status(400).send("Invalid signature");
+    }
+
+    const event = req.body;
+    if (event.event === "charge.completed" && event.data.status === "successful") {
+      const { meta, status, tx_ref } = event.data;
+
+      if (status !== "successful") return res.sendStatus(400);
+
+      // Extract metadata
+      let { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } = meta;
+
+      // Ensure gig exists
+      const gig = await Gig.findById(gigId);
+      if (!gig) return res.status(400).send("Gig not found");
+
+      // Convert price to USD if needed
+      let priceInUSD = price;
+      if (currency !== "USD") {
+        const exchangeRate = await getExchangeRate(currency, "USD");
+        priceInUSD = exchangeRate ? (price / exchangeRate).toFixed(2) : price;
+      }
+
+      // Create order in database with converted price
+      const newOrder = new Order({
+        gigId,
+        img: gigCover,
+        title: gigTitle,
+        buyerId,
+        sellerId,
+        price: priceInUSD,
+        currency: "USD",
+        payment_intent: tx_ref,
+        isCompleted: false,
+      });
+
+      await newOrder.save();
+
+      // Increment gig sales count
+      await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
+
+      // Update revenue tracking
+      await calculateSalesRevenue(gigId);
+
+      res.sendStatus(200);
+    } else {
+      res.sendStatus(400);
+    }
+  } catch (err) {
+    console.error("Webhook Error:", err);
+    next(createError(500, "Error processing payment webhook"));
+  }
+};
+
 
 // Get Orders
 export const getOrder = async (req, res, next) => {

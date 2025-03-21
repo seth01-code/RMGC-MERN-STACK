@@ -13,6 +13,7 @@ import {
   getCompletedOrders,
   getAllCompletedOrders,
   paystackWebhook,
+  flutterwaveWebhook,
 } from "../controllers/orderController.js";
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.get("/", verifyToken, getOrder);
 // Payment intent for creating orders (for Paystack)
 router.post("/create-payment-intent/:id", verifyToken, intent);
 router.post("/paystack-webhook", paystackWebhook);
+router.post("/flutterwave-webhook", flutterwaveWebhook);
 router.post("/create-flutterwave-intent/:id", verifyToken, flutterWaveIntent);
 
 // Mark order as completed
