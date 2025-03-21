@@ -183,91 +183,92 @@ export const paystackWebhook = async (req, res, next) => {
 };
 
 // Flutterwave Intent
-// export const flutterWaveIntent = async (req, res, next) => {
-//   try {
-//     const gigId = req.params.id;
-//     if (!gigId) return next(createError(400, "Gig ID is missing"));
 
-//     const gig = await Gig.findById(gigId);
-//     if (!gig) return next(createError(404, "Gig not found"));
+export const flutterWaveIntent = async (req, res, next) => {
+  try {
+    const gigId = req.params.id;
+    if (!gigId) return next(createError(400, "Gig ID is missing"));
 
-//     const userId = req.user?.id;
-//     if (!userId) return next(createError(401, "User not authenticated"));
+    const gig = await Gig.findById(gigId);
+    if (!gig) return next(createError(404, "Gig not found"));
 
-//     const user = await User.findById(userId);
-//     if (!user || !user.email || !user.country)
-//       return next(createError(400, "User details are incomplete"));
+    const userId = req.user?.id;
+    if (!userId) return next(createError(401, "User not authenticated"));
 
-//     const countryToCurrency = {
-//       USA: "USD",
-//       Canada: "CAD",
-//       UK: "GBP",
-//       Germany: "EUR",
-//       India: "INR",
-//     };
-//     const buyerCurrency = countryToCurrency[user.country] || "USD";
-//     const sellerCurrency = "USD";
+    const user = await User.findById(userId);
+    if (!user || !user.email || !user.country)
+      return next(createError(400, "User details are incomplete"));
 
-//     let convertedPrice = gig.price;
-//     if (buyerCurrency !== sellerCurrency) {
-//       const exchangeRate = await getExchangeRate(sellerCurrency, buyerCurrency);
-//       convertedPrice = exchangeRate
-//         ? (gig.price * exchangeRate).toFixed(2)
-//         : gig.price;
-//     }
+    const countryToCurrency = {
+      USA: "USD",
+      Canada: "CAD",
+      UK: "GBP",
+      Germany: "EUR",
+      India: "INR",
+    };
+    const buyerCurrency = countryToCurrency[user.country] || "USD";
+    const sellerCurrency = "USD";
 
-//     const response = await axios.post(
-//       "https://api.flutterwave.com/v3/payments",
-//       {
-//         tx_ref: `txn_${Date.now()}`,
-//         amount: convertedPrice,
-//         currency: buyerCurrency,
-//         redirect_url: `http://localhost:5173/payment-processing`,
-//         customer: { email: user.email },
-//         customizations: {
-//           title: gig.title,
-//           description: "Payment for gig",
-//           logo: gig.cover,
-//         },
-//       },
-//       {
-//         headers: {
-//           Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-//         },
-//       }
-//     );
+    let convertedPrice = gig.price;
+    if (buyerCurrency !== sellerCurrency) {
+      const exchangeRate = await getExchangeRate(sellerCurrency, buyerCurrency);
+      convertedPrice = exchangeRate
+        ? (gig.price * exchangeRate).toFixed(2)
+        : gig.price;
+    }
 
-//     if (!response.data?.data?.link)
-//       return next(createError(500, "Failed to generate payment link"));
+    const response = await axios.post(
+      "https://api.flutterwave.com/v3/payments",
+      {
+        tx_ref: `txn_${Date.now()}`,
+        amount: convertedPrice,
+        currency: buyerCurrency,
+        redirect_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
+        customer: { email: user.email },
+        customizations: {
+          title: gig.title,
+          description: "Payment for gig",
+          logo: gig.cover,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+        },
+      }
+    );
 
-//     const paymentLink = response.data.data.link;
+    if (!response.data?.data?.link)
+      return next(createError(500, "Failed to generate payment link"));
 
-//     // Save order in database
-//     const newOrder = new Order({
-//       gigId: gig._id,
-//       img: gig.cover,
-//       title: gig.title,
-//       buyerId: userId,
-//       sellerId: gig.userId,
-//       price: convertedPrice,
-//       currency: buyerCurrency,
-//       payment_intent: paymentLink,
-//       isCompleted: false,
-//     });
+    const paymentLink = response.data.data.link;
 
-//     await newOrder.save();
+    // Save order in database
+    const newOrder = new Order({
+      gigId: gig._id,
+      img: gig.cover,
+      title: gig.title,
+      buyerId: userId,
+      sellerId: gig.userId,
+      price: convertedPrice,
+      currency: buyerCurrency,
+      payment_intent: paymentLink,
+      isCompleted: false,
+    });
 
-//     // Increment gig sales count
-//     await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
+    await newOrder.save();
 
-//     // Update sales revenue
-//     await calculateSalesRevenue(gigId);
+    // Increment gig sales count
+    await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
 
-//     res.status(200).send({ paymentLink });
-//   } catch (err) {
-//     next(createError(500, "Error creating payment intent"));
-//   }
-// };
+    // Update sales revenue
+    await calculateSalesRevenue(gigId);
+
+    res.status(200).send({ paymentLink });
+  } catch (err) {
+    next(createError(500, "Error creating payment intent"));
+  }
+};
 
 // Get Orders
 export const getOrder = async (req, res, next) => {

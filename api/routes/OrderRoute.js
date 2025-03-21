@@ -5,7 +5,7 @@ import {
   getOrder,
   intent,
   completeOrder,
-  // flutterWaveIntent,
+  flutterWaveIntent,
   updateOrderStatus,
   getSalesRevenue,
   getSellerRevenue,
@@ -23,7 +23,7 @@ router.get("/", verifyToken, getOrder);
 // Payment intent for creating orders (for Paystack)
 router.post("/create-payment-intent/:id", verifyToken, intent);
 router.post("/paystack-webhook", paystackWebhook);
-// router.post("/create-flutterwave-intent/:id", verifyToken, flutterWaveIntent);
+router.post("/create-flutterwave-intent/:id", verifyToken, flutterWaveIntent);
 
 // Mark order as completed
 router.put("/:id/complete", verifyToken, completeOrder);
