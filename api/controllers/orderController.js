@@ -205,6 +205,11 @@ export const flutterWaveIntent = async (req, res, next) => {
       UK: "GBP",
       Germany: "EUR",
       India: "INR",
+      Nigeria: "NGN",
+      SouthAfrica: "ZAR",
+      Kenya: "KES",
+      Ghana: "GHS",
+      Egypt: "EGP",
     };
     const buyerCurrency = countryToCurrency[user.country] || "USD";
     const sellerCurrency = "USD";
