@@ -254,9 +254,9 @@ export const flutterWaveIntent = async (req, res, next) => {
           logo: gig.cover,
         },
         meta: {
-          gigId: gig._id,
-          buyerId: userId,
-          sellerId: gig.userId,
+          gigId: gig._id.toString(), // Ensure IDs are strings
+          buyerId: userId.toString(),
+          sellerId: gig.userId.toString(),
           price: gig.price,
           currency: buyerCurrency,
           gigTitle: gig.title,
