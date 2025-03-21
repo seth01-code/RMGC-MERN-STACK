@@ -213,14 +213,29 @@ export const flutterWaveIntent = async (req, res, next) => {
     };
     const buyerCurrency = countryToCurrency[user.country] || "USD";
 
-    if (!["USD", "NGN", "EUR", "GBP", "KES", "ZAR", "CAD", "INR", "GHS", "EGP"].includes(buyerCurrency)) {
+    if (
+      ![
+        "USD",
+        "NGN",
+        "EUR",
+        "GBP",
+        "KES",
+        "ZAR",
+        "CAD",
+        "INR",
+        "GHS",
+        "EGP",
+      ].includes(buyerCurrency)
+    ) {
       return next(createError(400, "Unsupported currency"));
     }
 
     let convertedPrice = gig.price;
     if (buyerCurrency !== "USD") {
       const exchangeRate = await getExchangeRate("USD", buyerCurrency);
-      convertedPrice = exchangeRate ? (gig.price * exchangeRate).toFixed(2) : gig.price;
+      convertedPrice = exchangeRate
+        ? (gig.price * exchangeRate).toFixed(2)
+        : gig.price;
     }
 
     const transactionReference = `txn_${Date.now()}`;
@@ -266,6 +281,8 @@ export const flutterWaveIntent = async (req, res, next) => {
 
 export const flutterwaveWebhook = async (req, res, next) => {
   try {
+    console.log("Webhook received:", req.body);
+
     const flutterwaveSecret = process.env.FLUTTERWAVE_SECRET_KEY;
     const signature = req.headers["verif-hash"];
 
@@ -274,13 +291,17 @@ export const flutterwaveWebhook = async (req, res, next) => {
     }
 
     const event = req.body;
-    if (event.event === "charge.completed" && event.data.status === "successful") {
+    if (
+      event.event === "charge.completed" &&
+      event.data.status === "successful"
+    ) {
       const { meta, status, tx_ref } = event.data;
 
       if (status !== "successful") return res.sendStatus(400);
 
       // Extract metadata
-      let { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } = meta;
+      let { gigId, buyerId, sellerId, price, currency, gigTitle, gigCover } =
+        meta;
 
       // Ensure gig exists
       const gig = await Gig.findById(gigId);
@@ -323,7 +344,6 @@ export const flutterwaveWebhook = async (req, res, next) => {
     next(createError(500, "Error processing payment webhook"));
   }
 };
-
 
 // Get Orders
 export const getOrder = async (req, res, next) => {
