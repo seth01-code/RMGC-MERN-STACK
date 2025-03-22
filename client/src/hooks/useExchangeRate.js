@@ -25,7 +25,7 @@ const countryToCurrencyMap = {
   Lithuania: "EUR",
   Malta: "EUR",
   India: "INR",
-  SouthAfrica: "ZAR",
+  "South Africa": "ZAR",
   Kenya: "KES",
   Ghana: "GHS",
   Uganda: "UGX",

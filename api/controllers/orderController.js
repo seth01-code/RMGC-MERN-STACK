@@ -224,7 +224,7 @@ export const flutterWaveIntent = async (req, res, next) => {
       Nigeria: "NGN",
       Kenya: "KES",
       Ghana: "GHS",
-      SouthAfrica: "ZAR",
+      "South Africa": "ZAR",
       Uganda: "UGX",
       Tanzania: "TZS",
       Rwanda: "RWF",
