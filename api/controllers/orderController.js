@@ -254,9 +254,9 @@ export const flutterWaveIntent = async (req, res, next) => {
           logo: gig.cover,
         },
         meta: {
-          gigId: gig._id.toString(), // Ensure IDs are strings
-          buyerId: userId.toString(),
-          sellerId: gig.userId.toString(),
+          gigId: gig._id,
+          buyerId: userId,
+          sellerId: gig.userId,
           price: gig.price,
           currency: buyerCurrency,
           gigTitle: gig.title,
@@ -276,101 +276,6 @@ export const flutterWaveIntent = async (req, res, next) => {
     res.status(200).send({ paymentLink: response.data.data.link });
   } catch (err) {
     next(createError(500, "Error creating payment intent"));
-  }
-};
-
-export const flutterwaveWebhook = async (req, res, next) => {
-  try {
-    console.log("Webhook received:", req.body);
-
-    const webhookSecret = process.env.FLUTTERWAVE_WEBHOOK_SECRET;
-    const signature = req.headers["verif-hash"];
-
-    if (!signature || signature !== webhookSecret) {
-      return res.status(400).send("Invalid signature");
-    }
-
-    const event = req.body;
-
-    // Check for status and ensure transaction is successful
-    if (
-      event.status === "successful" ||
-      event["event.type"] === "CARD_TRANSACTION"
-    ) {
-      const txRef = event.txRef || event.data?.tx_ref;
-      const amount = event.amount || event.data?.amount;
-      const currency = event.currency || event.data?.currency;
-      const customerEmail =
-        event.customer?.email || event.data?.customer?.email;
-
-      // Check if metadata exists (live Flutterwave webhook does not include meta)
-      const gigId = event.meta?.gigId || null;
-      const buyerId = event.meta?.buyerId || null;
-      const sellerId = event.meta?.sellerId || null;
-      const gigTitle = event.meta?.gigTitle || "Unknown Gig";
-      const gigCover = event.meta?.gigCover || null;
-
-      // If metadata is missing, fetch buyer and gig details using customer email
-      let user = null;
-      let gig = null;
-
-      if (!gigId || !buyerId || !sellerId) {
-        if (!customerEmail) {
-          return res
-            .status(400)
-            .send("Missing required metadata and customer email.");
-        }
-
-        user = await User.findOne({ email: customerEmail });
-        if (!user) return res.status(400).send("Buyer not found");
-
-        const order = await Order.findOne({ payment_intent: txRef });
-        if (order) return res.status(200).send("Order already processed"); // Avoid duplicate processing
-
-        // Try fetching gig based on transaction reference (if stored during initiation)
-        gig = await Gig.findOne({ title: gigTitle });
-        if (!gig) return res.status(400).send("Gig not found");
-
-        buyerId = user._id.toString();
-        gigId = gig._id.toString();
-        sellerId = gig.userId.toString();
-      }
-
-      // Convert price to USD if needed
-      let priceInUSD = amount;
-      if (currency !== "USD") {
-        const exchangeRate = await getExchangeRate(currency, "USD");
-        priceInUSD = exchangeRate ? (amount / exchangeRate).toFixed(2) : amount;
-      }
-
-      // Create order in database
-      const newOrder = new Order({
-        gigId,
-        img: gigCover,
-        title: gigTitle,
-        buyerId,
-        sellerId,
-        price: priceInUSD,
-        currency: "USD",
-        payment_intent: txRef,
-        isCompleted: false,
-      });
-
-      await newOrder.save();
-
-      // Increment gig sales count
-      await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
-
-      // Update revenue tracking
-      await calculateSalesRevenue(gigId);
-
-      return res.sendStatus(200);
-    } else {
-      return res.status(400).send("Transaction not successful");
-    }
-  } catch (err) {
-    console.error("Webhook Error:", err);
-    next(createError(500, "Error processing payment webhook"));
   }
 };
 
