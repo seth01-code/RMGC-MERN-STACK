@@ -13,6 +13,7 @@ import {
   getCompletedOrders,
   getAllCompletedOrders,
   paystackWebhook,
+  verifyFlutterWavePayment,
   // flutterwaveWebhook,
 } from "../controllers/orderController.js";
 
@@ -26,6 +27,7 @@ router.post("/create-payment-intent/:id", verifyToken, intent);
 router.post("/paystack-webhook", paystackWebhook);
 // router.post("/flutterwave-webhook", flutterwaveWebhook);
 router.post("/create-flutterwave-intent/:id", verifyToken, flutterWaveIntent);
+router.get("/verify", verifyFlutterWavePayment);
 
 // Mark order as completed
 router.put("/:id/complete", verifyToken, completeOrder);

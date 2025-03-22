@@ -222,13 +222,15 @@ export const flutterWaveIntent = async (req, res, next) => {
         : gig.price;
     }
 
+    const transactionReference = `txn_${Date.now()}_${userId}`;
+
     const response = await axios.post(
       "https://api.flutterwave.com/v3/payments",
       {
-        tx_ref: `txn_${Date.now()}`,
+        tx_ref: transactionReference,
         amount: convertedPrice,
         currency: buyerCurrency,
-        redirect_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
+        redirect_url: `https://www.renewedmindsglobalconsult.com/payment-success?tx_ref=${transactionReference}`,
         customer: { email: user.email },
         customizations: {
           title: gig.title,
@@ -246,34 +248,71 @@ export const flutterWaveIntent = async (req, res, next) => {
     if (!response.data?.data?.link)
       return next(createError(500, "Failed to generate payment link"));
 
-    const paymentLink = response.data.data.link;
-
-    // Save order in database
-    const newOrder = new Order({
-      gigId: gig._id,
-      img: gig.cover,
-      title: gig.title,
-      buyerId: userId,
-      sellerId: gig.userId,
-      price: convertedPrice,
-      currency: buyerCurrency,
-      payment_intent: paymentLink,
-      isCompleted: false,
-    });
-
-    await newOrder.save();
-
-    // Increment gig sales count
-    await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
-
-    // Update sales revenue
-    await calculateSalesRevenue(gigId);
-
-    res.status(200).send({ paymentLink });
+    res.status(200).send({ paymentLink: response.data.data.link, transactionReference });
   } catch (err) {
     next(createError(500, "Error creating payment intent"));
   }
 };
+
+export const verifyFlutterWavePayment = async (req, res, next) => {
+  try {
+    const { tx_ref } = req.query;
+
+    if (!tx_ref) return next(createError(400, "Transaction reference is missing"));
+
+    const response = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const transaction = response.data?.data;
+    if (!transaction || transaction.status !== "successful")
+      return next(createError(400, "Payment verification failed"));
+
+    const { amount, currency, customer, meta } = transaction;
+
+    const buyer = await User.findOne({ email: customer.email });
+    if (!buyer) return next(createError(400, "Buyer not found"));
+
+    const existingOrder = await Order.findOne({ payment_intent: tx_ref });
+    if (existingOrder) return res.status(200).send("Order already exists");
+
+    const gig = await Gig.findById(meta?.gigId);
+    if (!gig) return next(createError(404, "Gig not found"));
+
+    let priceInUSD = amount;
+    if (currency !== "USD") {
+      const exchangeRate = await getExchangeRate(currency, "USD");
+      priceInUSD = exchangeRate ? (amount / exchangeRate).toFixed(2) : amount;
+    }
+
+    const newOrder = new Order({
+      gigId: gig._id,
+      img: gig.cover,
+      title: gig.title,
+      buyerId: buyer._id,
+      sellerId: gig.userId,
+      price: priceInUSD,
+      currency: "USD",
+      payment_intent: tx_ref,
+      isCompleted: true,
+    });
+
+    await newOrder.save();
+
+    await Gig.findByIdAndUpdate(gig._id, { $inc: { sales: 1 } });
+    await calculateSalesRevenue(gig._id);
+
+    res.status(200).send({ message: "Payment verified, order created successfully" });
+  } catch (err) {
+    next(createError(500, "Error verifying payment"));
+  }
+};
+
 
 // Get Orders
 export const getOrder = async (req, res, next) => {
