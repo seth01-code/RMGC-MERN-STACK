@@ -294,13 +294,20 @@ export const flutterwaveWebhook = async (req, res, next) => {
 
     // Ensure the transaction is successful
     if (event.status === "successful") {
-      const { txRef, amount, currency, customer } = event;
+      const { txRef, amount, currency, customer, meta } = event;
 
-      // Fetch user and gig using email
-      const user = await User.findOne({ email: customer.email });
-      if (!user) return res.status(400).send("User not found");
+      if (!meta || !meta.gigId || !meta.buyerId || !meta.sellerId) {
+        return res.status(400).send("Missing metadata in webhook");
+      }
 
-      const gig = await Gig.findOne({ userId: user._id });
+      const { gigId, buyerId, sellerId, price } = meta;
+
+      // Fetch user by ID instead of email
+      const user = await User.findById(buyerId);
+      if (!user) return res.status(400).send("Buyer not found");
+
+      // Fetch the correct gig by ID
+      const gig = await Gig.findById(gigId);
       if (!gig) return res.status(400).send("Gig not found");
 
       // Convert price to USD if needed
@@ -312,11 +319,11 @@ export const flutterwaveWebhook = async (req, res, next) => {
 
       // Create order in database
       const newOrder = new Order({
-        gigId: gig._id,
+        gigId,
         img: gig.cover,
         title: gig.title,
-        buyerId: user._id,
-        sellerId: gig.userId,
+        buyerId,
+        sellerId,
         price: priceInUSD,
         currency: "USD",
         payment_intent: txRef,
@@ -326,10 +333,10 @@ export const flutterwaveWebhook = async (req, res, next) => {
       await newOrder.save();
 
       // Increment gig sales count
-      await Gig.findByIdAndUpdate(gig._id, { $inc: { sales: 1 } });
+      await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
 
       // Update revenue tracking
-      await calculateSalesRevenue(gig._id);
+      await calculateSalesRevenue(gigId);
 
       res.sendStatus(200);
     } else {
@@ -340,8 +347,6 @@ export const flutterwaveWebhook = async (req, res, next) => {
     next(createError(500, "Error processing payment webhook"));
   }
 };
-
-
 
 // Get Orders
 export const getOrder = async (req, res, next) => {
