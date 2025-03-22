@@ -264,7 +264,7 @@ export const flutterWaveIntent = async (req, res, next) => {
 
 export const verifyFlutterWavePayment = async (req, res, next) => {
   try {
-    const { transaction_id } = req.query; // FIX: Ensure the correct param name is used
+    const { transaction_id } = req.query;
 
     if (!transaction_id) {
       return next(createError(400, "Transaction ID is missing"));
@@ -288,9 +288,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
 
     // Ensure metadata exists and contains gigId
     if (!meta?.gigId) {
-      return next(
-        createError(400, "Gig ID is missing in transaction metadata")
-      );
+      return next(createError(400, "Gig ID is missing in transaction metadata"));
     }
 
     // Fetch the buyer
@@ -300,9 +298,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
     }
 
     // Prevent duplicate orders
-    const existingOrder = await Order.findOne({
-      payment_intent: transaction_id,
-    });
+    const existingOrder = await Order.findOne({ payment_intent: transaction_id });
     if (existingOrder) {
       return res.status(200).send({ message: "Order already exists" });
     }
@@ -313,22 +309,15 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       return next(createError(404, "Gig not found"));
     }
 
-    // Convert price to USD if needed
-    let priceInUSD = amount;
-    if (currency !== "USD") {
-      const exchangeRate = await getExchangeRate(currency, "USD");
-      priceInUSD = exchangeRate ? (amount / exchangeRate).toFixed(2) : amount;
-    }
-
-    // Create new order
+    // Create new order (price remains as sent by Flutterwave)
     const newOrder = new Order({
       gigId: gig._id,
       img: gig.cover,
       title: gig.title,
       buyerId: buyer.id,
       sellerId: gig.userId,
-      price: priceInUSD,
-      currency: "USD",
+      price: amount, // No conversion, use the amount from Flutterwave
+      currency: currency, // Store the currency as received from Flutterwave
       payment_intent: transaction_id,
       isCompleted: true,
     });
@@ -341,14 +330,13 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
     // Recalculate seller revenue
     await calculateSalesRevenue(gig._id);
 
-    res
-      .status(200)
-      .send({ message: "Payment verified, order created successfully" });
+    res.status(200).send({ message: "Payment verified, order created successfully" });
   } catch (err) {
     console.error("Payment verification error:", err);
     next(createError(500, "Error verifying payment"));
   }
 };
+
 
 // Get Orders
 export const getOrder = async (req, res, next) => {
