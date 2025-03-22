@@ -27,6 +27,7 @@ const PaymentProcessing = () => {
           navigate("/orders");
         }, 3000);
       } catch (error) {
+        console.error("Verification error:", error);
         setStatusMessage("Payment verification failed. Redirecting...");
         setTimeout(() => navigate("/orders"), 3000);
       }
