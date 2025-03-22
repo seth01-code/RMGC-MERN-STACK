@@ -13,7 +13,9 @@ const Orders = () => {
   const { t } = useTranslation();
   const [userDetails, setUserDetails] = useState({});
 
-  const { currencySymbol } = useExchangeRate(currentUser?.country);
+  const { currencySymbol, convertPrice } = useExchangeRate(
+    currentUser?.country
+  );
 
   const { isLoading, error, data } = useQuery({
     queryKey: ["orders"],
@@ -144,7 +146,9 @@ const Orders = () => {
                                   <td className="p-3">{order.title}</td>
                                   <td className="p-3">
                                     {currencySymbol}{" "}
-                                    {formatPrice(order.price, order.currency)}
+                                    {convertPrice(
+                                      formatPrice(order.price, order.currency)
+                                    )}
                                   </td>
                                   <td className="p-3">
                                     {user?.username || "N/A"}
