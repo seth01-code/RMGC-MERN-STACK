@@ -283,10 +283,10 @@ export const flutterwaveWebhook = async (req, res, next) => {
   try {
     console.log("Webhook received:", req.body);
 
-    const flutterwaveSecret = process.env.FLUTTERWAVE_SECRET_KEY;
+    const webhookSecret = process.env.FLUTTERWAVE_WEBHOOK_SECRET;
     const signature = req.headers["verif-hash"];
 
-    if (!signature || signature !== flutterwaveSecret) {
+    if (!signature || signature !== webhookSecret) {
       return res.status(400).send("Invalid signature");
     }
 
