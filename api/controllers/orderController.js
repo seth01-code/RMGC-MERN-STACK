@@ -199,6 +199,7 @@ export const flutterWaveIntent = async (req, res, next) => {
     if (!user || !user.email || !user.country)
       return next(createError(400, "User details are incomplete"));
 
+    // Currency mapping
     const countryToCurrency = {
       USA: "USD",
       Canada: "CAD",
@@ -214,6 +215,7 @@ export const flutterWaveIntent = async (req, res, next) => {
     const buyerCurrency = countryToCurrency[user.country] || "USD";
     const sellerCurrency = "USD";
 
+    // Convert price if necessary
     let convertedPrice = gig.price;
     if (buyerCurrency !== sellerCurrency) {
       const exchangeRate = await getExchangeRate(sellerCurrency, buyerCurrency);
@@ -237,6 +239,10 @@ export const flutterWaveIntent = async (req, res, next) => {
           description: "Payment for gig",
           logo: gig.cover,
         },
+        meta: {
+          gigId: gigId, // FIX: Add gigId to metadata
+          buyerId: userId,
+        },
       },
       {
         headers: {
@@ -258,7 +264,7 @@ export const flutterWaveIntent = async (req, res, next) => {
 
 export const verifyFlutterWavePayment = async (req, res, next) => {
   try {
-    const { transaction_id } = req.query; // Fixing parameter name
+    const { transaction_id } = req.query; // FIX: Ensure the correct param name is used
 
     if (!transaction_id) {
       return next(createError(400, "Transaction ID is missing"));
@@ -280,7 +286,14 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
 
     const { amount, currency, customer, meta } = transaction;
 
-    // Check if buyer exists
+    // Ensure metadata exists and contains gigId
+    if (!meta?.gigId) {
+      return next(
+        createError(400, "Gig ID is missing in transaction metadata")
+      );
+    }
+
+    // Fetch the buyer
     const buyer = await User.findOne({ email: customer.email });
     if (!buyer) {
       return next(createError(400, "Buyer not found"));
@@ -295,7 +308,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
     }
 
     // Fetch gig details
-    const gig = await Gig.findById(meta?.gigId);
+    const gig = await Gig.findById(meta.gigId);
     if (!gig) {
       return next(createError(404, "Gig not found"));
     }
@@ -312,7 +325,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       gigId: gig._id,
       img: gig.cover,
       title: gig.title,
-      buyerId: buyer._id,
+      buyerId: buyer.id,
       sellerId: gig.userId,
       price: priceInUSD,
       currency: "USD",
