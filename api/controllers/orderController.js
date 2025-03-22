@@ -286,36 +286,27 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
 
     const { currency, customer, meta } = transaction;
 
-    // Ensure metadata exists and contains gigId
     if (!meta?.gigId) {
       return next(
         createError(400, "Gig ID is missing in transaction metadata")
       );
     }
 
-    // Fetch the buyer
     const buyer = await User.findOne({ email: customer.email });
     if (!buyer) {
       return next(createError(400, "Buyer not found"));
     }
 
-    // Fetch gig details
     const gig = await Gig.findById(meta.gigId);
     if (!gig) {
       return next(createError(404, "Gig not found"));
     }
 
-    // Convert gig price to USD if necessary
-    // let priceInUSD = gig.price;
-    // if (currency !== "USD") {
-    //   const exchangeRate = await getExchangeRate(currency, "USD");
-    //   if (!exchangeRate) {
-    //     return next(createError(500, "Currency conversion failed"));
-    //   }
-    //   priceInUSD = (gig.price / exchangeRate).toFixed(2); // Convert gig price, not transaction amount
-    // }
+    const seller = await User.findById(gig.userId);
+    if (!seller) {
+      return next(createError(404, "Seller not found"));
+    }
 
-    // Check for existing order to prevent duplicates
     const existingOrder = await Order.findOne({
       payment_intent: transaction_id,
     });
@@ -323,35 +314,43 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       return res.status(200).send({ message: "Order already exists" });
     }
 
-    // Create new order (store gig price in USD)
     const newOrder = new Order({
       gigId: gig._id,
       img: gig.cover,
       title: gig.title,
       buyerId: buyer.id,
-      sellerId: gig.userId,
-      price: gig.price, // Use converted gig price, not Flutterwave amount
-      currency: "USD", // Always store in USD
+      sellerId: seller.id,
+      price: gig.price,
+      currency: "USD",
       payment_intent: transaction_id,
       isCompleted: false,
     });
 
     await newOrder.save();
 
-    // Update gig sales
     await Gig.findByIdAndUpdate(gig._id, { $inc: { sales: 1 } });
 
-    // Recalculate seller revenue
     await calculateSalesRevenue(gig._id);
 
-    res
-      .status(200)
-      .send({ message: "Payment verified, order created successfully" });
+    const receipt = {
+      message: "Payment verified, order created successfully",
+      transactionReference: transaction_id,
+      gigTitle: gig.title,
+      amountPaid: gig.price,
+      currency: "USD",
+      buyerUsername: buyer.username,
+      buyerEmail: buyer.email,
+      sellerUsername: seller.username,
+      sellerEmail: seller.email,
+    };
+
+    res.status(200).send(receipt);
   } catch (err) {
     console.error("Payment verification error:", err);
     next(createError(500, "Error verifying payment"));
   }
 };
+
 
 // Get Orders
 export const getOrder = async (req, res, next) => {
