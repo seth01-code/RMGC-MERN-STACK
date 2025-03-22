@@ -6,7 +6,7 @@ const Announcements = () => {
 
   const announcements = [
     {
-      text: "💰 All transactions on this platform are securely processed in USD and Naira only. Payments in other currencies are not accepted. Verify exchange rates before proceeding. 💰",
+      text: "💰 All transactions on this platform are securely processed and safe! 💰",
     },
     {
       text: "📩 Kindly check your messages regularly for important updates and new conversations. Stay connected! 📩",
