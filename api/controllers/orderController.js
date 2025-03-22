@@ -212,38 +212,20 @@ export const flutterWaveIntent = async (req, res, next) => {
       Egypt: "EGP",
     };
     const buyerCurrency = countryToCurrency[user.country] || "USD";
-
-    if (
-      ![
-        "USD",
-        "NGN",
-        "EUR",
-        "GBP",
-        "KES",
-        "ZAR",
-        "CAD",
-        "INR",
-        "GHS",
-        "EGP",
-      ].includes(buyerCurrency)
-    ) {
-      return next(createError(400, "Unsupported currency"));
-    }
+    const sellerCurrency = "USD";
 
     let convertedPrice = gig.price;
-    if (buyerCurrency !== "USD") {
-      const exchangeRate = await getExchangeRate("USD", buyerCurrency);
+    if (buyerCurrency !== sellerCurrency) {
+      const exchangeRate = await getExchangeRate(sellerCurrency, buyerCurrency);
       convertedPrice = exchangeRate
         ? (gig.price * exchangeRate).toFixed(2)
         : gig.price;
     }
 
-    const transactionReference = `txn_${Date.now()}`;
-
     const response = await axios.post(
       "https://api.flutterwave.com/v3/payments",
       {
-        tx_ref: transactionReference,
+        tx_ref: `txn_${Date.now()}`,
         amount: convertedPrice,
         currency: buyerCurrency,
         redirect_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
@@ -252,15 +234,6 @@ export const flutterWaveIntent = async (req, res, next) => {
           title: gig.title,
           description: "Payment for gig",
           logo: gig.cover,
-        },
-        meta: {
-          gigId: gig._id,
-          buyerId: userId,
-          sellerId: gig.userId,
-          price: gig.price,
-          currency: buyerCurrency,
-          gigTitle: gig.title,
-          gigCover: gig.cover,
         },
       },
       {
@@ -273,7 +246,30 @@ export const flutterWaveIntent = async (req, res, next) => {
     if (!response.data?.data?.link)
       return next(createError(500, "Failed to generate payment link"));
 
-    res.status(200).send({ paymentLink: response.data.data.link });
+    const paymentLink = response.data.data.link;
+
+    // Save order in database
+    const newOrder = new Order({
+      gigId: gig._id,
+      img: gig.cover,
+      title: gig.title,
+      buyerId: userId,
+      sellerId: gig.userId,
+      price: convertedPrice,
+      currency: buyerCurrency,
+      payment_intent: paymentLink,
+      isCompleted: false,
+    });
+
+    await newOrder.save();
+
+    // Increment gig sales count
+    await Gig.findByIdAndUpdate(gigId, { $inc: { sales: 1 } });
+
+    // Update sales revenue
+    await calculateSalesRevenue(gigId);
+
+    res.status(200).send({ paymentLink });
   } catch (err) {
     next(createError(500, "Error creating payment intent"));
   }
