@@ -213,7 +213,7 @@ export const flutterWaveIntent = async (req, res, next) => {
       Egypt: "EGP",
     };
     const buyerCurrency = countryToCurrency[user.country] || "USD";
-    // const sellerCurrency = "USD";
+    const sellerCurrency = "USD";
 
     // Convert price if necessary
     let convertedPrice = gig.price;
@@ -284,7 +284,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       return next(createError(400, "Payment verification failed"));
     }
 
-    const { amount, currency, customer, meta } = transaction;
+    const { currency, customer, meta } = transaction;
 
     // Ensure metadata exists and contains gigId
     if (!meta?.gigId) {
@@ -304,10 +304,13 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
     }
 
     // Convert gig price to USD if necessary
-    let priceInUSD = amount;
+    let priceInUSD = gig.price;
     if (currency !== "USD") {
       const exchangeRate = await getExchangeRate(currency, "USD");
-      priceInUSD = exchangeRate ? (amount / exchangeRate).toFixed(0) : amount;
+      if (!exchangeRate) {
+        return next(createError(500, "Currency conversion failed"));
+      }
+      priceInUSD = (gig.price / exchangeRate).toFixed(2); // Convert gig price, not transaction amount
     }
 
     // Check for existing order to prevent duplicates
