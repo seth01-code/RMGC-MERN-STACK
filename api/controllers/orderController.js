@@ -284,7 +284,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       return next(createError(400, "Payment verification failed"));
     }
 
-    const { amount, currency, customer, meta } = transaction;
+    const { currency, customer, meta } = transaction;
 
     // Ensure metadata exists and contains gigId
     if (!meta?.gigId) {
@@ -303,26 +303,31 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       return next(createError(404, "Gig not found"));
     }
 
-    // Convert to USD if necessary
-    let priceInUSD = amount;
+    // Convert gig price to USD if necessary
+    let priceInUSD = gig.price;
     if (currency !== "USD") {
       const exchangeRate = await getExchangeRate(currency, "USD");
       if (!exchangeRate) {
         return next(createError(500, "Currency conversion failed"));
       }
-      priceInUSD = exchangeRate ? (amount / exchangeRate).toFixed(0) : amount;
-      // Convert amount to USD
+      priceInUSD = (gig.price / exchangeRate).toFixed(2); // Convert gig price, not transaction amount
     }
 
-    // Create new order (price stored in USD)
+    // Check for existing order to prevent duplicates
+    const existingOrder = await Order.findOne({ payment_intent: transaction_id });
+    if (existingOrder) {
+      return res.status(200).send({ message: "Order already exists" });
+    }
+
+    // Create new order (store gig price in USD)
     const newOrder = new Order({
       gigId: gig._id,
       img: gig.cover,
       title: gig.title,
       buyerId: buyer.id,
       sellerId: gig.userId,
-      price: priceInUSD, // Store in 2 decimal places
-      currency: "USD", // Always store as USD
+      price: priceInUSD, // Use converted gig price, not Flutterwave amount
+      currency: "USD", // Always store in USD
       payment_intent: transaction_id,
       isCompleted: false,
     });
@@ -341,6 +346,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
     next(createError(500, "Error verifying payment"));
   }
 };
+
 
 
 // Get Orders
