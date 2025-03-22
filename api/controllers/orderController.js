@@ -319,7 +319,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       price: amount, // No conversion, use the amount from Flutterwave
       currency: currency, // Store the currency as received from Flutterwave
       payment_intent: transaction_id,
-      isCompleted: true,
+      isCompleted: false,
     });
 
     await newOrder.save();
