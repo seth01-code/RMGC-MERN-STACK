@@ -230,7 +230,7 @@ export const flutterWaveIntent = async (req, res, next) => {
         tx_ref: transactionReference,
         amount: convertedPrice,
         currency: buyerCurrency,
-        redirect_url: `https://www.renewedmindsglobalconsult.com/payment-success?tx_ref=${transactionReference}`,
+        redirect_url: `https://www.renewedmindsglobalconsult.com/payment-processing?tx_ref=${transactionReference}`,
         customer: { email: user.email },
         customizations: {
           title: gig.title,
