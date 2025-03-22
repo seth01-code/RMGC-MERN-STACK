@@ -11,7 +11,7 @@ const PaymentProcessing = () => {
     const transactionId = searchParams.get("transaction_id");
 
     if (!transactionId) {
-      setStatusMessage("Invalid transaction. Redirecting...");
+      setStatusMessage("Paystack Payment Successful. Redirecting...");
       setTimeout(() => navigate("/orders"), 3000);
       return;
     }

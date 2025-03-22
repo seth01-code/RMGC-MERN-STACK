@@ -148,7 +148,7 @@ const Orders = () => {
                                     {currencySymbol}{" "}
                                     {convertPrice(
                                       formatPrice(order.price, order.currency)
-                                    )}
+                                    ).toLocaleString()}
                                   </td>
                                   <td className="p-3">
                                     {user?.username || "N/A"}

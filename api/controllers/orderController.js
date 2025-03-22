@@ -103,7 +103,7 @@ export const intent = async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_TEST_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.PAYSTACK_LIVE_SECRET_KEY}`,
         },
       }
     );
@@ -120,7 +120,7 @@ export const intent = async (req, res, next) => {
 
 export const paystackWebhook = async (req, res, next) => {
   try {
-    const paystackSecret = process.env.PAYSTACK_TEST_SECRET_KEY;
+    const paystackSecret = process.env.PAYSTACK_LIVE_SECRET_KEY;
     const hash = crypto
       .createHmac("sha512", paystackSecret)
       .update(JSON.stringify(req.body))
@@ -205,15 +205,66 @@ export const flutterWaveIntent = async (req, res, next) => {
       Canada: "CAD",
       UK: "GBP",
       Germany: "EUR",
-      India: "INR",
+      France: "EUR",
+      Italy: "EUR",
+      Spain: "EUR",
+      Netherlands: "EUR",
+      Belgium: "EUR",
+      Austria: "EUR",
+      Finland: "EUR",
+      Ireland: "EUR",
+      Portugal: "EUR",
+      Slovakia: "EUR",
+      Slovenia: "EUR",
+      Cyprus: "EUR",
+      Estonia: "EUR",
+      Latvia: "EUR",
+      Lithuania: "EUR",
+      Malta: "EUR",
       Nigeria: "NGN",
-      SouthAfrica: "ZAR",
       Kenya: "KES",
       Ghana: "GHS",
+      SouthAfrica: "ZAR",
+      Uganda: "UGX",
+      Tanzania: "TZS",
+      Rwanda: "RWF",
+      Malawi: "MWK",
+      Zambia: "ZMW",
       Egypt: "EGP",
+      Senegal: "XOF",
+      Cameroon: "XAF",
+      "Côte d'Ivoire": "XOF",
+      Ethiopia: "ETB",
+      Seychelles: "SCR",
+      Mauritius: "MUR",
+      Morocco: "MAD",
+      Tunisia: "TND",
+      Algeria: "DZD",
+      Botswana: "BWP",
+      Namibia: "NAD",
+      Lesotho: "LSL",
+      Eswatini: "SZL",
+      Mozambique: "MZN",
+      Angola: "AOA",
+      "Democratic Republic of Congo": "CDF",
+      SierraLeone: "SLL",
+      Liberia: "LRD",
+      Gambia: "GMD",
+      Guinea: "GNF",
+      BurkinaFaso: "XOF",
+      Niger: "XOF",
+      Mali: "XOF",
+      Togo: "XOF",
+      Benin: "XOF",
+      Gabon: "XAF",
+      "Congo-Brazzaville": "XAF",
+      Chad: "XAF",
+      "Central African Republic": "XAF",
+      "Equatorial Guinea": "XAF",
+      "São Tomé and Príncipe": "STN",
     };
     const buyerCurrency = countryToCurrency[user.country] || "USD";
-    const sellerCurrency = "USD";
+    // const sellerCurrency = "USD";
 
     // Convert price if necessary
     let convertedPrice = gig.price;
@@ -246,7 +297,7 @@ export const flutterWaveIntent = async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_LIVE_SECRET_KEY}`,
         },
       }
     );
@@ -274,7 +325,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_LIVE_SECRET_KEY}`,
         },
       }
     );
@@ -350,7 +401,6 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
     next(createError(500, "Error verifying payment"));
   }
 };
-
 
 // Get Orders
 export const getOrder = async (req, res, next) => {
