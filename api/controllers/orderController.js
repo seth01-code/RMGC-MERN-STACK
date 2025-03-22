@@ -306,11 +306,12 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
     // Convert to USD if necessary
     let priceInUSD = amount;
     if (currency !== "USD") {
-      const exchangeRate = await getExchangeRate(currency);
+      const exchangeRate = await getExchangeRate(currency, "USD");
       if (!exchangeRate) {
         return next(createError(500, "Currency conversion failed"));
       }
-      priceInUSD = amount / exchangeRate; // Convert amount to USD
+      priceInUSD = exchangeRate ? (amount / exchangeRate).toFixed(0) : amount;
+      // Convert amount to USD
     }
 
     // Create new order (price stored in USD)
@@ -320,7 +321,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       title: gig.title,
       buyerId: buyer.id,
       sellerId: gig.userId,
-      price: priceInUSD.toFixed(0), // Store in 2 decimal places
+      price: priceInUSD, // Store in 2 decimal places
       currency: "USD", // Always store as USD
       payment_intent: transaction_id,
       isCompleted: false,
