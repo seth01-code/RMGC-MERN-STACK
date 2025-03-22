@@ -297,27 +297,31 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       return next(createError(400, "Buyer not found"));
     }
 
-    // Prevent duplicate orders
-    const existingOrder = await Order.findOne({ payment_intent: transaction_id });
-    if (existingOrder) {
-      return res.status(200).send({ message: "Order already exists" });
-    }
-
     // Fetch gig details
     const gig = await Gig.findById(meta.gigId);
     if (!gig) {
       return next(createError(404, "Gig not found"));
     }
 
-    // Create new order (price remains as sent by Flutterwave)
+    // Convert to USD if necessary
+    let priceInUSD = amount;
+    if (currency !== "USD") {
+      const exchangeRate = await getExchangeRate(currency);
+      if (!exchangeRate) {
+        return next(createError(500, "Currency conversion failed"));
+      }
+      priceInUSD = amount / exchangeRate; // Convert amount to USD
+    }
+
+    // Create new order (price stored in USD)
     const newOrder = new Order({
       gigId: gig._id,
       img: gig.cover,
       title: gig.title,
       buyerId: buyer.id,
       sellerId: gig.userId,
-      price: amount, // No conversion, use the amount from Flutterwave
-      currency: currency, // Store the currency as received from Flutterwave
+      price: priceInUSD.toFixed(0), // Store in 2 decimal places
+      currency: "USD", // Always store as USD
       payment_intent: transaction_id,
       isCompleted: false,
     });
