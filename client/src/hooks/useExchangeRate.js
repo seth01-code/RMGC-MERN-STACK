@@ -70,17 +70,18 @@ export const useExchangeRate = (country) => {
 // Function to get currency symbol based on currency code
 const getCurrencySymbol = (currencyCode) => {
   const currencySymbols = {
-    USD: "$", // US Dollar (USA)
-    CAD: "C$", // Canadian Dollar (Canada)
-    GBP: "£", // British Pound (UK)
-    EUR: "€", // Euro (Germany)
-    INR: "₹", // Indian Rupee (India)
-    NGN: "₦", // Nigerian Naira (Nigeria)
-    ZAR: "R", // South African Rand (South Africa)
+    USD: "$",   // US Dollar (USA)
+    CAD: "C$",  // Canadian Dollar (Canada)
+    GBP: "£",   // British Pound (UK)
+    EUR: "€",   // Euro (Germany)
+    INR: "₹",   // Indian Rupee (India)
+    NGN: "₦",   // Nigerian Naira (Nigeria)
+    ZAR: "R",   // South African Rand (South Africa)
     KES: "KSh", // Kenyan Shilling (Kenya)
     GHS: "GH₵", // Ghanaian Cedi (Ghana)
-    EGP: "E£", // Egyptian Pound (Egypt)
+    EGP: "E£",  // Egyptian Pound (Egypt)
   };
+  
 
   return currencySymbols[currencyCode] || "$";
 };
