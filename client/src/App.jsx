@@ -185,10 +185,11 @@ const Layout = () => {
             <Navbar />
           </>
         )}
+
       <div className="flex-1">
-        <GoogleAd />
         <Outlet />
       </div>
+
       {!isLoginPage &&
         !isRegister &&
         !isMessage &&
@@ -197,7 +198,12 @@ const Layout = () => {
         !isProcessing &&
         !isOTP &&
         !isForgotPassword &&
-        !isResetPassword && <Footer />}
+        !isResetPassword && (
+          <>
+            <GoogleAd /> {/* The ad will be here, just before the Footer */}
+            <Footer />
+          </>
+        )}
     </div>
   );
 };
