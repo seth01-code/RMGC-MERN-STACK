@@ -41,15 +41,21 @@ const GoogleAd = () => {
     }
   }, [location]);
 
+  // Check if the ad should be placed in the header or body
+  if (document.querySelector("header")) {
+    // Prevent ads from rendering in the header
+    return null;
+  }
+
   return (
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block" }}
-        data-ad-client="ca-pub-8713973295876975"
-        data-ad-slot="5074558232"
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      ></ins>
+    <ins
+      className="adsbygoogle"
+      style={{ display: "block" }}
+      data-ad-client="ca-pub-8713973295876975"
+      data-ad-slot="5074558232"
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    ></ins>
   );
 };
 
