@@ -42,7 +42,6 @@ const GoogleAd = () => {
   }, [location]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#f2f2f2]">
       <ins
         className="adsbygoogle"
         style={{ display: "block" }}
@@ -51,7 +50,6 @@ const GoogleAd = () => {
         data-ad-format="auto"
         data-full-width-responsive="true"
       ></ins>
-    </div>
   );
 };
 
