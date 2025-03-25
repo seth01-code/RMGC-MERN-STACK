@@ -7,6 +7,7 @@ import Slider from "../../components/Slide/Slider";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion"; // Add framer-motion import
+import GoogleAd from "../../components/GoogleAd";
 
 const Home = () => {
   const { t } = useTranslation();
@@ -14,8 +15,8 @@ const Home = () => {
   return (
     <div className="">
       <Featured />
+      <GoogleAd />
       <Slider />
-
       {/* Features Section */}
       <div className="relative features py-16 md:py-24 lg:py-28 text-white">
         {/* Background Video */}
@@ -117,6 +118,7 @@ const Home = () => {
 
       {/* Slide Section */}
       <Slide />
+      <GoogleAd />
     </div>
   );
 };
