@@ -14,7 +14,7 @@ import { FaTiktok } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
 import BackgroundVideo from "../../../assets/images/background.mp4"; // Import video
 import Logo from "../../../assets/logoo.webp";
-import GoogleAd from "../GoogleAd";
+// import GoogleAd from "../GoogleAd";
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -31,7 +31,7 @@ const Footer = () => {
 
   return (
     <>
-      <GoogleAd />
+      {/* <GoogleAd /> */}
       <footer className="relative text-gray-100 py-12">
         {/* Background Video */}
         <video
