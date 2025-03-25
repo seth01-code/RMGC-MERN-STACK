@@ -49,13 +49,18 @@ const GoogleAd = () => {
 
   return (
     <ins
-      className="adsbygoogle"
-      style={{ display: "block" }}
+      className="adsbygoogle block mx-auto"
+      style={{
+        display: "block",
+        backgroundColor: "#f2f2f2", // Set grey background
+        margin: "auto", // Center the ad horizontally
+        width: "100%", // Make sure it is responsive
+      }}
       data-ad-client="ca-pub-8713973295876975"
       data-ad-slot="5074558232"
       data-ad-format="auto"
       data-full-width-responsive="true"
-    ></ins>
+    />
   );
 };
 
