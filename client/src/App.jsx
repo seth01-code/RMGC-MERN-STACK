@@ -49,7 +49,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import TawkToChat from "./components/TawkToChat.jsx";
 import ScrollToTop from "./ScrollToTop.jsx";
 import AMPAdsense from "./components/AMPAdsense.jsx";
-// import GoogleAd from "./components/GoogleAd.jsx";
+import GoogleAd from "./components/GoogleAd.jsx";
 
 const queryClient = new QueryClient();
 
@@ -171,7 +171,6 @@ const Layout = () => {
       <ScrollToTop />
       <TawkToChat />
       <AMPAdsense />
-      {/* <GoogleAd/> */}
       {!isLoginPage &&
         !isRegister &&
         !isMessage &&
@@ -187,6 +186,7 @@ const Layout = () => {
           </>
         )}
       <div className="flex-1">
+        <GoogleAd />
         <Outlet />
       </div>
       {!isLoginPage &&
