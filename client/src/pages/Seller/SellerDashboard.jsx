@@ -226,7 +226,7 @@ const SellerDashboard = () => {
               <strong>Years of Experience:</strong> {user.yearsOfExperience}
             </p>
             <p>
-              <strong>Years of Experience:</strong> {user.services}
+              <strong>Services:</strong> {user.services}
             </p>
             <p>
               <strong>Language(s):</strong>{" "}
