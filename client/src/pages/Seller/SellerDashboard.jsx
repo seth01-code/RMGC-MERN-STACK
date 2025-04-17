@@ -226,6 +226,9 @@ const SellerDashboard = () => {
               <strong>Years of Experience:</strong> {user.yearsOfExperience}
             </p>
             <p>
+              <strong>Years of Experience:</strong> {user.services}
+            </p>
+            <p>
               <strong>Language(s):</strong>{" "}
               {user.languages && user.languages.length > 0
                 ? user.languages.map((lang, index) => (

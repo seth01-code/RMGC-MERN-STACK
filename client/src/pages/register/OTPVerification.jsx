@@ -10,7 +10,7 @@ const OTPVerification = () => {
   const { t } = useTranslation();
 
   const [otp, setOtp] = useState("");
-  const [timeLeft, setTimeLeft] = useState(120);
+  const [timeLeft, setTimeLeft] = useState(600); // 600 seconds for 10 minutes
   const [otpExpired, setOtpExpired] = useState(false);
   const [timerId, setTimerId] = useState(null);
   const [email, setEmail] = useState(localStorage.getItem("email") || "");
@@ -36,7 +36,7 @@ const OTPVerification = () => {
   const startTimer = () => {
     if (timerId) clearInterval(timerId);
 
-    setTimeLeft(120);
+    setTimeLeft(600); // Initialize with 600 seconds (10 minutes)
     setOtpExpired(false);
 
     const newTimerId = setInterval(() => {
@@ -81,25 +81,31 @@ const OTPVerification = () => {
     try {
       // Retrieve email from localStorage
       const storedEmail = localStorage.getItem("email");
-  
+
       if (!storedEmail) {
-        toast.error("Email is missing! Please restart the verification process.");
+        toast.error(
+          "Email is missing! Please restart the verification process."
+        );
         return;
       }
-  
+
       // Send request to resend OTP
-      const response = await newRequest.post("/auth/resend-otp", { email: storedEmail, otp });
-  
+      const response = await newRequest.post("/auth/resend-otp", {
+        email: storedEmail,
+        otp,
+      });
+
       if (response.status === 200) {
         toast.success("A new OTP has been sent to your email.");
         startTimer(); // Restart the countdown timer
       }
     } catch (err) {
       console.error("Error resending OTP:", err);
-      toast.error(err.response?.data || "Failed to resend OTP. Please try again.");
+      toast.error(
+        err.response?.data || "Failed to resend OTP. Please try again."
+      );
     }
   };
-  
 
   return (
     <div className="flex items-center justify-center min-h-screen text-black">
