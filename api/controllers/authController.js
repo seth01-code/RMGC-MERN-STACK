@@ -488,7 +488,7 @@ export const login = async (req, res, next) => {
     const token = jwt.sign(
       { id: user._id, isSeller: user.isSeller, isAdmin: user.isAdmin },
       process.env.JWT_KEY,
-      { expiresIn: "1m" } // Changed from "1d" to "7d"
+      { expiresIn: "7d" } // Changed from "1d" to "7d"
     );
 
     // Set the cookie with the token
