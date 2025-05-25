@@ -144,15 +144,42 @@ const Gig = () => {
                 modules={[Autoplay]}
                 className="bg-[#F5F5F5] rounded-lg overflow-hidden"
               >
-                {data.images.map((img, index) => (
-                  <SwiperSlide key={index} className="bg-[#F5F5F5]">
-                    <img
-                      src={img}
-                      alt={`Slide ${index}`}
-                      className="w-full max-h-[500px] object-contain"
-                    />
-                  </SwiperSlide>
-                ))}
+                {data.images.map((fileUrl, index) => {
+                  const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(fileUrl);
+                  const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
+                  const isPDF = /\.pdf$/i.test(fileUrl);
+
+                  return (
+                    <SwiperSlide
+                      key={index}
+                      className="bg-[#F5F5F5] flex justify-center items-center"
+                    >
+                      {isImage ? (
+                        <img
+                          src={fileUrl}
+                          alt={`Slide ${index}`}
+                          className="w-full max-h-[500px] object-contain"
+                        />
+                      ) : isVideo ? (
+                        <video
+                          controls
+                          className="w-full max-h-[500px] object-contain"
+                          src={fileUrl}
+                        />
+                      ) : isPDF ? (
+                        <iframe
+                          src={fileUrl}
+                          title={`PDF Slide ${index}`}
+                          className="w-full h-[500px]"
+                        />
+                      ) : (
+                        <p className="text-center text-gray-500">
+                          Unsupported file format
+                        </p>
+                      )}
+                    </SwiperSlide>
+                  );
+                })}
               </Swiper>
             ) : (
               <p className="text-gray-500">{t("noSamplesMessage")}</p>

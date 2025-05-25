@@ -121,49 +121,34 @@ const Add = () => {
     e.target[0].value = "";
   };
 
-  // const handleUpload = async () => {
-  //   setUploading(true);
-  //   try {
-  //     const cover = (await upload(singleFile))?.url || "";
-  //     const images = await Promise.all(
-  //       [...files].map(async (file) => (await upload(file))?.url || "")
-  //     );
-
-  //     setUploading(false);
-  //     dispatch({ type: "ADD_IMAGES", payload: { cover, images } });
-  //     toast.success(t("images_uploaded_success"));
-  //   } catch (err) {
-  //     setUploading(false);
-  //     toast.error(t("images_upload_failed"));
-  //   }
-  // };
-
   const handleUpload = async () => {
     setUploading(true);
-
     try {
-      const uploadedFiles = await Promise.all(
-        [...files].map(async (file) => {
-          const result = await upload(file);
-          return result?.url || "";
-        })
+      // Only images allowed for singleFile (cover)
+      const cover =
+        singleFile && singleFile.type.startsWith("image/")
+          ? (await upload(singleFile))?.url || ""
+          : "";
+
+      // Accept images, videos, and PDFs for general file uploads
+      const validTypes = ["image/", "video/", "application/pdf"];
+      const filteredFiles = [...files].filter((file) =>
+        validTypes.some((type) => file.type.startsWith(type))
       );
 
-      // Separate cover (first file) from the rest
-      const cover = uploadedFiles[0] || "";
-      const otherFiles = uploadedFiles.slice(1);
+      const uploadedFiles = await Promise.all(
+        filteredFiles.map(async (file) => (await upload(file))?.url || "")
+      );
 
       setUploading(false);
-
       dispatch({
         type: "ADD_IMAGES",
-        payload: { cover, images: otherFiles },
+        payload: { cover, images: uploadedFiles },
       });
-
-      toast.success(t("files_uploaded_success")); // Update toast message
+      toast.success(t("images_uploaded_success"));
     } catch (err) {
       setUploading(false);
-      toast.error(t("files_upload_failed"));
+      toast.error(t("images_upload_failed"));
     }
   };
 
@@ -260,12 +245,16 @@ const Add = () => {
               </div>
             </div>
 
+            {/* Cover Image Input - Only Images */}
             <label className="text-gray-500">{t("cover_image")}</label>
             <input
               type="file"
+              accept="image/*"
               onChange={(e) => setSingleFile(e.target.files[0])}
               className="input-field"
             />
+
+            {/* Media Files Input - Images, Videos, PDFs */}
             <label className="text-gray-500">{t("upload_images")}</label>
             <input
               type="file"
@@ -274,9 +263,16 @@ const Add = () => {
               onChange={(e) => setFiles(e.target.files)}
               className="input-field"
             />
-            <button onClick={handleUpload} className="btn-green">
+
+            {/* Upload Button */}
+            <button
+              onClick={handleUpload}
+              className="btn-green"
+              disabled={uploading}
+            >
               {uploading ? t("uploading") : t("upload")}
             </button>
+
             <br />
             <label className="text-gray-500">{t("description")}</label>
             <textarea
