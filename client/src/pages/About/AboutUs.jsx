@@ -8,6 +8,7 @@ import {
 import aboutBg from "../../../assets/images/aboutUs.jpg";
 import founderImg from "../../../assets/images/mi.jpg";
 import ctoImg from "../../../assets/images/12.jpg";
+import ccoImg from "../../../assets/images/Ukachi.jpg";
 
 const AboutUs = () => {
   return (
@@ -99,6 +100,11 @@ const AboutUs = () => {
               name: "Seth Ikhielea",
               role: "CTO & Personal Assistant",
               img: ctoImg,
+            },
+            {
+              name: "David Ukachi",
+              role: "Chief Commercial Officer",
+              img: ccoImg,
             },
           ].map((leader, index) => (
             <div
