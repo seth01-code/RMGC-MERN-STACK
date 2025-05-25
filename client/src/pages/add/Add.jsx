@@ -294,7 +294,7 @@ const Add = () => {
               {/* Videos Upload */}
               <div>
                 <label className="text-gray-500 font-medium">
-                  {t("upload_videos")}
+                  {t("Upload Videos")}
                 </label>
                 <input
                   type="file"
@@ -310,7 +310,7 @@ const Add = () => {
               {/* PDF Documents Upload */}
               <div>
                 <label className="text-gray-500 font-medium">
-                  {t("upload_documents")}
+                  {t("Upload Documents")}
                 </label>
                 <input
                   type="file"

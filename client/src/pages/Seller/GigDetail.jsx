@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 // import { Autoplay } from "swiper/modules";
@@ -18,6 +18,8 @@ const GigDetail = () => {
   const { id } = useParams();
   const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState(null);
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -120,8 +122,13 @@ const GigDetail = () => {
                 data.videos?.length > 0 ||
                 data.documents?.length > 0 ? (
                   <div className="relative">
+                    {/* Custom Navigation Refs */}
+                    const prevRef = useRef(null); const nextRef = useRef(null);
                     {/* Custom Prev Arrow */}
-                    <div className="swiper-button-prev-custom absolute left-2 top-1/2 z-10 -translate-y-1/2 bg-white shadow-md p-2 rounded-full cursor-pointer hover:bg-gray-100">
+                    <div
+                      ref={prevRef}
+                      className="swiper-button-prev-custom absolute left-2 top-1/2 z-10 -translate-y-1/2 bg-white shadow-md p-2 rounded-full cursor-pointer hover:bg-gray-100"
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="w-6 h-6 text-gray-700"
@@ -137,9 +144,11 @@ const GigDetail = () => {
                         />
                       </svg>
                     </div>
-
                     {/* Custom Next Arrow */}
-                    <div className="swiper-button-next-custom absolute right-2 top-1/2 z-10 -translate-y-1/2 bg-white shadow-md p-2 rounded-full cursor-pointer hover:bg-gray-100">
+                    <div
+                      ref={nextRef}
+                      className="swiper-button-next-custom absolute right-2 top-1/2 z-10 -translate-y-1/2 bg-white shadow-md p-2 rounded-full cursor-pointer hover:bg-gray-100"
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="w-6 h-6 text-gray-700"
@@ -155,14 +164,16 @@ const GigDetail = () => {
                         />
                       </svg>
                     </div>
-
-                    {/* Swiper Component */}
                     <Swiper
                       spaceBetween={10}
                       slidesPerView={1}
                       navigation={{
-                        prevEl: ".swiper-button-prev-custom",
-                        nextEl: ".swiper-button-next-custom",
+                        prevEl: prevRef.current,
+                        nextEl: nextRef.current,
+                      }}
+                      onBeforeInit={(swiper) => {
+                        swiper.params.navigation.prevEl = prevRef.current;
+                        swiper.params.navigation.nextEl = nextRef.current;
                       }}
                       modules={[Navigation]}
                       className="bg-[#F5F5F5] rounded-lg overflow-hidden"
