@@ -1,6 +1,8 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css/navigation";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import newRequest from "../../utils/newRequest";
@@ -145,7 +147,8 @@ const Gig = () => {
                   <Swiper
                     spaceBetween={10}
                     slidesPerView={1}
-                    modules={[Autoplay]}
+                    navigation
+                    modules={[Navigation]}
                     className="bg-[#F5F5F5] rounded-lg overflow-hidden"
                   >
                     {[
