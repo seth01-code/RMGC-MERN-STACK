@@ -104,11 +104,11 @@ export const sendMessage = async (req, res) => {
               ${text ? text.replace(/\n/g, "<br>") : "[Media message]"}
             </div>
             <p style="font-size: 14px; color: #666;">
-              Please <a href="YOUR_APP_URL_HERE" style="color: #FFA500; font-weight: bold; text-decoration: none;">check your app</a> to reply.
+              Please <a href="https://www.renewedmindsglobalconsult.com" style="color: #FFA500; font-weight: bold; text-decoration: none;">check the website</a> to reply.
             </p>
             <hr style="border: none; border-top: 1px solid #FFA500; margin: 30px 0;">
             <p style="font-size: 12px; color: #999; text-align: center;">
-              This is an automated message from <strong style="color: #FFA500;">Your App Name</strong>
+              This is an automated message from <strong style="color: #FFA500;">RMGC</strong>
             </p>
           </div>
         `,
