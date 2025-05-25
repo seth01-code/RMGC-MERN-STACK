@@ -76,9 +76,42 @@ export const sendMessage = async (req, res) => {
         from: process.env.EMAIL_USER,
         to: recipient.email,
         subject: `New message from ${sender.username}`,
-        text: `You have received a new message from ${sender.username}:\n\n${
-          text || "[Media message]"
-        }\n\nPlease check your app to reply.`,
+        html: `
+          <div style="
+            font-family: Arial, sans-serif; 
+            background-color: #fff; 
+            color: #333; 
+            padding: 20px; 
+            border-radius: 8px; 
+            max-width: 600px; 
+            margin: auto;
+            border: 2px solid #FFA500; /* orange border */
+          ">
+            <h2 style="color: #FFA500; margin-bottom: 0;">New message from ${
+              sender.username
+            }</h2>
+            <p style="font-size: 16px; line-height: 1.5; margin-top: 8px;">
+              You have received a new message:
+            </p>
+            <div style="
+              background-color: #FFA500; 
+              color: white; 
+              padding: 15px; 
+              border-radius: 6px; 
+              font-style: italic;
+              margin: 20px 0;
+            ">
+              ${text ? text.replace(/\n/g, "<br>") : "[Media message]"}
+            </div>
+            <p style="font-size: 14px; color: #666;">
+              Please <a href="YOUR_APP_URL_HERE" style="color: #FFA500; font-weight: bold; text-decoration: none;">check your app</a> to reply.
+            </p>
+            <hr style="border: none; border-top: 1px solid #FFA500; margin: 30px 0;">
+            <p style="font-size: 12px; color: #999; text-align: center;">
+              This is an automated message from <strong style="color: #FFA500;">Your App Name</strong>
+            </p>
+          </div>
+        `,
       };
 
       transporter.sendMail(mailOptions, (err, info) => {
