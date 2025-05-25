@@ -37,7 +37,15 @@ const GigSchema = new Schema(
     },
     images: {
       type: [String],
-      required: false,
+      default: [],
+    },
+    videos: {
+      type: [String],
+      default: [],
+    },
+    documents: {
+      type: [String],
+      default: [],
     },
     shortTitle: {
       type: String,
@@ -57,14 +65,16 @@ const GigSchema = new Schema(
     },
     features: {
       type: [String],
-      required: false,
+      default: [],
     },
     sales: {
       type: Number,
       default: 0,
     },
-
-    salesRevenue: { type: Number, default: 0 },
+    salesRevenue: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

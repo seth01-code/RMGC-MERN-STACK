@@ -136,7 +136,9 @@ const Gig = () => {
             )}
 
             {/* Swiper Slider */}
-            {data.images && data.images.length > 0 ? (
+            {data.images?.length > 0 ||
+            data.videos?.length > 0 ||
+            data.documents?.length > 0 ? (
               <Swiper
                 spaceBetween={10}
                 slidesPerView={1}
@@ -144,7 +146,11 @@ const Gig = () => {
                 modules={[Autoplay]}
                 className="bg-[#F5F5F5] rounded-lg overflow-hidden"
               >
-                {data.images.map((fileUrl, index) => {
+                {[
+                  ...(data.images || []),
+                  ...(data.videos || []),
+                  ...(data.documents || []),
+                ].map((fileUrl, index) => {
                   const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(fileUrl);
                   const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
                   const isPDF = /\.pdf$/i.test(fileUrl);

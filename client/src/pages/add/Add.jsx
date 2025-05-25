@@ -130,21 +130,40 @@ const Add = () => {
           ? (await upload(singleFile))?.url || ""
           : "";
 
-      // Accept images, videos, and PDFs for general file uploads
       const validTypes = ["image/", "video/", "application/pdf"];
       const filteredFiles = [...files].filter((file) =>
         validTypes.some((type) => file.type.startsWith(type))
       );
 
-      const uploadedFiles = await Promise.all(
-        filteredFiles.map(async (file) => (await upload(file))?.url || "")
+      const uploads = await Promise.all(
+        filteredFiles.map(async (file) => {
+          const uploaded = await upload(file);
+          return {
+            url: uploaded?.url || "",
+            type: file.type,
+          };
+        })
       );
+
+      // Separate by file type
+      const images = uploads
+        .filter((file) => file.type.startsWith("image/"))
+        .map((file) => file.url);
+
+      const videos = uploads
+        .filter((file) => file.type.startsWith("video/"))
+        .map((file) => file.url);
+
+      const documents = uploads
+        .filter((file) => file.type === "application/pdf")
+        .map((file) => file.url);
 
       setUploading(false);
       dispatch({
-        type: "ADD_IMAGES",
-        payload: { cover, images: uploadedFiles },
+        type: "ADD_IMAGES", // You might rename this to ADD_MEDIA for clarity
+        payload: { cover, images, videos, documents },
       });
+
       toast.success(t("images_uploaded_success"));
     } catch (err) {
       setUploading(false);
