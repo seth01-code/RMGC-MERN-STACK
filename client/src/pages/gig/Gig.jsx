@@ -137,13 +137,14 @@ const Gig = () => {
 
             {data && (
               <>
+                {console.log("Data Object:", data)}
+
                 {data.images?.length > 0 ||
                 data.videos?.length > 0 ||
                 data.documents?.length > 0 ? (
                   <Swiper
                     spaceBetween={10}
                     slidesPerView={1}
-                    autoplay={{ delay: 2500, disableOnInteraction: false }}
                     modules={[Autoplay]}
                     className="bg-[#F5F5F5] rounded-lg overflow-hidden"
                   >
@@ -158,6 +159,12 @@ const Gig = () => {
                       const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
                       const isPDF = /\.pdf$/i.test(fileUrl);
 
+                      console.log(`File #${index}:`, fileUrl, {
+                        isImage,
+                        isVideo,
+                        isPDF,
+                      });
+
                       return (
                         <SwiperSlide
                           key={index}
@@ -171,6 +178,7 @@ const Gig = () => {
                             />
                           ) : isVideo ? (
                             <video
+                              controls
                               className="w-full max-h-[500px] object-contain"
                               src={fileUrl}
                             />
