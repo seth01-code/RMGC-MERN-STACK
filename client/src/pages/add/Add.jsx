@@ -121,20 +121,49 @@ const Add = () => {
     e.target[0].value = "";
   };
 
+  // const handleUpload = async () => {
+  //   setUploading(true);
+  //   try {
+  //     const cover = (await upload(singleFile))?.url || "";
+  //     const images = await Promise.all(
+  //       [...files].map(async (file) => (await upload(file))?.url || "")
+  //     );
+
+  //     setUploading(false);
+  //     dispatch({ type: "ADD_IMAGES", payload: { cover, images } });
+  //     toast.success(t("images_uploaded_success"));
+  //   } catch (err) {
+  //     setUploading(false);
+  //     toast.error(t("images_upload_failed"));
+  //   }
+  // };
+
   const handleUpload = async () => {
     setUploading(true);
+
     try {
-      const cover = (await upload(singleFile))?.url || "";
-      const images = await Promise.all(
-        [...files].map(async (file) => (await upload(file))?.url || "")
+      const uploadedFiles = await Promise.all(
+        [...files].map(async (file) => {
+          const result = await upload(file);
+          return result?.url || "";
+        })
       );
 
+      // Separate cover (first file) from the rest
+      const cover = uploadedFiles[0] || "";
+      const otherFiles = uploadedFiles.slice(1);
+
       setUploading(false);
-      dispatch({ type: "ADD_IMAGES", payload: { cover, images } });
-      toast.success(t("images_uploaded_success"));
+
+      dispatch({
+        type: "ADD_IMAGES",
+        payload: { cover, images: otherFiles },
+      });
+
+      toast.success(t("files_uploaded_success")); // Update toast message
     } catch (err) {
       setUploading(false);
-      toast.error(t("images_upload_failed"));
+      toast.error(t("files_upload_failed"));
     }
   };
 
@@ -241,6 +270,7 @@ const Add = () => {
             <input
               type="file"
               multiple
+              accept="image/*,video/*,application/pdf"
               onChange={(e) => setFiles(e.target.files)}
               className="input-field"
             />
