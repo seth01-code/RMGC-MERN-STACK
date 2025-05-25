@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css/navigation";
-import { Autoplay } from "swiper/modules";
+// import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import newRequest from "../../utils/newRequest";
 import { useQuery } from "@tanstack/react-query";
@@ -144,62 +144,104 @@ const Gig = () => {
                 {data.images?.length > 0 ||
                 data.videos?.length > 0 ||
                 data.documents?.length > 0 ? (
-                  <Swiper
-                    spaceBetween={10}
-                    slidesPerView={1}
-                    navigation
-                    modules={[Navigation]}
-                    className="bg-[#F5F5F5] rounded-lg overflow-hidden"
-                  >
-                    {[
-                      ...(data.images || []),
-                      ...(data.videos || []),
-                      ...(data.documents || []),
-                    ].map((fileUrl, index) => {
-                      const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(
-                        fileUrl
-                      );
-                      const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
-                      const isPDF = /\.pdf$/i.test(fileUrl);
+                  <div className="relative">
+                    {/* Custom Prev Arrow */}
+                    <div className="swiper-button-prev-custom absolute left-2 top-1/2 z-10 -translate-y-1/2 bg-white shadow-md p-2 rounded-full cursor-pointer hover:bg-gray-100">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-6 h-6 text-gray-700"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </div>
 
-                      console.log(`File #${index}:`, fileUrl, {
-                        isImage,
-                        isVideo,
-                        isPDF,
-                      });
+                    {/* Custom Next Arrow */}
+                    <div className="swiper-button-next-custom absolute right-2 top-1/2 z-10 -translate-y-1/2 bg-white shadow-md p-2 rounded-full cursor-pointer hover:bg-gray-100">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-6 h-6 text-gray-700"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
 
-                      return (
-                        <SwiperSlide
-                          key={index}
-                          className="bg-[#F5F5F5] flex justify-center items-center"
-                        >
-                          {isImage ? (
-                            <img
-                              src={fileUrl}
-                              alt={`Slide ${index}`}
-                              className="w-full max-h-[500px] object-contain"
-                            />
-                          ) : isVideo ? (
-                            <video
-                              controls
-                              className="w-full max-h-[500px] object-contain"
-                              src={fileUrl}
-                            />
-                          ) : isPDF ? (
-                            <iframe
-                              src={fileUrl}
-                              title={`PDF Slide ${index}`}
-                              className="w-full h-[500px]"
-                            />
-                          ) : (
-                            <p className="text-center text-gray-500">
-                              Unsupported file format
-                            </p>
-                          )}
-                        </SwiperSlide>
-                      );
-                    })}
-                  </Swiper>
+                    {/* Swiper Component */}
+                    <Swiper
+                      spaceBetween={10}
+                      slidesPerView={1}
+                      navigation={{
+                        prevEl: ".swiper-button-prev-custom",
+                        nextEl: ".swiper-button-next-custom",
+                      }}
+                      modules={[Navigation]}
+                      className="bg-[#F5F5F5] rounded-lg overflow-hidden"
+                    >
+                      {[
+                        ...(data.images || []),
+                        ...(data.videos || []),
+                        ...(data.documents || []),
+                      ].map((fileUrl, index) => {
+                        const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(
+                          fileUrl
+                        );
+                        const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
+                        const isPDF = /\.pdf$/i.test(fileUrl);
+
+                        console.log(`File #${index}:`, fileUrl, {
+                          isImage,
+                          isVideo,
+                          isPDF,
+                        });
+
+                        return (
+                          <SwiperSlide
+                            key={index}
+                            className="bg-[#F5F5F5] flex justify-center items-center"
+                          >
+                            {isImage ? (
+                              <img
+                                src={fileUrl}
+                                alt={`Slide ${index}`}
+                                className="w-full max-h-[500px] object-contain"
+                              />
+                            ) : isVideo ? (
+                              <video
+                                controls
+                                className="w-full max-h-[500px] object-contain"
+                                src={fileUrl}
+                              />
+                            ) : isPDF ? (
+                              <iframe
+                                src={fileUrl}
+                                title={`PDF Slide ${index}`}
+                                className="w-full h-[500px]"
+                              />
+                            ) : (
+                              <p className="text-center text-gray-500">
+                                Unsupported file format
+                              </p>
+                            )}
+                          </SwiperSlide>
+                        );
+                      })}
+                    </Swiper>
+                  </div>
                 ) : (
                   <p className="text-gray-500">{t("noSamplesMessage")}</p>
                 )}
