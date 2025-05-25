@@ -135,60 +135,80 @@ const Gig = () => {
               </div>
             )}
 
-            {/* Swiper Slider */}
-            {data.images?.length > 0 ||
-            data.videos?.length > 0 ||
-            data.documents?.length > 0 ? (
-              <Swiper
-                spaceBetween={10}
-                slidesPerView={1}
-                autoplay={{ delay: 2500, disableOnInteraction: false }}
-                modules={[Autoplay]}
-                className="bg-[#F5F5F5] rounded-lg overflow-hidden"
-              >
-                {[
-                  ...(data.images || []),
-                  ...(data.videos || []),
-                  ...(data.documents || []),
-                ].map((fileUrl, index) => {
-                  const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(fileUrl);
-                  const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
-                  const isPDF = /\.pdf$/i.test(fileUrl);
+            {data && (
+              <>
+                {console.log("DATA:", data)}
+                {console.log("Images:", data.images)}
+                {console.log("Videos:", data.videos)}
+                {console.log("Documents:", data.documents)}
 
-                  return (
-                    <SwiperSlide
-                      key={index}
-                      className="bg-[#F5F5F5] flex justify-center items-center"
-                    >
-                      {isImage ? (
-                        <img
-                          src={fileUrl}
-                          alt={`Slide ${index}`}
-                          className="w-full max-h-[500px] object-contain"
-                        />
-                      ) : isVideo ? (
-                        <video
-                          controls
-                          className="w-full max-h-[500px] object-contain"
-                          src={fileUrl}
-                        />
-                      ) : isPDF ? (
-                        <iframe
-                          src={fileUrl}
-                          title={`PDF Slide ${index}`}
-                          className="w-full h-[500px]"
-                        />
-                      ) : (
-                        <p className="text-center text-gray-500">
-                          Unsupported file format
-                        </p>
-                      )}
-                    </SwiperSlide>
-                  );
-                })}
-              </Swiper>
-            ) : (
-              <p className="text-gray-500">{t("noSamplesMessage")}</p>
+                {data.images?.length > 0 ||
+                data.videos?.length > 0 ||
+                data.documents?.length > 0 ? (
+                  <Swiper
+                    spaceBetween={10}
+                    slidesPerView={1}
+                    autoplay={{ delay: 2500, disableOnInteraction: false }}
+                    modules={[Autoplay]}
+                    className="bg-[#F5F5F5] rounded-lg overflow-hidden"
+                  >
+                    {[
+                      ...(data.images || []),
+                      ...(data.videos || []),
+                      ...(data.documents || []),
+                    ].map((fileUrl, index) => {
+                      const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(
+                        fileUrl
+                      );
+                      const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
+                      const isPDF = /\.pdf$/i.test(fileUrl);
+
+                      console.log(`File #${index}:`, fileUrl);
+                      console.log(
+                        "isImage:",
+                        isImage,
+                        "| isVideo:",
+                        isVideo,
+                        "| isPDF:",
+                        isPDF
+                      );
+
+                      return (
+                        <SwiperSlide
+                          key={index}
+                          className="bg-[#F5F5F5] flex justify-center items-center"
+                        >
+                          {isImage ? (
+                            <img
+                              src={fileUrl}
+                              alt={`Slide ${index}`}
+                              className="w-full max-h-[500px] object-contain"
+                            />
+                          ) : isVideo ? (
+                            <video
+                              controls
+                              className="w-full max-h-[500px] object-contain"
+                              src={fileUrl}
+                            />
+                          ) : isPDF ? (
+                            <iframe
+                              src={fileUrl}
+                              title={`PDF Slide ${index}`}
+                              className="w-full h-[500px]"
+                            />
+                          ) : (
+                            <p className="text-center text-gray-500">
+                              Unsupported file format
+                            </p>
+                          )}
+                        </SwiperSlide>
+                      );
+                    })}
+                  </Swiper>
+                ) : (
+                  <p className="text-gray-500">{t("noSamplesMessage")}</p>
+                )}
+              </>
             )}
 
             <h2 className="text-xl font-semibold mt-6">{t("aboutGig")}</h2>
