@@ -148,7 +148,6 @@ const Gig = () => {
                 data.documents?.length > 0 ? (
                   <div className="relative">
                     {/* Custom Navigation Refs */}
-                    const prevRef = useRef(null); const nextRef = useRef(null);
                     {/* Custom Prev Arrow */}
                     <div
                       ref={prevRef}
