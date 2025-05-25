@@ -274,14 +274,55 @@ const Add = () => {
             />
 
             {/* Media Files Input - Images, Videos, PDFs */}
-            <label className="text-gray-500">{t("upload_images")}</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*,video/*,application/pdf"
-              onChange={(e) => setFiles(e.target.files)}
-              className="input-field"
-            />
+            <div className="flex flex-col gap-4">
+              {/* Images Upload */}
+              <div>
+                <label className="text-gray-500 font-medium">
+                  {t("upload_images")}
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) =>
+                    setFiles((prev) => [...prev, ...Array.from(e.target.files)])
+                  }
+                  className="input-field mt-1"
+                />
+              </div>
+
+              {/* Videos Upload */}
+              <div>
+                <label className="text-gray-500 font-medium">
+                  {t("upload_videos")}
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept="video/*"
+                  onChange={(e) =>
+                    setFiles((prev) => [...prev, ...Array.from(e.target.files)])
+                  }
+                  className="input-field mt-1"
+                />
+              </div>
+
+              {/* PDF Documents Upload */}
+              <div>
+                <label className="text-gray-500 font-medium">
+                  {t("upload_documents")}
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept="application/pdf"
+                  onChange={(e) =>
+                    setFiles((prev) => [...prev, ...Array.from(e.target.files)])
+                  }
+                  className="input-field mt-1"
+                />
+              </div>
+            </div>
 
             {/* Upload Button */}
             <button
