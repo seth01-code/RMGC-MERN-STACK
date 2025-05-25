@@ -112,26 +112,68 @@ const GigDetail = () => {
             )}
 
             {/* Swiper Slider */}
-            {data.images && data.images.length > 0 ? (
-              <Swiper
-                spaceBetween={10}
-                slidesPerView={1}
-                autoplay={{ delay: 2500, disableOnInteraction: false }}
-                modules={[Autoplay]}
-                className="rounded-lg overflow-hidden"
-              >
-                {data.images.map((img, index) => (
-                  <SwiperSlide key={index}>
-                    <img
-                      src={img}
-                      alt={`Slide ${index}`}
-                      className="w-full h-auto object-cover"
-                    />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            ) : (
-              <p className="text-gray-500">{t("noSamplesMessage")}</p>
+            {data && (
+              <>
+                {data.images?.length > 0 ||
+                data.videos?.length > 0 ||
+                data.documents?.length > 0 ? (
+                  <Swiper
+                    spaceBetween={10}
+                    slidesPerView={1}
+                    autoplay={{ delay: 2500, disableOnInteraction: false }}
+                    modules={[Autoplay]}
+                    className="bg-[#F5F5F5] rounded-lg overflow-hidden"
+                  >
+                    {[
+                      ...(data.images || []),
+                      ...(data.videos || []),
+                      ...(data.documents || []),
+                    ].map((fileUrl, index) => {
+                      const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(
+                        fileUrl
+                      );
+                      const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
+                      const isPDF = /\.pdf$/i.test(fileUrl);
+
+                      return (
+                        <SwiperSlide
+                          key={index}
+                          className="bg-[#F5F5F5] flex justify-center items-center"
+                        >
+                          {isImage ? (
+                            <img
+                              src={fileUrl}
+                              alt={`Slide ${index}`}
+                              className="w-full max-h-[500px] object-contain"
+                            />
+                          ) : isVideo ? (
+                            <video
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              className="w-full max-h-[500px] object-contain"
+                              src={fileUrl}
+                            />
+                          ) : isPDF ? (
+                            <iframe
+                              src={fileUrl}
+                              title={`PDF Slide ${index}`}
+                              className="w-full h-[500px]"
+                            />
+                          ) : (
+                            <p className="text-center text-gray-500">
+                              Unsupported file format
+                            </p>
+                          )}
+                        </SwiperSlide>
+                      );
+                    })}
+                  </Swiper>
+                ) : (
+                  <p className="text-gray-500">{t("noSamplesMessage")}</p>
+                )}
+              </>
             )}
 
             <h2 className="text-xl font-semibold mt-6">{t("aboutGig")}</h2>

@@ -137,11 +137,6 @@ const Gig = () => {
 
             {data && (
               <>
-                {console.log("DATA:", data)}
-                {console.log("Images:", data.images)}
-                {console.log("Videos:", data.videos)}
-                {console.log("Documents:", data.documents)}
-
                 {data.images?.length > 0 ||
                 data.videos?.length > 0 ||
                 data.documents?.length > 0 ? (
@@ -163,16 +158,6 @@ const Gig = () => {
                       const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
                       const isPDF = /\.pdf$/i.test(fileUrl);
 
-                      console.log(`File #${index}:`, fileUrl);
-                      console.log(
-                        "isImage:",
-                        isImage,
-                        "| isVideo:",
-                        isVideo,
-                        "| isPDF:",
-                        isPDF
-                      );
-
                       return (
                         <SwiperSlide
                           key={index}
@@ -186,7 +171,10 @@ const Gig = () => {
                             />
                           ) : isVideo ? (
                             <video
-                              controls
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
                               className="w-full max-h-[500px] object-contain"
                               src={fileUrl}
                             />
