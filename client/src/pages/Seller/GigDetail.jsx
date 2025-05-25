@@ -148,10 +148,6 @@ const GigDetail = () => {
                             />
                           ) : isVideo ? (
                             <video
-                              autoPlay
-                              // muted
-                              loop
-                              playsInline
                               className="w-full max-h-[500px] object-contain"
                               src={fileUrl}
                             />
