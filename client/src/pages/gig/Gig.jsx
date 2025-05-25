@@ -172,7 +172,7 @@ const Gig = () => {
                           ) : isVideo ? (
                             <video
                               autoPlay
-                              muted
+                              // muted
                               loop
                               playsInline
                               className="w-full max-h-[500px] object-contain"
