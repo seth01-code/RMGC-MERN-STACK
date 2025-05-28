@@ -96,7 +96,7 @@ const EditProfile = () => {
     // Prepare updated profile data
     const updatedProfile = {
       ...profile,
-      img: imageUrl || "",
+      img: typeof imageUrl === "string" ? imageUrl : imageUrl?.url || "",
     };
 
     // Include the new password if it's provided
