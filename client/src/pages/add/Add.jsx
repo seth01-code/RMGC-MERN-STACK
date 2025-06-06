@@ -422,13 +422,13 @@ const Add = () => {
               className="input-field"
               placeholder={t("price")}
             />
-            <p className="text-gray-500">
+            {/* <p className="text-gray-500">
               {t("converted_to_usd")}: $
               {state.price
                 ? Math.round(state.price / exchangeRate || 0).toLocaleString()
                 : "0"}{" "}
               USD
-            </p>
+            </p> */}
 
             <button
               onClick={handleSubmit}
