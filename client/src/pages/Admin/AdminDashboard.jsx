@@ -211,34 +211,40 @@ function AdminDashboard() {
         </div>
 
         {/* Pagination Controls */}
-        <div className="flex flex-col items-center gap-2 mt-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col items-center gap-4 mt-6">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             {/* Previous Button */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               whileHover={{ scale: 1.05 }}
               onClick={() => setCurrentGroup((prev) => Math.max(prev - 1, 0))}
               disabled={currentGroup === 0}
-              className="flex items-center gap-1 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-4 py-2 bg-blue-100 text-blue-800 rounded-full shadow-sm transition hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiChevronLeft size={18} />
               Previous
             </motion.button>
 
             {/* Page Selector */}
-            <select
-              className="px-3 py-1 rounded border text-sm text-gray-700"
-              value={currentGroup}
-              onChange={(e) => setCurrentGroup(Number(e.target.value))}
-            >
-              {Array.from({
-                length: Math.ceil(barChartData.labels.length / usersPerGroup),
-              }).map((_, index) => (
-                <option key={index} value={index}>
-                  Page {index + 1}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                className="px-4 py-2 appearance-none bg-white border border-gray-300 rounded-full shadow-sm text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+                value={currentGroup}
+                onChange={(e) => setCurrentGroup(Number(e.target.value))}
+              >
+                {Array.from({
+                  length: Math.ceil(barChartData.labels.length / usersPerGroup),
+                }).map((_, index) => (
+                  <option key={index} value={index}>
+                    Page {index + 1}
+                  </option>
+                ))}
+              </select>
+              {/* Custom dropdown arrow */}
+              <div className="absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none text-gray-400">
+                ▼
+              </div>
+            </div>
 
             {/* Next Button */}
             <motion.button
@@ -254,7 +260,7 @@ function AdminDashboard() {
               disabled={
                 (currentGroup + 1) * usersPerGroup >= barChartData.labels.length
               }
-              className="flex items-center gap-1 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-4 py-2 bg-blue-100 text-blue-800 rounded-full shadow-sm transition hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
               <FiChevronRight size={18} />
@@ -262,7 +268,7 @@ function AdminDashboard() {
           </div>
 
           {/* Page Count */}
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 mt-1">
             Page {currentGroup + 1} of{" "}
             {Math.ceil(barChartData.labels.length / usersPerGroup)}
           </span>
