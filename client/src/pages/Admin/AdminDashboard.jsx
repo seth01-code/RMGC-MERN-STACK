@@ -17,6 +17,7 @@ import {
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 ChartJS.register(
   Title,
@@ -37,6 +38,8 @@ function AdminDashboard() {
   const { currencySymbol, convertPrice, countryCurrency } = useExchangeRate(
     currentUser?.country
   );
+  const [currentGroup, setCurrentGroup] = useState(0);
+  const usersPerGroup = 10;
 
   // Fetch seller revenue data
   const { data, isLoading, error } = useQuery({
@@ -101,7 +104,22 @@ function AdminDashboard() {
     datasets: [],
   });
 
-  const [monthlyEarnings, setMonthlyEarnings] = useState([]);
+  const groupedData = {
+    ...barChartData,
+    labels: barChartData.labels.slice(
+      currentGroup * usersPerGroup,
+      (currentGroup + 1) * usersPerGroup
+    ),
+    datasets: barChartData.datasets.map((dataset) => ({
+      ...dataset,
+      data: dataset.data.slice(
+        currentGroup * usersPerGroup,
+        (currentGroup + 1) * usersPerGroup
+      ),
+    })),
+  };
+
+  // const [monthlyEarnings, setMonthlyEarnings] = useState([]);
 
   // Revenue Calculation
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -175,21 +193,79 @@ function AdminDashboard() {
         <h2 className="font-semibold text-lg mb-4">
           Total Sales Per Service Provider
         </h2>
+
+        {/* Bar Chart */}
         <div className="w-full flex flex-col items-center justify-center">
           <Bar
             ref={chartRef}
-            data={barChartData}
+            data={groupedData}
             options={{
               responsive: true,
               maintainAspectRatio: false,
               scales: {
-                x: {
-                  beginAtZero: true,
-                },
+                x: { beginAtZero: true },
               },
             }}
             className="w-full h-auto sm:h-[400px] md:h-[450px] lg:h-[500px] max-h-[600px]"
           />
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex flex-col items-center gap-2 mt-6">
+          <div className="flex items-center gap-4">
+            {/* Previous Button */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => setCurrentGroup((prev) => Math.max(prev - 1, 0))}
+              disabled={currentGroup === 0}
+              className="flex items-center gap-1 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiChevronLeft size={18} />
+              Previous
+            </motion.button>
+
+            {/* Page Selector */}
+            <select
+              className="px-3 py-1 rounded border text-sm text-gray-700"
+              value={currentGroup}
+              onChange={(e) => setCurrentGroup(Number(e.target.value))}
+            >
+              {Array.from({
+                length: Math.ceil(barChartData.labels.length / usersPerGroup),
+              }).map((_, index) => (
+                <option key={index} value={index}>
+                  Page {index + 1}
+                </option>
+              ))}
+            </select>
+
+            {/* Next Button */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={() =>
+                setCurrentGroup((prev) =>
+                  (prev + 1) * usersPerGroup < barChartData.labels.length
+                    ? prev + 1
+                    : prev
+                )
+              }
+              disabled={
+                (currentGroup + 1) * usersPerGroup >= barChartData.labels.length
+              }
+              className="flex items-center gap-1 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+              <FiChevronRight size={18} />
+            </motion.button>
+          </div>
+
+          {/* Page Count */}
+          <span className="text-sm text-gray-500">
+            Page {currentGroup + 1} of{" "}
+            {Math.ceil(barChartData.labels.length / usersPerGroup)}
+          </span>
         </div>
       </motion.div>
 
