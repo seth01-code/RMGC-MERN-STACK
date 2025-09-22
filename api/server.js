@@ -20,7 +20,7 @@ import User from "./models/userModel.js";
 // Initialize express app
 const app = express();
 dotenv.config();
-const port = 3000;
+const port = 5000;
 
 // Create an HTTP server and attach Express
 const server = createServer(app);
