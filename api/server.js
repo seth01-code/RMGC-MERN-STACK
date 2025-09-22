@@ -33,9 +33,10 @@ app.use(prerender);
 export const io = new Server(server, {
   cors: {
     origin: [
+      "http://localhost:3000", // <--- add this
       "https://www.renewedmindsglobalconsult.com",
       "https://renewedmindsglobalconsult.com",
-    ], // Custom Domains
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },
