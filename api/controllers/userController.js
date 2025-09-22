@@ -5,7 +5,7 @@ import Order from "../models/orderModel.js";
 import Conversation from "../models/conversationModel.js";
 import Message from "../models/messageModel.js";
 import Review from "../models/reviewModel.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 // Get specific user's data by user ID
 export const getUser = async (req, res, next) => {

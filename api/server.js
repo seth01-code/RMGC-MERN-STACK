@@ -60,6 +60,7 @@ const connect = async () => {
 app.use(
   cors({
     origin: [
+      "http://localhost:3000", // allow local Next.js
       "https://www.renewedmindsglobalconsult.com",
       "https://renewedmindsglobalconsult.com",
     ],
