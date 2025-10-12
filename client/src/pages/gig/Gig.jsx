@@ -346,51 +346,49 @@ const Gig = () => {
           </div>
 
           {/* RIGHT SECTION */}
-          <div className="border border-gray-300 p-5 rounded-md shadow-md lg:sticky top-36 min-w-[280px] w-full max-h-fit">
-            <div className="flex items-center justify-between">
-              <h3 className="text-md md:text-lg font-medium">
+          <div className="w-full min-w-[280px] bg-white p-6 rounded-xl shadow-lg space-y-4">
+            {/* Title & Price */}
+            <div className="flex justify-between items-center">
+              <h3 className="font-semibold text-lg text-gray-900">
                 {data.shortTitle}
               </h3>
-              <h3 className="text-md md:text-lg font-semibold">
-                {currencySymbol}{" "}
-                {new Intl.NumberFormat().format(
-                  (data.price * exchangeRate).toFixed(2)
-                )}
+              <h3 className="font-bold text-lg text-gray-900">
+                {currencySymbol} {(data.price * exchangeRate).toFixed(2)}
               </h3>
             </div>
 
-            <p className="text-gray-600 text-sm mt-2">{data.shortDesc}</p>
+            {/* Short Description */}
+            <p className="text-gray-600 text-sm">{data.shortDesc}</p>
 
-            <div className="flex justify-between text-sm text-gray-700 mt-3">
-              <div className="flex items-center gap-2">
-                <img src={Clock} alt="" className="w-5" />
-                <span>
-                  {data.deliveryTime} {t("daysDelivery")}
-                </span>
+            {/* Delivery & Revisions */}
+            <div className="flex justify-between text-gray-700 text-sm mt-2">
+              <div className="flex items-center gap-1">
+                <Image src={Clock} alt="Delivery Time" width={20} height={20} />
+                <span>{data.deliveryTime} days</span>
               </div>
-              <div className="flex items-center gap-2">
-                <img src={Recycle} alt="" className="w-5" />
-                <span>
-                  {data.revisionNumber} {t("revisions")}
-                </span>
+              <div className="flex items-center gap-1">
+                <Image src={Recycle} alt="Revisions" width={20} height={20} />
+                <span>{data.revisionNumber} revisions</span>
               </div>
             </div>
 
-            <div className="mt-4 flex flex-col gap-4">
-              {data.features.map((feature, index) => (
+            {/* Features */}
+            <div className="mt-3 flex flex-col gap-2">
+              {data.features.map((feature, i) => (
                 <div
-                  key={index}
-                  className="flex items-center gap-3 text-gray-600 text-sm"
+                  key={i}
+                  className="flex items-center gap-2 text-gray-700 text-sm hover:text-orange-600 transition"
                 >
-                  <FaCheckDouble className="text-xl text-[#FF8C00]" />
+                  <FaCheckDouble className="text-orange-500 flex-shrink-0" />
                   <span>{feature}</span>
                 </div>
               ))}
             </div>
 
-            <Link to={`/pay/${id}`} className="flex justify-center">
-              <button className="w-full max-w-[250px] bg-[#FF8C00] text-white py-2 mt-4 text-lg font-medium rounded-md hover:bg-[#FF8C00] transition">
-                {t("continue")}
+            {/* Continue Button */}
+            <Link href={`/pay/${gigId}`}>
+              <button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-medium transition-all duration-300 shadow-md">
+                Continue
               </button>
             </Link>
           </div>
