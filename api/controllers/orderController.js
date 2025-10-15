@@ -75,7 +75,7 @@ export const intent = async (req, res, next) => {
         amount: convertedPrice * 100, // Convert to kobo/cents
         email: user.email,
         currency: buyerCurrency,
-        callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
+        callback_url: `http://localhost:3000/payment-processing`,
         metadata: {
           gigId: gig._id,
           buyerId: userId,
@@ -253,6 +253,7 @@ export const flutterWaveIntent = async (req, res, next) => {
       Guinea: "GNF",
       BurkinaFaso: "XOF",
       Niger: "XOF",
+      Nigeria: "NGN",
       Mali: "XOF",
       Togo: "XOF",
       Benin: "XOF",
@@ -297,7 +298,7 @@ export const flutterWaveIntent = async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_TEST_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_LIVE_SECRET_KEY}`,
         },
       }
     );
