@@ -325,7 +325,7 @@ export const verifyFlutterWavePayment = async (req, res, next) => {
       `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_TEST_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_LIVE_SECRET_KEY}`,
         },
       }
     );
