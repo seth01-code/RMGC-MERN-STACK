@@ -107,7 +107,14 @@ const sendResetPasswordEmail = async (email, username, resetLink) => {
 };
 
 // Send Welcome Email (Professional UI)
-const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
+const sendWelcomeEmail = async (
+  email,
+  username,
+  isSeller,
+  isAdmin,
+  role,
+  tier
+) => {
   console.log(`📧 Sending Welcome Email to ${email}...`);
 
   try {
@@ -119,21 +126,13 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
         "👑 Welcome to Renewed Minds Global Consult – Admin Access Granted!";
       userMessage = `
         <p>Dear <b>${username}</b>,</p>
-
         <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-
         <p>As an <b>Administrator</b>, you have special privileges to oversee platform activities. 🔥</p>
-
-        <p>Here’s what you can do as an Admin:</p>
-        
         <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
           <li>🛠 Manage users and service providers</li>
           <li>📊 Monitor platform analytics and transactions</li>
           <li>💬 Facilitate communication and issue resolution</li>
         </ul>
-
-        <p>You can access the admin dashboard using the button below:</p>
-
         <div style="text-align: center; margin-top: 20px;">
           <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🔑 Access Admin Dashboard
@@ -145,46 +144,95 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
         "🚀 Welcome to Renewed Minds Global Consult – As A Service Provider!";
       userMessage = `
         <p>Dear <b>${username}</b>,</p>
-
         <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-
         <p>We’re excited to have you as a <b>service provider</b> on our platform. 🌟</p>
-
-        <p>Here’s what you can do as a Service Provider:</p>
-        
         <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
           <li>💼 Create & showcase your services</li>
           <li>📈 Get discovered by clients worldwide</li>
           <li>💰 Earn and grow your business</li>
         </ul>
-
-        <p>Start by setting up your profile and publishing your first service!</p>
-
         <div style="text-align: center; margin-top: 20px;">
           <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🚀 Go to Your Dashboard
           </a>
         </div>
       `;
+    }
+    // ✅ NEW: Organization welcome email
+    else if (role === "organization") {
+      subject =
+        "🏢 Welcome to Renewed Minds Global Consult – Organization Account Created!";
+      userMessage = `
+        <p>Dear <b>${username}</b>,</p>
+        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
+        <p>Your <b>Organization Account</b> has been successfully created.</p>
+        <p>Here’s what you can do as an Organization:</p>
+        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
+          <li>📝 Post remote job opportunities</li>
+          <li>💼 Connect with verified remote professionals</li>
+          <li>💳 Manage applications and hire talent securely</li>
+        </ul>
+        <p>Note: To activate job posting privileges, please complete your organization verification and payment.</p>
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+            🏢 Access Organization Dashboard
+          </a>
+        </div>
+      `;
+    }
+    // ✅ NEW: Remote Worker welcome email
+    else if (role === "remoteWorker") {
+      const tierText =
+        tier === "VIP"
+          ? "🌟 VIP Remote Worker Subscription Activated!"
+          : "💼 Free Tier Remote Worker Account Created!";
+      subject = `🌍 Welcome to Renewed Minds Global Consult – ${tierText}`;
+
+      if (tier === "VIP") {
+        userMessage = `
+          <p>Dear <b>${username}</b>,</p>
+          <p>Welcome aboard as a <b>VIP Remote Worker</b>! 🌟</p>
+          <p>As a VIP member, you now have full access to:</p>
+          <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
+            <li>💰 All remote job listings, regardless of pay range</li>
+            <li>📬 Direct applications and faster matching</li>
+            <li>🚀 Priority visibility for recruiters</li>
+          </ul>
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+              🌟 Access Your VIP Dashboard
+            </a>
+          </div>
+        `;
+      } else {
+        userMessage = `
+          <p>Dear <b>${username}</b>,</p>
+          <p>Welcome to <b>Renewed Minds Global Consult</b> as a <b>Remote Worker (Free Tier)</b>! 💼</p>
+          <p>Here’s what’s available to you right now:</p>
+          <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
+            <li>🪙 Access remote jobs between $1 – $200</li>
+            <li>📈 Build your remote career profile</li>
+            <li>🎯 Upgrade to VIP anytime for full job access</li>
+          </ul>
+          <div style="text-align: center; margin-top: 20px;">
+            <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+              💼 Go to Your Remote Dashboard
+            </a>
+          </div>
+        `;
+      }
     } else {
       subject = "🎉 Welcome to Renewed Minds Global Consult!";
       userMessage = `
         <p>Dear <b>${username}</b>,</p>
-
         <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-
         <p>We’re thrilled to have you join our community. 🚀</p>
-
         <p>As a valued member, you’ll gain access to:</p>
-        
         <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
           <li>✅ High-quality consulting & professional guidance</li>
           <li>✅ A supportive and engaging community</li>
           <li>✅ Exclusive resources and expert insights</li>
         </ul>
-
-        <p>Get started now by exploring our platform.</p>
-
         <div style="text-align: center; margin-top: 20px;">
           <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🚀 Login to Your Account
@@ -219,7 +267,7 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
     await transporter.sendMail({
       from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
       to: email,
-      subject: subject,
+      subject,
       html: emailBody,
     });
 
@@ -230,6 +278,8 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin) => {
 };
 
 // Register User (Save only in Memory)
+
+// --- Inside register controller, add new role logic ---
 export const register = async (req, res, next) => {
   try {
     const {
@@ -241,8 +291,8 @@ export const register = async (req, res, next) => {
       phone,
       desc,
       country,
-      portfolioLink = [], // Default to empty array
-      languages = [], // Default to empty array
+      portfolioLink = [],
+      languages = [],
       fullName,
       dob,
       address,
@@ -250,43 +300,44 @@ export const register = async (req, res, next) => {
       stateOfResidence,
       countryOfResidence,
       nextOfKin,
-      services = [], // Default to empty array
+      services = [],
+      role, // "organization" or "remote_worker"
+      tier, // "free" or "vip"
+      organizationName,
+      organizationWebsite,
+      organizationDescription,
+      organizationRegNumber,
+      organizationContactEmail,
+      organizationContactPhone,
+      organizationLogo,
     } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) return next(createError(400, "Email already in use"));
 
-    const isAdmin = email.toLowerCase().trim().endsWith(ADMIN_DOMAIN);
-
-    if (!isAdmin && email.toLowerCase().trim().includes(ADMIN_DOMAIN)) {
-      return next(createError(400, "Unauthorized email domain"));
-    }
-
     const otp = generateOTP();
     const hashedOtp = hashOTP(otp);
     const otpExpires = Date.now() + OTP_EXPIRATION_TIME;
 
+    // ✅ Store properly mapped fields in pendingUsers
     pendingUsers.set(email, {
-      username: username?.replace(/\s+$/, ""),
+      username: username?.trim(),
       email,
       password: bcrypt.hashSync(password, 5),
       isSeller,
-      isAdmin,
       img,
       phone,
       desc,
       country,
-      portfolioLink: Array.isArray(portfolioLink)
-        ? portfolioLink
-        : [portfolioLink], // Ensure array
-      languages: Array.isArray(languages) ? languages : [languages], // Ensure array
+      portfolioLink,
+      languages,
       fullName,
       dob,
       address,
       yearsOfExperience,
       stateOfResidence,
       countryOfResidence,
-      services: Array.isArray(services) ? services : [services], // Ensure array
+      services,
       nextOfKin: {
         fullName: nextOfKin?.fullName || "",
         dob: nextOfKin?.dob || null,
@@ -296,19 +347,43 @@ export const register = async (req, res, next) => {
         address: nextOfKin?.address || "",
         phone: nextOfKin?.phone || "",
       },
+
+      // ✅ Schema-compliant role logic
+      role:
+        role === "organization"
+          ? "organization"
+          : role === "remote_worker"
+          ? "remote_worker"
+          : null,
+      tier: tier?.toLowerCase() === "vip" ? "vip" : "free",
+
+      // ✅ Organization data only if role = organization
+      organization:
+        role === "organization"
+          ? {
+              name: organizationName || "",
+              regNumber: organizationRegNumber || "",
+              website: organizationWebsite || "",
+              description: organizationDescription || "",
+              verified: false,
+              contactEmail: organizationContactEmail || email,
+              contactPhone: organizationContactPhone || "",
+              logo: organizationLogo || "",
+            }
+          : null,
+
       hashedOtp,
       otpExpires,
     });
 
     await sendOtpEmail(email, username, otp);
-
     res.status(201).json({ message: "OTP sent. Please verify.", email });
   } catch (err) {
     next(err);
   }
 };
 
-// Verify OTP & Save User in Database
+// --- Inside verifyOtp controller, extend logic to save new roles ---
 export const verifyOtp = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
@@ -329,19 +404,18 @@ export const verifyOtp = async (req, res, next) => {
     const isMatch = bcrypt.compareSync(otp, userData.hashedOtp);
     if (!isMatch) return next(createError(400, "Invalid OTP"));
 
-    // Save the user in the database
+    // ✅ Create a user from schema-aligned data
     const newUser = new User({
-      username: userData.username?.replace(/\s+$/, ""), // Remove only trailing spaces
+      username: userData.username,
       email: userData.email,
       password: userData.password,
       isSeller: userData.isSeller,
-      isAdmin: userData.isAdmin,
       img: userData.img,
       phone: userData.phone,
       desc: userData.desc,
       country: userData.country,
-      portfolioLink: userData.portfolioLink, // Save array
-      languages: userData.languages, // Save array
+      portfolioLink: userData.portfolioLink,
+      languages: userData.languages,
       isVerified: true,
       fullName: userData.fullName,
       dob: userData.dob,
@@ -349,27 +423,24 @@ export const verifyOtp = async (req, res, next) => {
       yearsOfExperience: userData.yearsOfExperience,
       stateOfResidence: userData.stateOfResidence,
       countryOfResidence: userData.countryOfResidence,
-      services: userData.services, // Save array
-      nextOfKin: {
-        fullName: userData.nextOfKin?.fullName || "",
-        dob: userData.nextOfKin?.dob || null,
-        stateOfResidence: userData.nextOfKin?.stateOfResidence || "",
-        countryOfResidence: userData.nextOfKin?.countryOfResidence || "",
-        email: userData.nextOfKin?.email || "",
-        address: userData.nextOfKin?.address || "",
-        phone: userData.nextOfKin?.phone || "",
-      },
+      services: userData.services,
+      nextOfKin: userData.nextOfKin,
+
+      // ✅ Role and organization logic
+      role: userData.role,
+      tier: userData.role === "remote_worker" ? userData.tier : null,
+      organization:
+        userData.role === "organization" ? userData.organization : null,
     });
 
     await newUser.save();
     pendingUsers.delete(email);
 
-    // Send Welcome Email with isSeller
     await sendWelcomeEmail(
       email,
       userData.username,
-      userData.isSeller,
-      userData.isAdmin
+      userData.role,
+      userData.tier
     );
 
     res
@@ -379,83 +450,6 @@ export const verifyOtp = async (req, res, next) => {
     next(err);
   }
 };
-
-// Edit OTP verification for user profile updates
-// export const verifyEditOtp = async (req, res, next) => {
-//   try {
-//     const { email, otp } = req.body;
-
-//     // Check if email exists in the database
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return next(createError(404, "No user found with this email"));
-//     }
-
-//     // If OTP hasn't been sent yet, send a new OTP
-//     if (!pendingUsers.has(email)) {
-//       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-//       const hashedOtp = bcrypt.hashSync(otpCode, 10);
-
-//       // Store the OTP and expiration time
-//       pendingUsers.set(email, {
-//         hashedOtp,
-//         otpExpires: Date.now() + 10 * 60 * 1000, // 10 minutes expiry
-//       });
-
-//       // Send OTP to user (you can integrate email sending here)
-//       await sendOtpEmail(email, otpCode);
-
-//       return res.status(200).json({ message: "OTP sent successfully" });
-//     }
-
-//     // Check if OTP is valid
-//     const userData = pendingUsers.get(email);
-//     if (Date.now() > userData.otpExpires) {
-//       pendingUsers.delete(email);
-//       return next(createError(400, "OTP expired. Please request a new OTP"));
-//     }
-
-//     const isMatch = bcrypt.compareSync(otp, userData.hashedOtp);
-//     if (!isMatch) return next(createError(400, "Invalid OTP"));
-
-//     // If OTP is valid, allow email change or other profile updates
-//     return res.status(200).json({ message: "OTP verified. Proceed with updating profile" });
-
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
-// Resend OTP
-// export const resendOtp = async (req, res, next) => {
-//   try {
-//     const { email } = req.body;
-//     if (!email) return next(createError(400, "Email is required"));
-
-//     if (!pendingUsers.has(email)) {
-//       return next(
-//         createError(404, "No pending registration found for this email")
-//       );
-//     }
-
-//     const userData = pendingUsers.get(email);
-//     if (Date.now() < userData.otpExpires) {
-//       return next(createError(400, "Please wait before requesting a new OTP"));
-//     }
-
-//     const newOtp = generateOTP();
-//     userData.hashedOtp = hashOTP(newOtp);
-//     userData.otpExpires = Date.now() + OTP_EXPIRATION_TIME;
-//     pendingUsers.set(email, userData);
-
-//     await sendOtpEmail(email, userData.username, newOtp);
-//     res
-//       .status(200)
-//       .json({ message: "New OTP sent. Please check your email.", email });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
 
 // ✅ Login
 export const login = async (req, res, next) => {

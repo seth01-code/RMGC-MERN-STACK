@@ -2,18 +2,19 @@ import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
   {
+    // ===== Existing Fields (unchanged) =====
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    isSeller: { type: Boolean, default: false },
+    isSeller: { type: Boolean, default: false }, // ⚠️ Leave untouched for freelancer logic
     isAdmin: { type: Boolean, default: false },
-    img: { type: String, default: "" }, // Profile picture
+    img: { type: String, default: "" },
     bio: { type: String, default: "" },
     country: { type: String, default: "" },
-    phone: { type: String, default: "" }, // Added phone field
-    desc: { type: String, default: "" }, // Added description field
-    portfolioLink: { type: [String], default: [] }, // Default should be an array
-    languages: { type: [String], default: [] }, // Default should be an array
+    phone: { type: String, default: "" },
+    desc: { type: String, default: "" },
+    portfolioLink: { type: [String], default: [] },
+    languages: { type: [String], default: [] },
     isVerified: { type: Boolean, default: false },
     otp: { type: String },
     otpExpires: { type: Date },
@@ -21,7 +22,6 @@ const UserSchema = new mongoose.Schema(
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
 
-    // New fields added from your list
     fullName: { type: String },
     dob: { type: Date },
     address: { type: String, default: "" },
@@ -29,7 +29,6 @@ const UserSchema = new mongoose.Schema(
     stateOfResidence: { type: String, default: "" },
     countryOfResidence: { type: String, default: "" },
 
-    // Next of Kin details
     nextOfKin: {
       fullName: { type: String },
       dob: { type: Date },
@@ -40,13 +39,59 @@ const UserSchema = new mongoose.Schema(
       phone: { type: String, default: "" },
     },
 
-    // List of services provided by the user
     services: { type: [String], default: [] },
+
+    // ===== New Additions for RMGC Expansion =====
+
+    // (1) Role definition for new types (optional)
+    role: {
+      type: String,
+      enum: ["organization", "remote_worker"],
+      default: null, // ⚠️ null ensures freelancers remain unaffected
+    },
+
+    // (2) For remote workers — Free or VIP tier
+    tier: {
+      type: String,
+      enum: ["free", "vip", null],
+      default: null,
+    },
+
+    // (3) VIP subscription tracking (applies only if tier === 'vip')
+    vipSubscription: {
+      startDate: { type: Date },
+      endDate: { type: Date },
+      active: { type: Boolean, default: false },
+      paymentReference: { type: String },
+      gateway: {
+        type: String,
+        enum: ["paystack", "flutterwave", "stripe", null],
+        default: null,
+      },
+    },
+
+    // (4) Organization-specific fields (for role === 'organization')
+    organization: {
+      name: { type: String },
+      regNumber: { type: String },
+      website: { type: String },
+      description: { type: String },
+      verified: { type: Boolean, default: false },
+      contactEmail: { type: String },
+      contactPhone: { type: String },
+      logo: { type: String },
+    },
+
+    // (5) List of jobs posted by this organization
+    postedJobs: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Job",
+      },
+    ],
   },
-  { timestamps: true } // ✅ This automatically adds createdAt & updatedAt
+  { timestamps: true }
 );
 
-// Check if the model is already defined (prevents overwriting)
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
-
 export default User;
