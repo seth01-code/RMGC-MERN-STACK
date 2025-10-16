@@ -157,12 +157,12 @@ const sendWelcomeEmail = async (
     // ✅ Remote Worker welcome email (second)
     else if (role === "remote_worker") {
       const tierText =
-        tier === "VIP"
+        tier === "vip"
           ? "🌟 VIP Remote Worker Subscription Activated!"
           : "💼 Free Tier Remote Worker Account Created!";
       subject = `🌍 Welcome to Renewed Minds Global Consult – ${tierText}`;
 
-      if (tier === "VIP") {
+      if (tier === "vip") {
         userMessage = `
           <p>Dear <b>${username}</b>,</p>
           <p>Welcome aboard as a <b>VIP Remote Worker</b>! 🌟</p>
