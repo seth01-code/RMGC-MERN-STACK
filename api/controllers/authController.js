@@ -155,7 +155,7 @@ const sendWelcomeEmail = async (
     }
 
     // ✅ Remote Worker welcome email (second)
-    else if (role === "remoteWorker") {
+    else if (role === "remote_workerr") {
       const tierText =
         tier === "VIP"
           ? "🌟 VIP Remote Worker Subscription Activated!"
