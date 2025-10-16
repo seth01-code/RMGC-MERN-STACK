@@ -107,7 +107,14 @@ const sendResetPasswordEmail = async (email, username, resetLink) => {
 };
 
 // Send Welcome Email (Professional UI)
-const sendWelcomeEmail = async (email, username, isSeller, isAdmin, role, tier) => {
+const sendWelcomeEmail = async (
+  email,
+  username,
+  isSeller,
+  isAdmin,
+  role,
+  tier
+) => {
   console.log(`📧 Sending Welcome Email to ${email}...`);
 
   try {
@@ -299,7 +306,6 @@ const sendWelcomeEmail = async (email, username, isSeller, isAdmin, role, tier) 
   }
 };
 
-
 // Register User (Save only in Memory)
 
 // --- Inside register controller, add new role logic ---
@@ -462,6 +468,8 @@ export const verifyOtp = async (req, res, next) => {
     await sendWelcomeEmail(
       email,
       userData.username,
+      userData.isSeller,
+      userData.isAdmin,
       userData.role,
       userData.tier
     );
