@@ -107,59 +107,24 @@ const sendResetPasswordEmail = async (email, username, resetLink) => {
 };
 
 // Send Welcome Email (Professional UI)
-const sendWelcomeEmail = async (
-  email,
-  username,
-  isSeller,
-  isAdmin,
-  role,
-  tier
-) => {
+const sendWelcomeEmail = async (email, username, isSeller, isAdmin, role, tier) => {
   console.log(`📧 Sending Welcome Email to ${email}...`);
 
   try {
     let subject;
     let userMessage;
 
-    if (isAdmin) {
-      subject =
-        "👑 Welcome to Renewed Minds Global Consult – Admin Access Granted!";
-      userMessage = `
-        <p>Dear <b>${username}</b>,</p>
-        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-        <p>As an <b>Administrator</b>, you have special privileges to oversee platform activities. 🔥</p>
-        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-          <li>🛠 Manage users and service providers</li>
-          <li>📊 Monitor platform analytics and transactions</li>
-          <li>💬 Facilitate communication and issue resolution</li>
-        </ul>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-            🔑 Access Admin Dashboard
-          </a>
-        </div>
-      `;
-    } else if (isSeller) {
-      subject =
-        "🚀 Welcome to Renewed Minds Global Consult – As A Service Provider!";
-      userMessage = `
-        <p>Dear <b>${username}</b>,</p>
-        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-        <p>We’re excited to have you as a <b>service provider</b> on our platform. 🌟</p>
-        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-          <li>💼 Create & showcase your services</li>
-          <li>📈 Get discovered by clients worldwide</li>
-          <li>💰 Earn and grow your business</li>
-        </ul>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-            🚀 Go to Your Dashboard
-          </a>
-        </div>
-      `;
-    }
-    // ✅ NEW: Organization welcome email
-    else if (role === "organization") {
+    console.log("🧩 Welcome Email Context →", {
+      email,
+      username,
+      isSeller,
+      isAdmin,
+      role,
+      tier,
+    });
+
+    // ✅ Organization welcome email (check first)
+    if (role === "organization") {
       subject =
         "🏢 Welcome to Renewed Minds Global Consult – Organization Account Created!";
       userMessage = `
@@ -174,13 +139,15 @@ const sendWelcomeEmail = async (
         </ul>
         <p>Note: To activate job posting privileges, please complete your organization verification and payment.</p>
         <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+          <a href="https://www.renewedmindsglobalconsult.com/login"
+             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🏢 Access Organization Dashboard
           </a>
         </div>
       `;
     }
-    // ✅ NEW: Remote Worker welcome email
+
+    // ✅ Remote Worker welcome email (second)
     else if (role === "remoteWorker") {
       const tierText =
         tier === "VIP"
@@ -199,7 +166,8 @@ const sendWelcomeEmail = async (
             <li>🚀 Priority visibility for recruiters</li>
           </ul>
           <div style="text-align: center; margin-top: 20px;">
-            <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+            <a href="https://www.renewedmindsglobalconsult.com/login"
+               style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
               🌟 Access Your VIP Dashboard
             </a>
           </div>
@@ -215,13 +183,61 @@ const sendWelcomeEmail = async (
             <li>🎯 Upgrade to VIP anytime for full job access</li>
           </ul>
           <div style="text-align: center; margin-top: 20px;">
-            <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+            <a href="https://www.renewedmindsglobalconsult.com/login"
+               style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
               💼 Go to Your Remote Dashboard
             </a>
           </div>
         `;
       }
-    } else {
+    }
+
+    // ✅ Admin welcome email
+    else if (isAdmin) {
+      subject =
+        "👑 Welcome to Renewed Minds Global Consult – Admin Access Granted!";
+      userMessage = `
+        <p>Dear <b>${username}</b>,</p>
+        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
+        <p>As an <b>Administrator</b>, you have special privileges to oversee platform activities. 🔥</p>
+        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
+          <li>🛠 Manage users and service providers</li>
+          <li>📊 Monitor platform analytics and transactions</li>
+          <li>💬 Facilitate communication and issue resolution</li>
+        </ul>
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="https://www.renewedmindsglobalconsult.com/login"
+             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+            🔑 Access Admin Dashboard
+          </a>
+        </div>
+      `;
+    }
+
+    // ✅ Seller (freelancer) welcome email
+    else if (isSeller) {
+      subject =
+        "🚀 Welcome to Renewed Minds Global Consult – As A Service Provider!";
+      userMessage = `
+        <p>Dear <b>${username}</b>,</p>
+        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
+        <p>We’re excited to have you as a <b>service provider</b> on our platform. 🌟</p>
+        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
+          <li>💼 Create & showcase your services</li>
+          <li>📈 Get discovered by clients worldwide</li>
+          <li>💰 Earn and grow your business</li>
+        </ul>
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="https://www.renewedmindsglobalconsult.com/login"
+             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+            🚀 Go to Your Dashboard
+          </a>
+        </div>
+      `;
+    }
+
+    // ✅ General user fallback
+    else {
       subject = "🎉 Welcome to Renewed Minds Global Consult!";
       userMessage = `
         <p>Dear <b>${username}</b>,</p>
@@ -234,7 +250,8 @@ const sendWelcomeEmail = async (
           <li>✅ Exclusive resources and expert insights</li>
         </ul>
         <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login" style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
+          <a href="https://www.renewedmindsglobalconsult.com/login"
+             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
             🚀 Login to Your Account
           </a>
         </div>
@@ -250,7 +267,12 @@ const sendWelcomeEmail = async (
         <div style="padding: 20px; color: #333;">
           ${userMessage}
 
-          <p style="margin-top: 30px;">If you have any questions, feel free to <a href="mailto:support@renewedmindsglobalconsult.com" style="color: #4CAF50; text-decoration: none; font-weight: bold;">contact our support team</a>.</p>
+          <p style="margin-top: 30px;">If you have any questions, feel free to 
+            <a href="mailto:support@renewedmindsglobalconsult.com" 
+               style="color: #4CAF50; text-decoration: none; font-weight: bold;">
+               contact our support team
+            </a>.
+          </p>
 
           <p>Once again, welcome! We can’t wait to see you thrive. 🌟</p>
 
@@ -276,6 +298,7 @@ const sendWelcomeEmail = async (
     console.error(`❌ Failed to send Welcome Email to ${email}:`, error);
   }
 };
+
 
 // Register User (Save only in Memory)
 
