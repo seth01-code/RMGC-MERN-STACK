@@ -53,7 +53,7 @@ const UserSchema = new mongoose.Schema(
     // (2) For remote workers — Free or VIP tier
     tier: {
       type: String,
-      enum: ["free", "vip", null],
+      enum: ["free", "VIP", null],
       default: null,
     },
 
