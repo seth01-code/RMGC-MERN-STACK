@@ -4,6 +4,10 @@ import { verifyToken } from "../middleware/jwt.js";
 
 const router = express.Router();
 
-router.post("/organization/subscribe", verifyToken, createOrganizationSubscription);
+router.post(
+  "/organization/subscribe",
+  verifyToken,
+  createOrganizationSubscription
+);
 
 export default router;
