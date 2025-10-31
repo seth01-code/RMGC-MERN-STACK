@@ -174,7 +174,7 @@ import messageRoute from "./routes/MessageRoute.js";
 import reviewRoute from "./routes/ReviewRoute.js";
 import sellerRoutes from "./routes/sellerRoutes.js";
 import exchangeRateRoute from "./routes/exchangeRoute.js";
-import paymentRoute from "./routes/paymentRoute.js";
+import paymentRoute from "./routes/paymentroute.js";
 
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
