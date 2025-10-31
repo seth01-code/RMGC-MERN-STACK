@@ -506,47 +506,44 @@ export const verifyOtp = async (req, res, next) => {
 };
 
 // ✅ Login
-export const login = async (req, res, next) => {
+export const login = async (req, res) => {
   try {
     const { email, username, password } = req.body;
 
-    // Remove only trailing spaces from the username in the request
     const trimmedUsername = username?.replace(/\s+$/, "");
 
-    // Find the user by email or username (ignoring both leading/trailing spaces)
     const user = await User.findOne({
       $or: [
         { email },
-        { username: { $regex: `^${trimmedUsername}$`, $options: "i" } }, // Ignore spaces in the DB username as well
+        { username: { $regex: `^${trimmedUsername}$`, $options: "i" } },
       ],
     });
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Check if the password matches
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Incorrect password" });
 
-    // Check if the user is verified
-    if (!user.isVerified) {
-      return res.status(400).json({ error: "Please verify your email first" });
-    }
-
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, isSeller: user.isSeller, isAdmin: user.isAdmin },
       process.env.JWT_KEY,
-      { expiresIn: "7d" } // Changed from "1d" to "7d"
+      { expiresIn: "7d" }
     );
 
-    // Set the cookie with the token
     res.cookie("accessToken", token, {
       httpOnly: true,
       sameSite: "None",
       secure: true,
     });
 
-    // Respond with the user data and token
+    // Determine role
+    let role = "user";
+    if (user.isAdmin) role = "admin";
+    else if (user.isSeller) role = "seller";
+    else if (user.role === "organization" || user.organization?.regNumber)
+      role = "organization";
+
+    // Respond with all needed info
     res.status(200).json({
       id: user._id,
       username: user.username,
@@ -556,10 +553,16 @@ export const login = async (req, res, next) => {
       img: user.img || null,
       bio: user.bio || "",
       country: user.country || "",
-      portfolioLink: user.portfolioLink || "",
+      portfolioLink: user.portfolioLink || [],
+      role,
+      vipSubscription: {
+        active: user.vipSubscription?.active ?? false,
+        gateway: user.vipSubscription?.gateway ?? null,
+      },
+      organization: user.organization || null,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Login error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
