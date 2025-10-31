@@ -4,16 +4,8 @@ import createError from "../utils/createError.js";
 
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
-    const {
-      email,
-      fullName,
-      cardNumber,
-      cvv,
-      expiryMonth,
-      expiryYear,
-      currency,
-    } = req.body;
-    const userId = req.user?.id; // must come from auth middleware
+    const { email, fullName, currency } = req.body;
+    const userId = req.user?.id;
 
     if (!userId) return next(createError(401, "Unauthorized"));
 
@@ -22,29 +14,28 @@ export const createOrganizationSubscription = async (req, res, next) => {
       return next(createError(400, "Only organizations can subscribe"));
     }
 
-    // Base plan info
     const amountNGN = 50000; // ₦50,000 yearly
     const tx_ref = `ORG-${Date.now()}-${userId}`;
     const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 
-    // Call Flutterwave charge endpoint
+    // 🔹 Step 1: Initialize payment (server-side)
     const response = await axios.post(
-      "https://api.flutterwave.com/v3/charges?type=card",
+      "https://api.flutterwave.com/v3/payments",
       {
         tx_ref,
         amount: amountNGN,
-        currency: "NGN", // Flutterwave auto converts if card currency differs
-        redirect_url: "http://localhost:3000/payment-processing",
-        payment_type: "card",
-        card_number: cardNumber,
-        cvv,
-        expiry_month: expiryMonth,
-        expiry_year: expiryYear,
-        email,
-        fullname: fullName,
-        authorization: {
-          mode: "pin", // optional if your account requires PIN
+        currency: "NGN",
+        customer: {
+          email,
+          name: fullName,
         },
+        customizations: {
+          title: "Organization Subscription",
+          description: "Access to RMGC organization dashboard and job posting",
+          logo: "https://www.renewedmindsglobalconsult.com/logo.png",
+        },
+        redirect_url:
+          "https://www.renewedmindsglobalconsult.com/payment/success",
       },
       {
         headers: {
@@ -54,26 +45,16 @@ export const createOrganizationSubscription = async (req, res, next) => {
       }
     );
 
-    const { status, data } = response.data;
-
-    if (status !== "success") {
-      return next(createError(400, "Payment initiation failed"));
+    const data = response.data?.data;
+    if (!data || !data.link) {
+      return next(createError(400, "Failed to initialize payment"));
     }
 
-    // Optionally store transaction details
-    user.vipSubscription = {
-      startDate: new Date(),
-      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-      active: true,
-      paymentReference: tx_ref,
-      gateway: "flutterwave",
-    };
-
-    await user.save();
-
+    // 🔹 Step 2: Return hosted payment link to frontend (you can open it invisibly)
     res.status(200).json({
-      message: "Organization subscription created successfully",
-      data,
+      success: true,
+      paymentLink: data.link,
+      tx_ref,
     });
   } catch (error) {
     console.error(
