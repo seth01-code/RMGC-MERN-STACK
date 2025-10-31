@@ -4,7 +4,15 @@ import createError from "../utils/createError.js";
 
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
-    const { email, fullName, cardNumber, cvv, expiryMonth, expiryYear, currency } = req.body;
+    const {
+      email,
+      fullName,
+      cardNumber,
+      cvv,
+      expiryMonth,
+      expiryYear,
+      currency,
+    } = req.body;
     const userId = req.user?.id; // must come from auth middleware
 
     if (!userId) return next(createError(401, "Unauthorized"));
@@ -17,7 +25,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
     // Base plan info
     const amountNGN = 50000; // ₦50,000 yearly
     const tx_ref = `ORG-${Date.now()}-${userId}`;
-    const FLW_SECRET = process.env.FLW_SECRET_KEY;
+    const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 
     // Call Flutterwave charge endpoint
     const response = await axios.post(
@@ -26,7 +34,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
         tx_ref,
         amount: amountNGN,
         currency: "NGN", // Flutterwave auto converts if card currency differs
-        redirect_url: "https://yourfrontend.com/payment-success",
+        redirect_url: "http://localhost:3000/payment-processing",
         payment_type: "card",
         card_number: cardNumber,
         cvv,
@@ -68,7 +76,10 @@ export const createOrganizationSubscription = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error("❌ Error in organization subscription:", error.response?.data || error);
+    console.error(
+      "❌ Error in organization subscription:",
+      error.response?.data || error
+    );
     next(createError(500, "Internal server error"));
   }
 };
