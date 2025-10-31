@@ -26,7 +26,11 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
     const amountNGN = 50000;
     const tx_ref = `ORG-${Date.now()}-${userId}`;
-    const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
+
+    // Flutterwave keys (no env for now)
+    const FLW_PUBLIC = "FLWPUBK_TEST-a4ec3e8dfe4b6e3b7cecd44ec481a3f2-X";
+    const FLW_SECRET = "FLWSECK_TEST-515b108d85989e44124b65d6ae479f2c-X";
+    const FLW_ENCRYPTION = "FLWSECK_TESTe0dc650c2ddb";
 
     // Prepare payment payload
     const payload = {
@@ -35,7 +39,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       currency: "NGN",
       redirect_url: "http://localhost:3000/payment-processing",
       payment_type: "card",
-      card_number: cardNumber,
+      card_number: cardNumber.replace(/\s/g, ""),
       cvv,
       expiry_month: expiryMonth,
       expiry_year: expiryYear,
@@ -43,10 +47,10 @@ export const createOrganizationSubscription = async (req, res, next) => {
       fullname: fullName,
     };
 
-    // Encrypt payload
-    const encryptedPayload = encryptPayload(payload, FLW_SECRET);
+    // Encrypt payload with the encryption key
+    const encryptedPayload = encryptPayload(payload, FLW_ENCRYPTION);
 
-    // Send encrypted data to Flutterwave
+    // Send encrypted payload to Flutterwave
     const response = await axios.post(
       "https://api.flutterwave.com/v3/charges?type=card",
       { client: encryptedPayload },
@@ -64,7 +68,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       return next(createError(400, "Payment initiation failed"));
     }
 
-    // Save subscription data
+    // Save subscription status
     user.vipSubscription = {
       startDate: new Date(),
       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),

@@ -1,15 +1,10 @@
 import crypto from "crypto";
 
-export const encryptPayload = (payload, secretKey) => {
+export const encryptPayload = (payload, encryptionKey) => {
   const text = JSON.stringify(payload);
+  const key = encryptionKey;
 
-  // Flutterwave uses 24-byte key for 3DES
-  const key = crypto
-    .createHash("md5")
-    .update(secretKey)
-    .digest("hex")
-    .substring(0, 24);
-
+  // 3DES encryption using ECB mode
   const cipher = crypto.createCipheriv("des-ede3", key, null);
   let encrypted = cipher.update(text, "utf8", "base64");
   encrypted += cipher.final("base64");
