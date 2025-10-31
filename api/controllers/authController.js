@@ -332,6 +332,7 @@ export const register = async (req, res, next) => {
       services = [],
       role, // "organization" or "remote_worker"
       tier, // "free" or "vip"
+      // Organization fields
       organizationName,
       organizationWebsite,
       organizationDescription,
@@ -339,6 +340,11 @@ export const register = async (req, res, next) => {
       organizationContactEmail,
       organizationContactPhone,
       organizationLogo,
+      organizationState,
+      organizationCountry,
+      organizationIndustry,
+      organizationCompanySize,
+      organizationSocialLinks = {}, // { linkedin, twitter, facebook }
     } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -348,7 +354,7 @@ export const register = async (req, res, next) => {
     const hashedOtp = hashOTP(otp);
     const otpExpires = Date.now() + OTP_EXPIRATION_TIME;
 
-    // ✅ Store properly mapped fields in pendingUsers
+    // Store pending user
     pendingUsers.set(email, {
       username: username?.trim(),
       email,
@@ -377,16 +383,19 @@ export const register = async (req, res, next) => {
         phone: nextOfKin?.phone || "",
       },
 
-      // ✅ Schema-compliant role logic
+      // Role and tier
       role:
         role === "organization"
           ? "organization"
           : role === "remote_worker"
           ? "remote_worker"
           : null,
-      tier: tier?.toLowerCase() === "vip" ? "vip" : "free",
+      tier:
+        role === "remote_worker" && tier?.toLowerCase() === "vip"
+          ? "vip"
+          : "free",
 
-      // ✅ Organization data only if role = organization
+      // Organization data (only if role = organization)
       organization:
         role === "organization"
           ? {
@@ -398,6 +407,16 @@ export const register = async (req, res, next) => {
               contactEmail: organizationContactEmail || email,
               contactPhone: organizationContactPhone || "",
               logo: organizationLogo || "",
+              address: address || "",
+              state: organizationState || "",
+              country: organizationCountry || "",
+              industry: organizationIndustry || "",
+              companySize: organizationCompanySize || "",
+              socialLinks: {
+                linkedin: organizationSocialLinks?.linkedin || "",
+                twitter: organizationSocialLinks?.twitter || "",
+                facebook: organizationSocialLinks?.facebook || "",
+              },
             }
           : null,
 
@@ -412,7 +431,7 @@ export const register = async (req, res, next) => {
   }
 };
 
-// --- Inside verifyOtp controller, extend logic to save new roles ---
+// --- verifyOtp controller ---
 export const verifyOtp = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
@@ -433,7 +452,7 @@ export const verifyOtp = async (req, res, next) => {
     const isMatch = bcrypt.compareSync(otp, userData.hashedOtp);
     if (!isMatch) return next(createError(400, "Invalid OTP"));
 
-    // ✅ Create a user from schema-aligned data
+    // ✅ Create the user in DB
     const newUser = new User({
       username: userData.username,
       email: userData.email,
@@ -455,9 +474,11 @@ export const verifyOtp = async (req, res, next) => {
       services: userData.services,
       nextOfKin: userData.nextOfKin,
 
-      // ✅ Role and organization logic
+      // ✅ Include role and tier
       role: userData.role,
       tier: userData.role === "remote_worker" ? userData.tier : null,
+
+      // ✅ Organization info if applicable
       organization:
         userData.role === "organization" ? userData.organization : null,
     });
@@ -474,9 +495,11 @@ export const verifyOtp = async (req, res, next) => {
       userData.tier
     );
 
-    res
-      .status(200)
-      .json({ message: "OTP verified. Account created successfully." });
+    // ✅ Return the role in the response
+    res.status(200).json({
+      message: "OTP verified. Account created successfully.",
+      role: newUser.role, // 👈 add this line
+    });
   } catch (err) {
     next(err);
   }

@@ -43,7 +43,7 @@ const UserSchema = new mongoose.Schema(
 
     // ===== New Additions for RMGC Expansion =====
 
-    // (1) Role definition for new types (optional)
+    // (1) Role definition for new types
     role: {
       type: String,
       enum: ["organization", "remote_worker"],
@@ -80,6 +80,18 @@ const UserSchema = new mongoose.Schema(
       contactEmail: { type: String },
       contactPhone: { type: String },
       logo: { type: String },
+
+      // ===== New fields to match frontend form =====
+      address: { type: String },
+      state: { type: String },
+      country: { type: String },
+      industry: { type: String },
+      companySize: { type: String },
+      socialLinks: {
+        linkedin: { type: String, default: "" },
+        twitter: { type: String, default: "" },
+        facebook: { type: String, default: "" },
+      },
     },
 
     // (5) List of jobs posted by this organization
