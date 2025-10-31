@@ -1,5 +1,5 @@
 import express from "express";
-import { createOrganizationSubscription } from "../controllers/organizationPaymentController.js";
+import { createOrganizationSubscription, verifyOrganizationPayment } from "../controllers/organizationPaymentController.js";
 import { verifyToken } from "../middleware/jwt.js";
 
 const router = express.Router();
@@ -9,5 +9,7 @@ router.post(
   verifyToken,
   createOrganizationSubscription
 );
+
+router.post("/organization/verify", verifyOrganizationPaymentt);
 
 export default router;
