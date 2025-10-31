@@ -174,6 +174,7 @@ import messageRoute from "./routes/MessageRoute.js";
 import reviewRoute from "./routes/ReviewRoute.js";
 import sellerRoutes from "./routes/sellerRoutes.js";
 import exchangeRateRoute from "./routes/exchangeRoute.js";
+import paymentRoute from "./routes/paymentRoute.js";
 
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
@@ -184,6 +185,7 @@ app.use("/api/messages", messageRoute);
 app.use("/api/reviews", reviewRoute);
 app.use("/api", exchangeRateRoute);
 app.use("/api/sellers", sellerRoutes);
+app.use("/api/payments", paymentRoute);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
