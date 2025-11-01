@@ -93,50 +93,43 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
-    const { tx_ref } = req.body; // tx_ref sent from frontend
-    const userId = req.user?.id; // assuming you already have user in auth middleware
+    const { tx_ref } = req.body;
+    if (!tx_ref) return res.status(400).json({ message: "tx_ref required" });
 
-    if (!tx_ref)
-      return res
-        .status(400)
-        .json({ message: "Transaction reference is required" });
-
-    // Step 1: Fetch transaction by reference
-    const txRes = await axios.get(
+    // ✅ 1. Find the transaction by tx_ref
+    const txSearch = await axios.get(
       `https://api.flutterwave.com/v3/transactions?tx_ref=${tx_ref}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
         },
       }
     );
 
-    const transactions = txRes.data.data;
+    const transactions = txSearch.data.data;
     if (!transactions || transactions.length === 0)
       return res.status(404).json({ message: "Transaction not found" });
 
-    const transaction = transactions[0];
+    const tx = transactions[0];
 
-    // Step 2: Verify by ID
+    // ✅ 2. Verify that transaction ID
     const verifyRes = await axios.get(
-      `https://api.flutterwave.com/v3/transactions/${transaction.id}/verify`,
+      `https://api.flutterwave.com/v3/transactions/${tx.id}/verify`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
         },
       }
     );
 
     const { data } = verifyRes.data;
 
-    // Step 3: Confirm successful payment
     if (
       data.status === "successful" &&
       data.amount === 50000 &&
       data.currency === "NGN"
     ) {
-      // Update the user’s VIP subscription
-      const user = await User.findById(userId);
+      const user = await User.findById(req.user.id);
       if (!user) return res.status(404).json({ message: "User not found" });
 
       user.vipSubscription = {
@@ -150,17 +143,17 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       await user.save();
 
       return res.status(200).json({
-        message: "Payment verified and VIP subscription activated ✅",
+        message: "Payment verified and subscription activated ✅",
         data,
       });
     }
 
-    return res.status(400).json({
-      message: "Payment not verified yet",
-      data,
-    });
+    res.status(400).json({ message: "Payment not verified yet", data });
   } catch (error) {
-    console.error("❌ Error verifying payment:", error.response?.data || error);
+    console.error(
+      "❌ Error verifying payment:",
+      error.response?.data || error.message
+    );
     next(createError(500, "Internal server error"));
   }
 };
