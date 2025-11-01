@@ -93,38 +93,72 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
-    const { tx_ref } = req.body; // or req.query.tx_ref
+    const { tx_ref } = req.body; // tx_ref sent from frontend
+    const userId = req.user?.id; // assuming you already have user in auth middleware
 
-    const response = await axios.get(
-      `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
+    if (!tx_ref)
+      return res
+        .status(400)
+        .json({ message: "Transaction reference is required" });
+
+    // Step 1: Fetch transaction by reference
+    const txRes = await axios.get(
+      `https://api.flutterwave.com/v3/transactions?tx_ref=${tx_ref}`,
       {
         headers: {
-          Authorization: `Bearer FLWSECK_TEST-515b108d85989e44124b65d6ae479f2c-X`,
+          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
         },
       }
     );
 
-    const { data } = response.data;
+    const transactions = txRes.data.data;
+    if (!transactions || transactions.length === 0)
+      return res.status(404).json({ message: "Transaction not found" });
 
-    if (data.status === "successful" && data.amount === 50000) {
-      // ✅ Update user subscription
-      const user = await User.findById(req.user.id);
+    const transaction = transactions[0];
+
+    // Step 2: Verify by ID
+    const verifyRes = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/${transaction.id}/verify`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const { data } = verifyRes.data;
+
+    // Step 3: Confirm successful payment
+    if (
+      data.status === "successful" &&
+      data.amount === 50000 &&
+      data.currency === "NGN"
+    ) {
+      // Update the user’s VIP subscription
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
       user.vipSubscription = {
+        active: true,
+        gateway: "flutterwave",
+        paymentReference: tx_ref,
         startDate: new Date(),
         endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-        active: true,
-        paymentReference: tx_ref,
-        gateway: "flutterwave",
       };
+
       await user.save();
 
       return res.status(200).json({
-        message: "Payment verified and subscription activated ✅",
+        message: "Payment verified and VIP subscription activated ✅",
         data,
       });
     }
 
-    res.status(400).json({ message: "Payment not verified yet", data });
+    return res.status(400).json({
+      message: "Payment not verified yet",
+      data,
+    });
   } catch (error) {
     console.error("❌ Error verifying payment:", error.response?.data || error);
     next(createError(500, "Internal server error"));
