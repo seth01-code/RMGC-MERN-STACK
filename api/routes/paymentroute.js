@@ -10,6 +10,6 @@ router.post(
   createOrganizationSubscription
 );
 
-router.post("/organization/verify", verifyOrganizationPayment);
+router.post("/organization/verify", verifyToken, verifyOrganizationPayment);
 
 export default router;
