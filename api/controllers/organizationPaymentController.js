@@ -91,52 +91,42 @@ export const createOrganizationSubscription = async (req, res, next) => {
   }
 };
 
-export const verifyOrganizationPayment = async (req, res) => {
+export const verifyOrganizationPayment = async (req, res, next) => {
   try {
-    const { tx_ref, transaction_id, email } = req.body;
+    const { tx_ref } = req.body; // or req.query.tx_ref
 
-    if (!transaction_id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing transaction ID" });
-    }
-
-    const verify = await axios.get(
-      `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
+    const response = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+          Authorization: `Bearer FLWSECK_TEST-515b108d85989e44124b65d6ae479f2c-X`,
         },
       }
     );
 
-    const data = verify.data.data;
+    const { data } = response.data;
 
-    if (data.status !== "successful") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Payment verification failed" });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (user) {
+    if (data.status === "successful" && data.amount === 50000) {
+      // ✅ Update user subscription
+      const user = await User.findById(req.user.id);
       user.vipSubscription = {
-        active: true,
         startDate: new Date(),
         endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+        active: true,
         paymentReference: tx_ref,
         gateway: "flutterwave",
       };
       await user.save();
+
+      return res.status(200).json({
+        message: "Payment verified and subscription activated ✅",
+        data,
+      });
     }
 
-    return res.json({
-      success: true,
-      message: "Subscription activated successfully",
-    });
+    res.status(400).json({ message: "Payment not verified yet", data });
   } catch (error) {
-    console.error("❌ Verification error:", error.response?.data || error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error verifying payment:", error.response?.data || error);
+    next(createError(500, "Internal server error"));
   }
 };
