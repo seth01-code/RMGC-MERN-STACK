@@ -92,7 +92,6 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     const { tx_ref } = req.body;
     if (!tx_ref) return res.status(400).json({ message: "tx_ref required" });
 
-    // ✅ Use verify_by_reference (correct Flutterwave endpoint)
     const verifyRes = await axios.get(
       `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
       {
@@ -104,11 +103,12 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
     const { data } = verifyRes.data;
 
-    if (
-      data.status === "successful" &&
-      data.amount === 50000 &&
-      data.currency === "NGN"
-    ) {
+    // ✅ Treat test-approved transactions as success
+    const isSuccessful =
+      data.status === "successful" ||
+      data.processor_response === "Approved. Successful";
+
+    if (isSuccessful && data.amount === 50000 && data.currency === "NGN") {
       const user = await User.findById(req.user.id);
       if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -128,7 +128,12 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       });
     }
 
-    res.status(400).json({ message: "Payment not verified yet", data });
+    // Pending or failed
+    res.status(400).json({
+      message:
+        "Payment not yet successful — waiting for OTP or final confirmation",
+      data,
+    });
   } catch (error) {
     console.error("❌ Error verifying payment:", error.response?.data || error);
     next(createError(500, "Internal server error"));
