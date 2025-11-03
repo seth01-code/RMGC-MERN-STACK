@@ -173,51 +173,55 @@ export const validateOtp = async (req, res, next) => {
  */
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
-    const { tx_ref, flwRef, id } = req.body; // allow optional id if frontend stores it
-    if (!tx_ref && !flwRef && !id) {
-      return next(createError(400, "Missing transaction reference"));
+    const { tx_ref, flwRef, id, transaction_id } = req.body;
+
+    const reference = flwRef || tx_ref;
+    const transactionId = id || transaction_id;
+
+    if (!reference && !transactionId) {
+      return next(createError(400, "Missing transaction reference or ID"));
     }
 
     let verifyRes;
 
-    // 🧩 1️⃣ Try verifying by transaction ID first (if available)
-    if (id) {
+    // 🧩 1️⃣ Try verifying by transaction ID first if valid
+    if (
+      transactionId &&
+      transactionId !== "null" &&
+      transactionId !== "undefined"
+    ) {
       try {
         verifyRes = await axios.get(
-          `https://api.flutterwave.com/v3/transactions/${id}/verify`,
-          {
-            headers: { Authorization: `Bearer ${FLW_SECRET}` },
-          }
+          `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`,
+          { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
         );
+        console.log("✅ Verified by ID:", verifyRes.data?.data?.id);
       } catch (err) {
-        console.warn("⚠️ ID verification failed, trying tx_ref...");
+        console.warn("⚠️ ID verification failed, falling back to tx_ref...");
       }
     }
 
-    // 🧩 2️⃣ Fallback — verify by tx_ref if ID or flw_ref provided
-    if (!verifyRes) {
-      const reference = flwRef || tx_ref;
+    // 🧩 2️⃣ Fallback to verify_by_reference if ID failed or not available
+    if (!verifyRes || verifyRes.data?.status === "error") {
       verifyRes = await axios.get(
         `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${reference}`,
-        {
-          headers: { Authorization: `Bearer ${FLW_SECRET}` },
-        }
+        { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
       );
+      console.log("✅ Verified by tx_ref:", reference);
     }
 
     const { data } = verifyRes.data;
 
-    console.log("✅ Flutterwave verification result:", data);
-
-    // 🧠 3️⃣ Validate payment details
+    // 🧠 3️⃣ Validate transaction details
     if (
       data.status?.toLowerCase() === "successful" &&
       Number(data.amount) === 50000 &&
       data.currency === "NGN"
     ) {
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(req.user?.id);
       if (!user) return next(createError(404, "User not found"));
 
+      // 💎 Activate VIP subscription
       user.vipSubscription = {
         active: true,
         gateway: "flutterwave",
@@ -230,6 +234,8 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
       await user.save();
 
+      console.log(`🎉 VIP activated for user: ${user.email} (${user._id})`);
+
       return res.status(200).json({
         success: true,
         message:
@@ -238,10 +244,11 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       });
     }
 
-    // ❌ Not verified or still pending
-    res.status(400).json({
+    // ❌ Payment not verified
+    console.warn("🚫 Payment not successful or still pending:", data.status);
+    return res.status(400).json({
       success: false,
-      message: "Payment not verified or still pending",
+      message: `Payment not verified (status: ${data.status})`,
       data,
     });
   } catch (error) {
