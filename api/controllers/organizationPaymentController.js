@@ -176,11 +176,15 @@ export const validateOtp = async (req, res, next) => {
  */
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
-    const { tx_ref } = req.body;
-    if (!tx_ref) return next(createError(400, "Missing transaction reference"));
+    const { tx_ref, flwRef } = req.body;
+    if (!tx_ref && !flwRef)
+      return next(createError(400, "Missing transaction reference"));
+
+    // Prefer flw_ref if available (it's the actual charge reference)
+    const reference = flwRef || tx_ref;
 
     const verifyRes = await axios.get(
-      `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
+      `https://api.flutterwave.com/v3/transactions/${reference}/verify`,
       {
         headers: {
           Authorization: `Bearer ${FLW_SECRET}`,
@@ -195,7 +199,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       user.vipSubscription = {
         active: true,
         gateway: "flutterwave",
-        paymentReference: tx_ref,
+        paymentReference: data.tx_ref,
         startDate: new Date(),
         endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       };
@@ -213,3 +217,4 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     next(createError(400, "Payment verification failed"));
   }
 };
+
