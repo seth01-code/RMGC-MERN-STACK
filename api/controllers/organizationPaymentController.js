@@ -173,48 +173,29 @@ export const validateOtp = async (req, res, next) => {
  */
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
-    const { tx_ref, flwRef, id, transaction_id } = req.body;
-
+    const { tx_ref, flwRef } = req.body;
     const reference = flwRef || tx_ref;
-    const transactionId = id || transaction_id;
 
-    if (!reference && !transactionId) {
-      return next(createError(400, "Missing transaction reference or ID"));
+    if (!reference) {
+      return next(createError(400, "Missing transaction reference"));
     }
 
-    let verifyRes;
-
-    // 🧩 1️⃣ Try verifying by transaction ID first if valid
-    if (
-      transactionId &&
-      transactionId !== "null" &&
-      transactionId !== "undefined"
-    ) {
-      try {
-        verifyRes = await axios.get(
-          `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`,
-          { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
-        );
-        console.log("✅ Verified by ID:", verifyRes.data?.data?.id);
-      } catch (err) {
-        console.warn("⚠️ ID verification failed, falling back to tx_ref...");
+    // 🔍 Verify using tx_ref or flwRef only
+    const verifyRes = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${reference}`,
+      {
+        headers: { Authorization: `Bearer ${FLW_SECRET}` },
       }
-    }
-
-    // 🧩 2️⃣ Fallback to verify_by_reference if ID failed or not available
-    if (!verifyRes || verifyRes.data?.status === "error") {
-      verifyRes = await axios.get(
-        `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${reference}`,
-        { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
-      );
-      console.log("✅ Verified by tx_ref:", reference);
-    }
+    );
 
     const { data } = verifyRes.data;
 
-    // 🧠 3️⃣ Validate transaction details
+    // 🧠 Handle sandbox or production cases
+    const status = data.status?.toLowerCase();
+    const isTestMode = process.env.NODE_ENV === "development";
+
     if (
-      data.status?.toLowerCase() === "successful" &&
+      (status === "successful" || (isTestMode && status === "pending")) &&
       Number(data.amount) === 50000 &&
       data.currency === "NGN"
     ) {
@@ -244,11 +225,11 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       });
     }
 
-    // ❌ Payment not verified
-    console.warn("🚫 Payment not successful or still pending:", data.status);
+    // 🚫 Payment not verified yet
+    console.warn("🚫 Payment not successful or still pending:", status);
     return res.status(400).json({
       success: false,
-      message: `Payment not verified (status: ${data.status})`,
+      message: `Payment not verified (status: ${status})`,
       data,
     });
   } catch (error) {
