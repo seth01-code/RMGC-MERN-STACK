@@ -101,7 +101,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       `https://api.flutterwave.com/v3/transactions?tx_ref=${tx_ref}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
         },
       }
     );
@@ -117,7 +117,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       `https://api.flutterwave.com/v3/transactions/${tx.id}/verify`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLW_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
         },
       }
     );
