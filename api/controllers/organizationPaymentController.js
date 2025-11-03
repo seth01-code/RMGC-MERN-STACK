@@ -1,13 +1,9 @@
 import axios from "axios";
+import crypto from "crypto";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
 
-const FLW_PUBLIC = process.env.FLW_PUBLIC_KEY;
-const FLW_SECRET = process.env.FLW_SECRET_KEY;
-const FLW_ENCRYPTION = process.env.FLW_ENCRYPTION_KEY;
-
-// Create yearly recurring subscription
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
     const {
@@ -25,20 +21,23 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
     const user = await User.findById(userId);
     if (!user || user.role !== "organization") {
-      return next(
-        createError(403, "Only registered organizations can subscribe")
-      );
+      return next(createError(400, "Only organizations can subscribe"));
     }
 
+    const amountNGN = 50000;
     const tx_ref = `ORG-${Date.now()}-${userId}`;
-    const amount = currency === "USD" ? 60 : 50000; // Adjust price by currency
 
-    // Encrypt payment payload
+    // Flutterwave keys (no env for now)
+    const FLW_PUBLIC = "FLWPUBK_TEST-a4ec3e8dfe4b6e3b7cecd44ec481a3f2-X";
+    const FLW_SECRET = "FLWSECK_TEST-515b108d85989e44124b65d6ae479f2c-X";
+    const FLW_ENCRYPTION = "FLWSECK_TESTe0dc650c2ddb";
+
+    // Prepare payment payload
     const payload = {
       tx_ref,
-      amount,
-      currency,
-      redirect_url: `${process.env.CLIENT_URL}/org-processing?tx_ref=${tx_ref}`,
+      amount: amountNGN,
+      currency: "NGN",
+      redirect_url: "http://localhost:3000/payment-processing",
       payment_type: "card",
       card_number: cardNumber.replace(/\s/g, ""),
       cvv,
@@ -46,14 +45,12 @@ export const createOrganizationSubscription = async (req, res, next) => {
       expiry_year: expiryYear,
       email,
       fullname: fullName,
-      authorization: {
-        mode: "pin",
-        pin: "3310", // You can ask user in form for PIN if required
-      },
     };
 
+    // Encrypt payload with the encryption key
     const encryptedPayload = encryptPayload(payload, FLW_ENCRYPTION);
 
+    // Send encrypted payload to Flutterwave
     const response = await axios.post(
       "https://api.flutterwave.com/v3/charges?type=card",
       { client: encryptedPayload },
@@ -67,100 +64,73 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
     const { status, data } = response.data;
 
-    if (
-      data.status === "pending" &&
-      data.processor_response === "PIN or OTP required"
-    ) {
-      return res.status(200).json({
-        requiresOtp: true,
-        flwRef: data.flw_ref,
-        message: "Enter the OTP sent to your phone/email",
-      });
+    if (status !== "success") {
+      return next(createError(400, "Payment initiation failed"));
     }
 
-    if (status !== "success")
-      return next(createError(400, "Payment initiation failed"));
+    // Save subscription status
+    user.vipSubscription = {
+      startDate: new Date(),
+      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+      active: true,
+      paymentReference: tx_ref,
+      gateway: "flutterwave",
+    };
+    await user.save();
 
     res.status(200).json({
-      message: "Payment initiated successfully",
-      tx_ref,
+      message: "Organization subscription created successfully",
       data,
     });
   } catch (error) {
     console.error(
-      "❌ Error creating subscription:",
-      error.response?.data || error.message
+      "❌ Error in organization subscription:",
+      error.response?.data || error
     );
     next(createError(500, "Internal server error"));
   }
 };
 
-// Submit OTP if required
-export const validateOrganizationOtp = async (req, res, next) => {
-  try {
-    const { otp, flwRef } = req.body;
-
-    const response = await axios.post(
-      "https://api.flutterwave.com/v3/validate-charge",
-      { otp, flw_ref: flwRef },
-      {
-        headers: {
-          Authorization: `Bearer ${FLW_SECRET}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const { data } = response.data;
-
-    if (data.status === "successful") {
-      // Save card token for recurring billing
-      const user = await User.findById(req.user.id);
-      user.subscriptionToken = data.card?.token || null;
-      user.vipSubscription = {
-        active: true,
-        gateway: "flutterwave",
-        paymentReference: data.tx_ref,
-        startDate: new Date(),
-        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-      };
-      await user.save();
-
-      return res.status(200).json({
-        message: "OTP verified, subscription activated ✅",
-        data,
-      });
-    }
-
-    return res.status(400).json({ message: "OTP verification failed" });
-  } catch (error) {
-    console.error(
-      "❌ Error validating OTP:",
-      error.response?.data || error.message
-    );
-    next(createError(500, "Internal server error"));
-  }
-};
-
-// Verify payment route
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
     if (!tx_ref) return res.status(400).json({ message: "tx_ref required" });
 
-    const verifyRes = await axios.get(
-      `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
+    // ✅ 1. Find the transaction by tx_ref
+    const txSearch = await axios.get(
+      `https://api.flutterwave.com/v3/transactions?tx_ref=${tx_ref}`,
       {
         headers: {
-          Authorization: `Bearer ${FLW_SECRET}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const transactions = txSearch.data.data;
+    if (!transactions || transactions.length === 0)
+      return res.status(404).json({ message: "Transaction not found" });
+
+    const tx = transactions[0];
+
+    // ✅ 2. Verify that transaction ID
+    const verifyRes = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/${tx.id}/verify`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
         },
       }
     );
 
     const { data } = verifyRes.data;
-    if (data.status === "successful") {
+
+    if (
+      data.status === "successful" &&
+      data.amount === 50000 &&
+      data.currency === "NGN"
+    ) {
       const user = await User.findById(req.user.id);
-      if (!user) return next(createError(404, "User not found"));
+      if (!user) return res.status(404).json({ message: "User not found" });
 
       user.vipSubscription = {
         active: true,
@@ -169,10 +139,11 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         startDate: new Date(),
         endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       };
+
       await user.save();
 
       return res.status(200).json({
-        message: "Payment verified successfully ✅",
+        message: "Payment verified and subscription activated ✅",
         data,
       });
     }
@@ -180,7 +151,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     res.status(400).json({ message: "Payment not verified yet", data });
   } catch (error) {
     console.error(
-      "❌ Verification error:",
+      "❌ Error verifying payment:",
       error.response?.data || error.message
     );
     next(createError(500, "Internal server error"));
