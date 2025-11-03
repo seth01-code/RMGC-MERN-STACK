@@ -1,6 +1,7 @@
 import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
+import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -8,10 +9,17 @@ const FRONTEND_URL = process.env.FRONTEND_URL;
 /**
  * STEP 1: Create a charge (handles PIN and OTP if required)
  */
+
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
-    const { fullName, email, cardNumber, cvv, expiryMonth, expiryYear } =
-      req.body;
+    const {
+      fullName,
+      email,
+      cardNumber,
+      cvv,
+      expiryMonth,
+      expiryYear,
+    } = req.body;
     const userId = req.user?.id;
 
     if (!userId) return next(createError(401, "Unauthorized"));
@@ -33,11 +41,14 @@ export const createOrganizationSubscription = async (req, res, next) => {
       cvv,
       expiry_month: expiryMonth,
       expiry_year: expiryYear,
+      redirect_url: `${process.env.FRONTEND_URL}/org-processing`,
     };
+
+    const encryptedPayload = encryptPayload(payload, process.env.FLW_ENCRYPTION_KEY);
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/charges?type=card",
-      payload,
+      { client: encryptedPayload },
       {
         headers: {
           Authorization: `Bearer ${FLW_SECRET}`,
@@ -48,8 +59,8 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
     const { data } = flwRes.data;
 
-    if (data.status === "success" && data.meta.authorization.mode === "pin") {
-      // Flutterwave requires PIN submission
+    // Handle PIN/OTP flow
+    if (data?.meta?.authorization?.mode === "pin") {
       return res.status(200).json({
         requiresPin: true,
         flwRef: data.flw_ref,
@@ -58,7 +69,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       });
     }
 
-    if (data.status === "success" && data.meta.authorization.mode === "otp") {
+    if (data?.meta?.authorization?.mode === "otp") {
       return res.status(200).json({
         requiresOtp: true,
         flwRef: data.flw_ref,
@@ -67,7 +78,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Payment initiated successfully",
       data,
       tx_ref,
