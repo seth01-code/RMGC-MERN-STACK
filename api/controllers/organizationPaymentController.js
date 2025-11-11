@@ -43,7 +43,7 @@ export const createOrganizationPlan = async (req, res, next) => {
     console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
 
     const planRes = await axios.post(
-      "https://api.flutterwave.com/v3/plans",
+      "POST https://api.flutterwave.com/v3/subscriptions",
       payload,
       {
         headers: {
