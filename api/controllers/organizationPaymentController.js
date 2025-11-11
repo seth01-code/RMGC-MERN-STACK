@@ -4,7 +4,7 @@ import createError from "../utils/createError.js";
 import cron from "node-cron";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FRONTEND_URL =  "http://localhost:3000";
+const FRONTEND_URL = "http://localhost:3000";
 
 // Supported currencies
 const SUPPORTED_CURRENCIES = [
@@ -33,10 +33,10 @@ export const createOrganizationPlan = async (req, res, next) => {
 
     const payload = {
       name: `ORG-PLAN-${Date.now()}`,
-      amount,
-      interval, // "minute" works in sandbox; "monthly" for production
-      currency,
-      duration: 12, // total cycles, optional
+      amount: Number(amount),
+      interval: process.env.NODE_ENV === "development" ? "minute" : "monthly",
+      currency: currency.toUpperCase(),
+      duration: 12,
     };
 
     const planRes = await axios.post(
