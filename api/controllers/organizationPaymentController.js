@@ -5,6 +5,19 @@ import createError from "../utils/createError.js";
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
+const SUPPORTED_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
+
+// 💱 Fixed approximate exchange rates to maintain ₦50,000 equivalent
+const FX_RATES = {
+  NGN: 1,
+  USD: 0.00065, // ≈ $32.5
+  GBP: 0.00052, // ≈ £26
+  EUR: 0.00060, // ≈ €30
+  KES: 0.093,   // ≈ KSh 4650
+  GHS: 0.0092,  // ≈ ₵460
+  ZAR: 0.012,   // ≈ R600
+};
+
 // 💳 Step 1 — Create Flutterwave Checkout Link
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
@@ -16,23 +29,35 @@ export const createOrganizationSubscription = async (req, res, next) => {
       return next(createError(400, "Only organizations can subscribe"));
     }
 
-    const amount = 50000;
+    // 🌍 Determine currency
+    let currency = (req.body.currency || "USD").toUpperCase();
+    if (!SUPPORTED_CURRENCIES.includes(currency)) {
+      console.warn(`⚠️ Unsupported currency "${currency}", defaulting to USD`);
+      currency = "USD";
+    }
+
+    // 💵 Convert ₦50,000 equivalent
+    const baseAmountNGN = 50000;
+    const fxRate = FX_RATES[currency] || FX_RATES.USD;
+    const amount = Number((baseAmountNGN * fxRate).toFixed(2));
+
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
-    // 🌍 Flutterwave hosted checkout payload
+    // 🧾 Flutterwave checkout payload
     const payload = {
       tx_ref,
       amount,
-      currency: "NGN",
+      currency,
       redirect_url: `${FRONTEND_URL}/org-processing`,
+      payment_options: "card", // 💳 Card only
       customer: {
         email: user.email,
-        name: user.fullname || user.username,
+        name: user.fullname || user.username || "Organization User",
       },
       customizations: {
         title: "RMGC Organization Plan",
-        description: "Unlock job posting privileges and premium access",
-        logo: `${FRONTEND_URL}/logo.png`,
+        description: `Access to job posting and premium organization features`,
+        logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
     };
 
@@ -53,12 +78,17 @@ export const createOrganizationSubscription = async (req, res, next) => {
         success: true,
         checkoutLink,
         tx_ref,
+        amount,
+        currency,
       });
     }
 
     throw new Error("Unable to initialize payment");
   } catch (error) {
-    console.error("❌ Payment initialization error:", error.response?.data || error.message);
+    console.error(
+      "❌ Payment initialization error:",
+      error.response?.data || error.message
+    );
     next(createError(500, "Payment initialization failed"));
   }
 };
@@ -80,8 +110,8 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
     if (
       (status === "successful" || (isTestMode && status === "pending")) &&
-      Number(data.amount) >= 50000 &&
-      data.currency === "NGN"
+      data.currency &&
+      Number(data.amount) > 0
     ) {
       const user = await User.findById(req.user?.id);
       if (!user) return next(createError(404, "User not found"));
@@ -93,12 +123,13 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         paymentReference: data.tx_ref,
         transactionId: data.id,
         amount: data.amount,
+        currency: data.currency,
         startDate: new Date(),
         endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       };
 
       await user.save();
-      console.log(`🎉 VIP activated for ${user.email}`);
+      console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
 
       return res.status(200).json({
         success: true,
