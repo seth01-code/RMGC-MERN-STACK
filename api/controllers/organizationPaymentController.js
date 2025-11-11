@@ -35,12 +35,13 @@ export const createOrganizationPlan = async (req, res, next) => {
     const payload = {
       name: `ORG-PLAN-${Date.now()}`,
       amount: Number(amount),
-      interval: "daily", // now daily
+      interval: "daily",
       currency: currency.toUpperCase(),
       duration: 12,
     };
 
     console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
+
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/subscriptions",
       payload,
@@ -52,13 +53,13 @@ export const createOrganizationPlan = async (req, res, next) => {
       }
     );
 
-    console.log("✅ Flutterwave plan response:", planRes.data);
+    console.log("✅ Flutterwave plan response:", flwRes.data);
 
-    if (planRes.data.status === "success") {
-      return res.status(200).json({ success: true, plan: planRes.data.data });
+    if (flwRes.data.status === "success") {
+      return res.status(200).json({ success: true, plan: flwRes.data.data });
     }
 
-    console.error("❌ Plan creation failed, response:", planRes.data);
+    console.error("❌ Plan creation failed, response:", flwRes.data);
     throw new Error("Plan creation failed");
   } catch (err) {
     console.error("❌ Plan creation error:", err.response?.data || err.message);
