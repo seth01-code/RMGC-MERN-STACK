@@ -4,7 +4,7 @@ import createError from "../utils/createError.js"; // Assuming this utility
 // Removed 'cron' as the preferred method is webhooks for ongoing status.
 import crypto from "crypto";
 
-const FLW_SECRET = "FLWSECK_TEST-515b108d85989e44124b65d6ae479f2c-X";
+const FLW_SECRET = "FLWSECK_TEST-da6cc5fd8b66a484cfe7580cc579f983-X";
 const FLW_WEBHOOK_HASH = process.env.FLUTTERWAVE_WEBHOOK_SECRET; // CRITICAL: This must be set for webhook security
 const FRONTEND_URL = "http://localhost:3000";
 
