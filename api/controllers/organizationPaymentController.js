@@ -4,7 +4,7 @@ import createError from "../utils/createError.js";
 import cron from "node-cron";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const FRONTEND_URL =  "http://localhost:3000";
 
 // Supported currencies
 const SUPPORTED_CURRENCIES = [
