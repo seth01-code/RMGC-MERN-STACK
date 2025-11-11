@@ -21,34 +21,45 @@ const SUPPORTED_CURRENCIES = [
 
 /**
  * Step 1: Create a Flutterwave plan (for recurring subscription)
- * Use interval = "minute" for testing purposes (sandbox only)
+ * Use interval = "daily" now
  */
 export const createOrganizationPlan = async (req, res, next) => {
   try {
-    const { amount = 1, currency = "USD", interval = "minute" } = req.body;
+    const { amount = 1, currency = "USD" } = req.body;
 
     if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
+      console.error("❌ Unsupported currency:", currency);
       return next(createError(400, "Unsupported currency"));
     }
 
     const payload = {
       name: `ORG-PLAN-${Date.now()}`,
       amount: Number(amount),
-      interval: process.env.NODE_ENV === "development" ? "minute" : "monthly",
+      interval: "daily", // now daily
       currency: currency.toUpperCase(),
       duration: 12,
     };
 
+    console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
+
     const planRes = await axios.post(
       "https://api.flutterwave.com/v3/plans",
       payload,
-      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
+
+    console.log("✅ Flutterwave plan response:", planRes.data);
 
     if (planRes.data.status === "success") {
       return res.status(200).json({ success: true, plan: planRes.data.data });
     }
 
+    console.error("❌ Plan creation failed, response:", planRes.data);
     throw new Error("Plan creation failed");
   } catch (err) {
     console.error("❌ Plan creation error:", err.response?.data || err.message);
@@ -58,17 +69,22 @@ export const createOrganizationPlan = async (req, res, next) => {
 
 /**
  * Step 2: Subscribe an organization to a plan
- * Forces card-only payments
  */
 export const subscribeOrganization = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const user = await User.findById(userId);
-    if (!user || user.role !== "organization")
+
+    if (!user || user.role !== "organization") {
+      console.error("❌ User not found or not organization:", userId);
       return next(createError(400, "Only organizations can subscribe"));
+    }
 
     const { plan_id } = req.body;
-    if (!plan_id) return next(createError(400, "Plan ID required"));
+    if (!plan_id) {
+      console.error("❌ No plan_id provided in request body");
+      return next(createError(400, "Plan ID required"));
+    }
 
     const payload = {
       plan: plan_id,
@@ -86,11 +102,20 @@ export const subscribeOrganization = async (req, res, next) => {
       meta: { card_only: true },
     };
 
+    console.log("ℹ️ Creating subscription with payload:", payload);
+
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/subscriptions",
       payload,
-      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
+
+    console.log("✅ Subscription response:", flwRes.data);
 
     if (flwRes.data.status === "success") {
       return res.status(200).json({
@@ -100,6 +125,7 @@ export const subscribeOrganization = async (req, res, next) => {
       });
     }
 
+    console.error("❌ Subscription creation failed, response:", flwRes.data);
     throw new Error("Subscription creation failed");
   } catch (err) {
     console.error("❌ Subscription error:", err.response?.data || err.message);
@@ -113,19 +139,33 @@ export const subscribeOrganization = async (req, res, next) => {
 export const verifyOrganizationSubscription = async (req, res, next) => {
   try {
     const { subscription_id } = req.body;
-    if (!subscription_id)
+    if (!subscription_id) {
+      console.error("❌ Subscription ID required for verification");
       return next(createError(400, "Subscription ID required"));
+    }
+
+    console.log("ℹ️ Verifying subscription:", subscription_id);
 
     const verifyRes = await axios.get(
       `https://api.flutterwave.com/v3/subscriptions/${subscription_id}`,
-      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
+
+    console.log("✅ Subscription verification response:", verifyRes.data);
 
     const subscription = verifyRes.data.data;
 
     if (subscription.status === "active") {
       const user = await User.findById(req.user?.id);
-      if (!user) return next(createError(404, "User not found"));
+      if (!user) {
+        console.error("❌ User not found for subscription verification");
+        return next(createError(404, "User not found"));
+      }
 
       user.vipSubscription = {
         active: true,
@@ -140,6 +180,7 @@ export const verifyOrganizationSubscription = async (req, res, next) => {
       return res.status(200).json({ success: true, subscription });
     }
 
+    console.warn("⚠️ Subscription not active yet:", subscription);
     return res.status(400).json({ success: false, subscription });
   } catch (err) {
     console.error(
@@ -151,11 +192,12 @@ export const verifyOrganizationSubscription = async (req, res, next) => {
 };
 
 /**
- * Step 4: Optional cron job to auto-verify active subscriptions every minute
+ * Step 4: Cron job to auto-verify subscriptions daily
  */
-cron.schedule("* * * * *", async () => {
-  console.log("🕒 Running subscription verification cron job...");
+cron.schedule("0 0 * * *", async () => {
+  console.log("🕒 Running daily subscription verification cron job...");
   const users = await User.find({ "vipSubscription.active": true });
+
   for (const user of users) {
     try {
       await verifyOrganizationSubscription(
@@ -167,7 +209,7 @@ cron.schedule("* * * * *", async () => {
         () => {}
       );
     } catch (err) {
-      console.error("Cron verification error:", err.message);
+      console.error("❌ Cron verification error:", err.message);
     }
   }
 });
