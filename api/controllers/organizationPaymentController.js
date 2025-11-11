@@ -32,9 +32,9 @@ export const createOrganizationPlan = async (req, res, next) => {
     const payload = {
       name: `ORG-PLAN-${Date.now()}`,
       amount: Number(amount),
-      interval: interval, // daily, weekly, monthly, quarterly, yearly
+      interval: "daily", // ✅ valid
       currency: currency.toUpperCase(),
-      duration: 12, // number of billing cycles
+      duration: 12,
     };
 
     console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
