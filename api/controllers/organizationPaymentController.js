@@ -1,170 +1,173 @@
 import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
+import cron from "node-cron";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
-const SUPPORTED_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
+// Supported currencies
+const SUPPORTED_CURRENCIES = [
+  "NGN",
+  "USD",
+  "GBP",
+  "EUR",
+  "KES",
+  "GHS",
+  "ZAR",
+  "UGX",
+  "TZS",
+];
 
-// 💱 Fixed approximate exchange rates to maintain ₦50,000 equivalent
-const FX_RATES = {
-  NGN: 1,
-  USD: 0.00065, // ≈ $32.5
-  GBP: 0.00052, // ≈ £26
-  EUR: 0.0006, // ≈ €30
-  KES: 0.093, // ≈ KSh 4650
-  GHS: 0.0092, // ≈ ₵460
-  ZAR: 0.012, // ≈ R600
-};
-
-// 💳 Step 1 — Create Flutterwave Checkout Link
-export const createOrganizationSubscription = async (req, res, next) => {
+/**
+ * Step 1: Create a Flutterwave plan (for recurring subscription)
+ * Use interval = "minute" for testing purposes (sandbox only)
+ */
+export const createOrganizationPlan = async (req, res, next) => {
   try {
-    const userId = req.user?.id;
-    if (!userId) return next(createError(401, "Unauthorized"));
+    const { amount = 1, currency = "USD", interval = "minute" } = req.body;
 
-    const user = await User.findById(userId);
-    if (!user || user.role !== "organization") {
-      return next(createError(400, "Only organizations can subscribe"));
+    if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
+      return next(createError(400, "Unsupported currency"));
     }
 
-    // Receive currency and amount from frontend
-    let { currency, amount } = req.body;
-
-    currency = (currency || "USD").toUpperCase();
-
-    const SUPPORTED_CURRENCIES = [
-      "NGN",
-      "USD",
-      "GBP",
-      "EUR",
-      "KES",
-      "GHS",
-      "ZAR",
-      "UGX",
-      "TZS",
-    ];
-    if (!SUPPORTED_CURRENCIES.includes(currency)) {
-      console.warn(`⚠️ Unsupported currency "${currency}", defaulting to USD`);
-      currency = "USD";
-    }
-
-    // Ensure amount is a number
-    amount = Number(amount);
-    if (!amount || amount <= 0) return next(createError(400, "Invalid amount"));
-
-    const tx_ref = `ORG-${Date.now()}-${userId}`;
-
-    // Flutterwave checkout payload
     const payload = {
-      tx_ref,
+      name: `ORG-PLAN-${Date.now()}`,
       amount,
+      interval, // "minute" works in sandbox; "monthly" for production
       currency,
-      redirect_url: `http://localhost:3000/org-processing`,
-      payment_options: "card", // Force card only
-      customer: {
-        email: user.email,
-        name: user.fullname || user.username || "Organization User",
-      },
-      customizations: {
-        title: "RMGC Organization Plan",
-        description: "Access to job posting and premium organization features",
-        logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
-      },
-      meta: {
-        card_only: true, // extra safety
-      },
+      duration: 12, // total cycles, optional
     };
 
-    const flwRes = await axios.post(
-      "https://api.flutterwave.com/v3/payments",
+    const planRes = await axios.post(
+      "https://api.flutterwave.com/v3/plans",
       payload,
-      {
-        headers: {
-          Authorization: `Bearer ${FLW_SECRET}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (flwRes.data.status === "success") {
-      const checkoutLink = flwRes.data.data.link;
-      return res.status(200).json({
-        success: true,
-        checkoutLink,
-        tx_ref,
-        amount,
-        currency,
-      });
-    }
-
-    throw new Error("Unable to initialize payment");
-  } catch (error) {
-    console.error(
-      "❌ Payment initialization error:",
-      error.response?.data || error.message
-    );
-    next(createError(500, "Payment initialization failed"));
-  }
-};
-
-// 💳 Step 2 — Verify payment after redirect
-export const verifyOrganizationPayment = async (req, res, next) => {
-  try {
-    const { tx_ref } = req.body;
-    if (!tx_ref) return next(createError(400, "Missing transaction reference"));
-
-    const verifyRes = await axios.get(
-      `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
       { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
     );
 
-    const { data } = verifyRes.data;
-    const status = data.status?.toLowerCase();
-    const isTestMode = process.env.NODE_ENV === "development";
+    if (planRes.data.status === "success") {
+      return res.status(200).json({ success: true, plan: planRes.data.data });
+    }
 
-    if (
-      (status === "successful" || (isTestMode && status === "pending")) &&
-      data.currency &&
-      Number(data.amount) > 0
-    ) {
-      const user = await User.findById(req.user?.id);
-      if (!user) return next(createError(404, "User not found"));
+    throw new Error("Plan creation failed");
+  } catch (err) {
+    console.error("❌ Plan creation error:", err.response?.data || err.message);
+    next(createError(500, "Plan creation failed"));
+  }
+};
 
-      // 💎 Activate VIP subscription
-      user.vipSubscription = {
-        active: true,
-        gateway: "flutterwave",
-        paymentReference: data.tx_ref,
-        transactionId: data.id,
-        amount: data.amount,
-        currency: data.currency,
-        startDate: new Date(),
-        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-      };
+/**
+ * Step 2: Subscribe an organization to a plan
+ * Forces card-only payments
+ */
+export const subscribeOrganization = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    const user = await User.findById(userId);
+    if (!user || user.role !== "organization")
+      return next(createError(400, "Only organizations can subscribe"));
 
-      await user.save();
-      console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
+    const { plan_id } = req.body;
+    if (!plan_id) return next(createError(400, "Plan ID required"));
 
+    const payload = {
+      plan: plan_id,
+      customer: {
+        email: user.email,
+        name: user.fullname || user.username,
+      },
+      payment_options: "card",
+      customizations: {
+        title: "RMGC Organization Plan",
+        description: "Recurring subscription",
+        logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
+      },
+      redirect_url: `${FRONTEND_URL}/org-processing`,
+      meta: { card_only: true },
+    };
+
+    const flwRes = await axios.post(
+      "https://api.flutterwave.com/v3/subscriptions",
+      payload,
+      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+    );
+
+    if (flwRes.data.status === "success") {
       return res.status(200).json({
         success: true,
-        message: "✅ Payment verified successfully — VIP activated",
-        data,
+        checkoutLink: flwRes.data.data.payment_link,
+        subscriptionId: flwRes.data.data.id,
       });
     }
 
-    console.warn("🚫 Payment not successful or still pending:", status);
-    return res.status(400).json({
-      success: false,
-      message: `Payment not verified (status: ${status})`,
-      data,
-    });
-  } catch (error) {
-    console.error(
-      "❌ Verification error:",
-      error.response?.data || error.message
-    );
-    next(createError(400, "Payment verification failed"));
+    throw new Error("Subscription creation failed");
+  } catch (err) {
+    console.error("❌ Subscription error:", err.response?.data || err.message);
+    next(createError(500, "Subscription creation failed"));
   }
 };
+
+/**
+ * Step 3: Verify subscription and activate VIP
+ */
+export const verifyOrganizationSubscription = async (req, res, next) => {
+  try {
+    const { subscription_id } = req.body;
+    if (!subscription_id)
+      return next(createError(400, "Subscription ID required"));
+
+    const verifyRes = await axios.get(
+      `https://api.flutterwave.com/v3/subscriptions/${subscription_id}`,
+      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+    );
+
+    const subscription = verifyRes.data.data;
+
+    if (subscription.status === "active") {
+      const user = await User.findById(req.user?.id);
+      if (!user) return next(createError(404, "User not found"));
+
+      user.vipSubscription = {
+        active: true,
+        gateway: "flutterwave",
+        subscriptionId: subscription.id,
+        startDate: new Date(subscription.start_date),
+        nextPaymentDate: new Date(subscription.next_payment_date),
+      };
+
+      await user.save();
+
+      return res.status(200).json({ success: true, subscription });
+    }
+
+    return res.status(400).json({ success: false, subscription });
+  } catch (err) {
+    console.error(
+      "❌ Subscription verification error:",
+      err.response?.data || err.message
+    );
+    next(createError(500, "Subscription verification failed"));
+  }
+};
+
+/**
+ * Step 4: Optional cron job to auto-verify active subscriptions every minute
+ */
+cron.schedule("* * * * *", async () => {
+  console.log("🕒 Running subscription verification cron job...");
+  const users = await User.find({ "vipSubscription.active": true });
+  for (const user of users) {
+    try {
+      await verifyOrganizationSubscription(
+        {
+          body: { subscription_id: user.vipSubscription.subscriptionId },
+          user,
+        },
+        { status: () => ({ json: console.log }) },
+        () => {}
+      );
+    } catch (err) {
+      console.error("Cron verification error:", err.message);
+    }
+  }
+});
