@@ -35,7 +35,7 @@ export const createOrganizationPlan = async (req, res, next) => {
     const payload = {
       name: `ORG-PLAN-${Date.now()}`,
       amount: Number(amount),
-      interval: "daily",
+      interval: "daily", // For testing. Use "monthly" in production
       currency: currency.toUpperCase(),
       duration: 12,
     };
@@ -43,7 +43,7 @@ export const createOrganizationPlan = async (req, res, next) => {
     console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
 
     const flwRes = await axios.post(
-      "https://api.flutterwave.com/v3/subscriptions",
+      "https://api.flutterwave.com/v3/plans", // <-- Correct endpoint
       payload,
       {
         headers: {
@@ -66,6 +66,7 @@ export const createOrganizationPlan = async (req, res, next) => {
     next(createError(500, "Plan creation failed"));
   }
 };
+
 
 /**
  * Step 2: Subscribe an organization to a plan
