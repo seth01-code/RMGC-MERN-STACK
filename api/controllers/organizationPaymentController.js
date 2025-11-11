@@ -23,75 +23,77 @@ const SUPPORTED_CURRENCIES = [
  * Step 1: Create a Flutterwave plan (for recurring subscription)
  * Use interval = "daily" now
  */
-export const createOrganizationPlan = async (req, res, next) => {
-  try {
-    const { amount = 1, currency = "USD" } = req.body;
+// export const createOrganizationPlan = async (req, res, next) => {
+//   try {
+//     const { amount = 1, currency = "USD" } = req.body;
 
-    if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
-      console.error("❌ Unsupported currency:", currency);
-      return next(createError(400, "Unsupported currency"));
-    }
+//     if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
+//       console.error("❌ Unsupported currency:", currency);
+//       return next(createError(400, "Unsupported currency"));
+//     }
 
-    const payload = {
-      name: `ORG-PLAN-${Date.now()}`,
-      amount: Number(amount),
-      interval: "daily", // For testing. Use "monthly" in production
-      currency: currency.toUpperCase(),
-      duration: 12,
-    };
+//     const payload = {
+//       name: `ORG-PLAN-${Date.now()}`,
+//       amount: Number(amount),
+//       interval: "daily", // For testing. Use "monthly" in production
+//       currency: currency.toUpperCase(),
+//       duration: 12,
+//     };
 
-    console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
+//     console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
 
-    const flwRes = await axios.post(
-      "https://api.flutterwave.com/v3/subscriptions/plans", // correct endpoint
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${FLW_SECRET}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+//     const flwRes = await axios.post(
+//       "https://api.flutterwave.com/v3/subscriptions/plans", // correct endpoint
+//       payload,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${FLW_SECRET}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
 
-    console.log("✅ Flutterwave plan response:", flwRes.data);
+//     console.log("✅ Flutterwave plan response:", flwRes.data);
 
-    if (flwRes.data.status === "success") {
-      return res.status(200).json({ success: true, plan: flwRes.data.data });
-    }
+//     if (flwRes.data.status === "success") {
+//       return res.status(200).json({ success: true, plan: flwRes.data.data });
+//     }
 
-    console.error("❌ Plan creation failed, response:", flwRes.data);
-    throw new Error("Plan creation failed");
-  } catch (err) {
-    console.error("❌ Plan creation error:", err.response?.data || err.message);
-    next(createError(500, "Plan creation failed"));
-  }
-};
+//     console.error("❌ Plan creation failed, response:", flwRes.data);
+//     throw new Error("Plan creation failed");
+//   } catch (err) {
+//     console.error("❌ Plan creation error:", err.response?.data || err.message);
+//     next(createError(500, "Plan creation failed"));
+//   }
+// };
 
 /**
  * Step 2: Subscribe an organization to a plan
  */
+
 export const subscribeOrganization = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     const user = await User.findById(userId);
 
     if (!user || user.role !== "organization") {
-      console.error("❌ User not found or not organization:", userId);
       return next(createError(400, "Only organizations can subscribe"));
     }
 
-    const { plan_id } = req.body;
-    if (!plan_id) {
-      console.error("❌ No plan_id provided in request body");
-      return next(createError(400, "Plan ID required"));
+    const { amount = 1, currency = "USD", interval = "daily" } = req.body;
+
+    if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
+      return next(createError(400, "Unsupported currency"));
     }
 
     const payload = {
-      plan: plan_id,
       customer: {
         email: user.email,
         name: user.fullname || user.username,
       },
+      amount: Number(amount),
+      currency: currency.toUpperCase(),
+      interval, // daily, weekly, monthly
       payment_options: "card",
       customizations: {
         title: "RMGC Organization Plan",
@@ -99,10 +101,7 @@ export const subscribeOrganization = async (req, res, next) => {
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
       redirect_url: `${FRONTEND_URL}/org-processing`,
-      meta: { card_only: true },
     };
-
-    console.log("ℹ️ Creating subscription with payload:", payload);
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/subscriptions",
@@ -115,8 +114,6 @@ export const subscribeOrganization = async (req, res, next) => {
       }
     );
 
-    console.log("✅ Subscription response:", flwRes.data);
-
     if (flwRes.data.status === "success") {
       return res.status(200).json({
         success: true,
@@ -125,7 +122,6 @@ export const subscribeOrganization = async (req, res, next) => {
       });
     }
 
-    console.error("❌ Subscription creation failed, response:", flwRes.data);
     throw new Error("Subscription creation failed");
   } catch (err) {
     console.error("❌ Subscription error:", err.response?.data || err.message);
