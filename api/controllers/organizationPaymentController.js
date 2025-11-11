@@ -12,10 +12,10 @@ const FX_RATES = {
   NGN: 1,
   USD: 0.00065, // ≈ $32.5
   GBP: 0.00052, // ≈ £26
-  EUR: 0.00060, // ≈ €30
-  KES: 0.093,   // ≈ KSh 4650
-  GHS: 0.0092,  // ≈ ₵460
-  ZAR: 0.012,   // ≈ R600
+  EUR: 0.0006, // ≈ €30
+  KES: 0.093, // ≈ KSh 4650
+  GHS: 0.0092, // ≈ ₵460
+  ZAR: 0.012, // ≈ R600
 };
 
 // 💳 Step 1 — Create Flutterwave Checkout Link
@@ -48,7 +48,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       tx_ref,
       amount,
       currency,
-      redirect_url: `${FRONTEND_URL}/org-processing`,
+      redirect_url: `http://localhost:3000/org-processing`,
       payment_options: "card", // 💳 Card only
       customer: {
         email: user.email,
@@ -145,7 +145,10 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error("❌ Verification error:", error.response?.data || error.message);
+    console.error(
+      "❌ Verification error:",
+      error.response?.data || error.message
+    );
     next(createError(400, "Payment verification failed"));
   }
 };
