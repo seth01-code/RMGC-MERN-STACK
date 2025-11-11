@@ -43,7 +43,7 @@ export const createOrganizationPlan = async (req, res, next) => {
     console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
 
     const flwRes = await axios.post(
-      "https://api.flutterwave.com/v3/plans", // <-- Correct endpoint
+      "https://api.flutterwave.com/v3/subscriptions/plans", // correct endpoint
       payload,
       {
         headers: {
@@ -66,7 +66,6 @@ export const createOrganizationPlan = async (req, res, next) => {
     next(createError(500, "Plan creation failed"));
   }
 };
-
 
 /**
  * Step 2: Subscribe an organization to a plan
