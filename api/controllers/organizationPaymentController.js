@@ -61,16 +61,19 @@ export const createOrganizationSubscription = async (req, res, next) => {
       tx_ref,
       amount,
       currency,
-      redirect_url: `${FRONTEND_URL}/org-processing`,
-      payment_options: "card",
+      redirect_url: `http://localhost:3000/org-processing`,
+      payment_options: "card", // Force card only
       customer: {
         email: user.email,
         name: user.fullname || user.username || "Organization User",
       },
       customizations: {
         title: "RMGC Organization Plan",
-        description: `Access to job posting and premium organization features`,
+        description: "Access to job posting and premium organization features",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
+      },
+      meta: {
+        card_only: true, // extra safety
       },
     };
 
