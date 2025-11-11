@@ -1,299 +1,170 @@
 import axios from "axios";
-import User from "../models/userModel.js"; // Assuming this model structure
-import createError from "../utils/createError.js"; // Assuming this utility
-// Removed 'cron' as the preferred method is webhooks for ongoing status.
-import crypto from "crypto";
+import User from "../models/userModel.js";
+import createError from "../utils/createError.js";
 
-const FLW_SECRET = "FLWSECK_TEST-da6cc5fd8b66a484cfe7580cc579f983-X";
-const FLW_WEBHOOK_HASH = process.env.FLUTTERWAVE_WEBHOOK_SECRET; // CRITICAL: This must be set for webhook security
-const FRONTEND_URL = "http://localhost:3000";
+const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
-const SUPPORTED_CURRENCIES = [
-  "NGN",
-  "USD",
-  "GBP",
-  "EUR",
-  "KES",
-  "GHS",
-  "ZAR",
-  "UGX",
-  "TZS",
-];
+const SUPPORTED_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
 
-// --- 1. Initiate Subscription (Payment Link Creation) ---
+// 💱 Fixed approximate exchange rates to maintain ₦50,000 equivalent
+const FX_RATES = {
+  NGN: 1,
+  USD: 0.00065, // ≈ $32.5
+  GBP: 0.00052, // ≈ £26
+  EUR: 0.0006, // ≈ €30
+  KES: 0.093, // ≈ KSh 4650
+  GHS: 0.0092, // ≈ ₵460
+  ZAR: 0.012, // ≈ R600
+};
 
-/**
- * Subscribe organization directly (recurring) via Flutterwave Payment Links.
- * This function initiates the payment flow and provides the checkout link.
- */
-export const subscribeOrganization = async (req, res, next) => {
+// 💳 Step 1 — Create Flutterwave Checkout Link
+export const createOrganizationSubscription = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user?.id);
+    const userId = req.user?.id;
+    if (!userId) return next(createError(401, "Unauthorized"));
+
+    const user = await User.findById(userId);
     if (!user || user.role !== "organization") {
-      console.log("❌ Unauthorized subscription attempt");
       return next(createError(400, "Only organizations can subscribe"));
     }
 
-    // MANDATORY CHECK: Ensure the secret key is loaded before proceeding
-    if (!FLW_SECRET) {
-      console.error("❌ FLW_SECRET is not set in environment variables.");
-      return next(
-        createError(
-          500,
-          "Server configuration error: Flutterwave secret key missing."
-        )
-      );
+    // Receive currency and amount from frontend
+    let { currency, amount } = req.body;
+
+    currency = (currency || "USD").toUpperCase();
+
+    const SUPPORTED_CURRENCIES = [
+      "NGN",
+      "USD",
+      "GBP",
+      "EUR",
+      "KES",
+      "GHS",
+      "ZAR",
+      "UGX",
+      "TZS",
+    ];
+    if (!SUPPORTED_CURRENCIES.includes(currency)) {
+      console.warn(`⚠️ Unsupported currency "${currency}", defaulting to USD`);
+      currency = "USD";
     }
 
-    const { amount = 1, currency = "USD", interval = "monthly" } = req.body;
+    // Ensure amount is a number
+    amount = Number(amount);
+    if (!amount || amount <= 0) return next(createError(400, "Invalid amount"));
 
-    if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
-      console.log("❌ Unsupported currency:", currency);
-      return next(createError(400, "Unsupported currency"));
-    }
+    const tx_ref = `ORG-${Date.now()}-${userId}`;
 
-    // Generate a unique reference for tracking the subscription creation
-    const tx_ref = `ORG-SUB-${user._id}-${Date.now()}`;
-
+    // Flutterwave checkout payload
     const payload = {
-      // Amount must be an integer or float, but not excessively high precision
-      amount: Number(amount).toFixed(2),
-      currency: currency.toUpperCase(),
-      tx_ref: tx_ref, // Important for tracking!
-      redirect_url: `${FRONTEND_URL}/org-processing`,
-      payment_options: "card",
+      tx_ref,
+      amount,
+      currency,
+      redirect_url: `http://localhost:3000/org-processing`,
+      payment_options: "card", // Force card only
       customer: {
         email: user.email,
-        name: user.fullname || user.username,
-        // userId is crucial to link back when handling webhooks
-        phonenumber: user.phone,
+        name: user.fullname || user.username || "Organization User",
       },
       customizations: {
         title: "RMGC Organization Plan",
-        description: "Recurring subscription",
+        description: "Access to job posting and premium organization features",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
-      // This is correct for creating a recurring payment link
-      recurring: {
-        interval, // daily, weekly, monthly
+      meta: {
+        card_only: true, // extra safety
       },
     };
 
-    console.log("ℹ️ Sending subscription request to Flutterwave:", payload);
-
-    const { data } = await axios.post(
-      "https://api.flutterwave.com/v3/payment-links",
+    const flwRes = await axios.post(
+      "https://api.flutterwave.com/v3/payments",
       payload,
       {
-        headers: { Authorization: `Bearer ${FLW_SECRET}` },
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET}`,
+          "Content-Type": "application/json",
+        },
       }
     );
 
-    console.log("✅ Flutterwave subscription response:", data);
-
-    if (data.status !== "success" || !data.data.link) {
-      throw new Error("Subscription link creation failed");
+    if (flwRes.data.status === "success") {
+      const checkoutLink = flwRes.data.data.link;
+      return res.status(200).json({
+        success: true,
+        checkoutLink,
+        tx_ref,
+        amount,
+        currency,
+      });
     }
 
-    // Recommended: Save the payment link ID and transaction ref to the user
-    // or a dedicated 'SubscriptionAttempt' model for later verification if needed.
-    // For now, we only return the link.
-
-    return res.status(200).json({
-      success: true,
-      checkoutLink: data.data.link,
-      // Note: data.data.id here is the Payment Link ID
-      paymentLinkId: data.data.id,
-      txRef: tx_ref,
-    });
-  } catch (err) {
-    // IMPROVED ERROR LOGGING: Logs the actual HTTP status code and error message from Flutterwave
-    const status = err.response?.status;
-    const errorDetails =
-      err.response?.data?.message || err.response?.data || err.message;
-
+    throw new Error("Unable to initialize payment");
+  } catch (error) {
     console.error(
-      `❌ Subscription creation HTTP Error (${status || "Unknown"}):`,
-      errorDetails
+      "❌ Payment initialization error:",
+      error.response?.data || error.message
     );
-
-    // If the status is 401/403, it's almost certainly an API key issue.
-    if (status === 401 || status === 403) {
-      next(
-        createError(
-          500,
-          "Subscription creation failed. Check your FLUTTERWAVE_SECRET_KEY for errors."
-        )
-      );
-    } else {
-      next(
-        createError(
-          500,
-          "Subscription creation failed. Check console for details."
-        )
-      );
-    }
+    next(createError(500, "Payment initialization failed"));
   }
 };
 
-// --- 2. Webhook Handler (CRITICAL for recurring status) ---
-
-/**
- * Handles incoming Flutterwave webhook events (e.g., successful charge,
- * subscription creation, failed renewal, cancellation).
- * This is the correct way to manage the ONGOING subscription status.
- */
-export const handleFlutterwaveWebhook = async (req, res, next) => {
-  // 1. VERIFY WEBHOOK SIGNATURE (SECURITY MANDATE)
-  const hash = crypto
-    .createHmac("sha256", FLW_WEBHOOK_HASH)
-    .update(JSON.stringify(req.body))
-    .digest("hex");
-
-  const signature = req.headers["verif-hash"];
-
-  if (signature !== hash) {
-    console.warn(
-      "⚠️ Webhook received with invalid hash. Possible security breach."
-    );
-    // Respond with 200 OK to prevent Flutterwave from retrying, but log error.
-    return res.status(200).end();
-  }
-
-  // 2. PROCESS WEBHOOK DATA
-  const event = req.body;
-  const eventType = event.event;
-  const payload = event.data;
-
-  console.log(`✅ Received Flutterwave Webhook Event: ${eventType}`);
-
-  if (eventType === "charge.successful") {
-    // This event fires for the initial payment and every successful recurring charge.
-
-    // Check if the transaction is recurring (mandatory check for subscription logic)
-    if (payload.is_recurring !== true) {
-      console.log(`ℹ️ Non-recurring successful charge ignored.`);
-      return res.status(200).end();
-    }
-
-    // Find the user based on the email (or a unique ID stored in metadata)
-    const user = await User.findOne({ email: payload.customer.email });
-    if (!user) {
-      console.error(`❌ User not found for email: ${payload.customer.email}`);
-      return res.status(200).end();
-    }
-
-    // Update user status
-    user.vipSubscription = {
-      active: true,
-      gateway: "flutterwave",
-      // Best practice: Store the actual Subscription ID if available from the transaction details
-      // If only Payment Link ID is available, store that.
-      subscriptionId: payload.payment_link_id || payload.subscription_id,
-      startDate: user.vipSubscription.startDate || new Date(payload.created_at),
-      lastPaymentDate: new Date(payload.created_at),
-      amount: payload.amount,
-      currency: payload.currency,
-      // You would calculate nextPaymentDate based on the plan interval here if Flutterwave doesn't provide it
-    };
-
-    await user.save();
-    console.log(`✅ User VIP activated/renewed for: ${user.email}`);
-  } else if (
-    eventType === "subscription.cancelled" ||
-    eventType === "subscription.failed"
-  ) {
-    // This event fires if the subscription is manually cancelled or a renewal charge fails repeatedly.
-    const user = await User.findOne({ email: payload.customer.email });
-
-    if (user && user.vipSubscription?.active) {
-      user.vipSubscription.active = false;
-      // Optional: Add a reason for cancellation/failure
-      user.vipSubscription.cancellationReason = eventType;
-      await user.save();
-      console.log(`❌ User VIP deactivated due to ${eventType}: ${user.email}`);
-    }
-  }
-
-  // Always respond with 200 OK to acknowledge the webhook and prevent retries.
-  return res.status(200).end();
-};
-
-// --- 3. Initial Verification (Optional - Used for frontend redirect) ---
-
-/**
- * Verify subscription via Payment Link and activate VIP status.
- * IMPORTANT: This should only be used immediately after the user completes
- * the initial payment, before the webhook is processed. The webhook handler
- * is the reliable source of truth for ongoing status.
- */
-export const verifyOrganizationSubscription = async (req, res, next) => {
+// 💳 Step 2 — Verify payment after redirect
+export const verifyOrganizationPayment = async (req, res, next) => {
   try {
-    // The transaction_id is often passed back in the redirect_url as a query param
-    // For this example, we assume either paymentLinkId (used in original code) or a transaction_id is passed
-    const { paymentLinkId, transaction_id } = req.body;
+    const { tx_ref } = req.body;
+    if (!tx_ref) return next(createError(400, "Missing transaction reference"));
 
-    // Verification by Transaction ID is more robust than by Payment Link ID after payment
-    if (transaction_id) {
-      // Step 1: Verify the transaction details
-      const { data } = await axios.get(
-        `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
-        { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
-      );
+    const verifyRes = await axios.get(
+      `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
+      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+    );
 
-      if (data.status !== "success" || data.data.status !== "successful") {
-        console.warn("⚠️ Transaction verification failed:", data);
-        return res
-          .status(400)
-          .json({ success: false, message: "Transaction failed." });
-      }
+    const { data } = verifyRes.data;
+    const status = data.status?.toLowerCase();
+    const isTestMode = process.env.NODE_ENV === "development";
 
-      const txData = data.data;
-
-      // Ensure it's the right transaction type (for a recurring initial payment)
-      if (txData.payment_type !== "card" || txData.is_recurring !== true) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Transaction is not a recurring card payment.",
-          });
-      }
-
+    if (
+      (status === "successful" || (isTestMode && status === "pending")) &&
+      data.currency &&
+      Number(data.amount) > 0
+    ) {
       const user = await User.findById(req.user?.id);
-      if (!user) {
-        console.log("❌ User not found during subscription verification");
-        return next(createError(404, "User not found"));
-      }
+      if (!user) return next(createError(404, "User not found"));
 
-      // Step 2: Update user status after successful initial payment
+      // 💎 Activate VIP subscription
       user.vipSubscription = {
         active: true,
         gateway: "flutterwave",
-        // The actual Subscription ID is the best identifier to save
-        subscriptionId: txData.subscription_id || paymentLinkId,
-        startDate: new Date(txData.created_at),
-        lastPaymentDate: new Date(txData.created_at),
+        paymentReference: data.tx_ref,
+        transactionId: data.id,
+        amount: data.amount,
+        currency: data.currency,
+        startDate: new Date(),
+        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       };
+
       await user.save();
+      console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
 
-      console.log("✅ User VIP activated after initial payment:", user.email);
-
-      return res.status(200).json({ success: true, user, txData });
-    } else {
-      return next(
-        createError(400, "Transaction ID required for verification.")
-      );
+      return res.status(200).json({
+        success: true,
+        message: "✅ Payment verified successfully — VIP activated",
+        data,
+      });
     }
-  } catch (err) {
+
+    console.warn("🚫 Payment not successful or still pending:", status);
+    return res.status(400).json({
+      success: false,
+      message: `Payment not verified (status: ${status})`,
+      data,
+    });
+  } catch (error) {
     console.error(
-      "❌ Initial subscription verification error:",
-      err.response?.data || err.message
+      "❌ Verification error:",
+      error.response?.data || error.message
     );
-    next(createError(500, "Subscription verification failed"));
+    next(createError(400, "Payment verification failed"));
   }
 };
-
-// NOTE ON CRON JOB: The original cron job logic is unreliable for ongoing subscription management.
-// It would only check for the INITIAL successful transaction and keep the user active
-// even if subsequent charges fail. Replace it entirely with the Webhook Handler above.
