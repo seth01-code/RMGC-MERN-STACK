@@ -36,38 +36,38 @@ export const subscribeOrganization = async (req, res, next) => {
 
     // Flutterwave subscription payload
     const payload = {
+      amount: Number(amount),
+      currency: currency.toUpperCase(),
+      redirect_url: `${FRONTEND_URL}/org-processing`,
+      payment_options: "card",
       customer: {
         email: user.email,
         name: user.fullname || user.username,
       },
-      amount: Number(amount),
-      currency: currency.toUpperCase(),
-      interval, // daily, weekly, monthly, quarterly, yearly
-      payment_options: "card",
       customizations: {
         title: "RMGC Organization Plan",
         description: "Recurring subscription",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
-      redirect_url: `${FRONTEND_URL}/org-processing`,
+      recurring: {
+        interval: interval, // daily, weekly, monthly...
+      },
     };
 
-    console.log("ℹ️ Creating Flutterwave subscription with payload:", payload);
-
     const { data } = await axios.post(
-      "https://api.flutterwave.com/v3/subscriptions",
+      "https://api.flutterwave.com/v3/payment-links",
       payload,
-      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+      {
+        headers: { Authorization: `Bearer ${FLW_SECRET}` },
+      }
     );
 
-    if (data.status !== "success") {
-      console.error("❌ Subscription creation failed:", data);
+    if (data.status !== "success")
       throw new Error("Subscription creation failed");
-    }
 
     return res.status(200).json({
       success: true,
-      checkoutLink: data.data.payment_link,
+      checkoutLink: data.data.link,
       subscriptionId: data.data.id,
     });
   } catch (err) {
