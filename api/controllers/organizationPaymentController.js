@@ -103,6 +103,8 @@ export const subscribeOrganization = async (req, res, next) => {
       redirect_url: `${FRONTEND_URL}/org-processing`,
     };
 
+    console.log("ℹ️ Creating Flutterwave subscription with payload:", payload);
+
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/subscriptions",
       payload,
@@ -114,6 +116,8 @@ export const subscribeOrganization = async (req, res, next) => {
       }
     );
 
+    console.log("✅ Flutterwave subscription response:", flwRes.data);
+
     if (flwRes.data.status === "success") {
       return res.status(200).json({
         success: true,
@@ -122,9 +126,29 @@ export const subscribeOrganization = async (req, res, next) => {
       });
     }
 
+    console.error("❌ Subscription creation failed, response:", flwRes.data);
     throw new Error("Subscription creation failed");
   } catch (err) {
-    console.error("❌ Subscription error:", err.response?.data || err.message);
+    // Full logging
+    console.error("❌ Subscription error message:", err.message);
+    if (err.response) {
+      console.error("❌ Subscription error response data:", err.response.data);
+      console.error(
+        "❌ Subscription error response status:",
+        err.response.status
+      );
+      console.error(
+        "❌ Subscription error response headers:",
+        err.response.headers
+      );
+    } else if (err.request) {
+      console.error(
+        "❌ Subscription error request made but no response:",
+        err.request
+      );
+    } else {
+      console.error("❌ Subscription error config:", err.config);
+    }
     next(createError(500, "Subscription creation failed"));
   }
 };
