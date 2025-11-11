@@ -1,10 +1,9 @@
 import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
-import cron from "node-cron";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const FRONTEND_URL = "http://localhost:3000";
 
 const SUPPORTED_CURRENCIES = [
   "NGN",
@@ -19,46 +18,7 @@ const SUPPORTED_CURRENCIES = [
 ];
 
 /**
- * Step 1: Create a Flutterwave plan
- */
-export const createOrganizationPlan = async (req, res, next) => {
-  try {
-    const { amount = 1, currency = "USD", interval = "monthly" } = req.body;
-
-    if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
-      return next(createError(400, "Unsupported currency"));
-    }
-
-    const payload = {
-      name: `ORG-PLAN-${Date.now()}`,
-      amount: Number(amount),
-      interval: "daily", // ✅ valid
-      currency: currency.toUpperCase(),
-      duration: 12,
-    };
-
-    console.log("ℹ️ Creating Flutterwave plan with payload:", payload);
-
-    const { data } = await axios.post(
-      "https://api.flutterwave.com/v3/plans",
-      payload,
-      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
-    );
-
-    if (data.status !== "success") {
-      console.error("❌ Plan creation failed:", data);
-      throw new Error("Plan creation failed");
-    }
-
-    return res.status(200).json({ success: true, plan: data.data });
-  } catch (err) {
-    console.error("❌ Plan creation error:", err.response?.data || err.message);
-    next(createError(500, "Plan creation failed"));
-  }
-};
-
-/**
- * Step 2: Subscribe organization to a Flutterwave plan
+ * Subscribe organization directly (recurring)
  */
 export const subscribeOrganization = async (req, res, next) => {
   try {
@@ -67,25 +27,31 @@ export const subscribeOrganization = async (req, res, next) => {
       return next(createError(400, "Only organizations can subscribe"));
     }
 
-    const { plan_id } = req.body;
-    if (!plan_id) return next(createError(400, "Plan ID required"));
+    const { amount = 1, currency = "USD", interval = "monthly" } = req.body;
 
+    if (!SUPPORTED_CURRENCIES.includes(currency.toUpperCase())) {
+      return next(createError(400, "Unsupported currency"));
+    }
+
+    // Flutterwave subscription payload
     const payload = {
-      plan: plan_id,
       customer: {
         email: user.email,
         name: user.fullname || user.username,
       },
+      amount: Number(amount),
+      currency: currency.toUpperCase(),
+      interval, // daily, weekly, monthly, quarterly, yearly
+      payment_options: "card",
       customizations: {
         title: "RMGC Organization Plan",
         description: "Recurring subscription",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
-      payment_options: "card",
       redirect_url: `${FRONTEND_URL}/org-processing`,
     };
 
-    console.log("ℹ️ Subscribing organization to plan:", payload);
+    console.log("ℹ️ Creating Flutterwave subscription with payload:", payload);
 
     const { data } = await axios.post(
       "https://api.flutterwave.com/v3/subscriptions",
