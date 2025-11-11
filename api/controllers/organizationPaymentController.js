@@ -29,27 +29,40 @@ export const createOrganizationSubscription = async (req, res, next) => {
       return next(createError(400, "Only organizations can subscribe"));
     }
 
-    // 🌍 Determine currency
-    let currency = (req.body.currency || "USD").toUpperCase();
+    // Receive currency and amount from frontend
+    let { currency, amount } = req.body;
+
+    currency = (currency || "USD").toUpperCase();
+
+    const SUPPORTED_CURRENCIES = [
+      "NGN",
+      "USD",
+      "GBP",
+      "EUR",
+      "KES",
+      "GHS",
+      "ZAR",
+      "UGX",
+      "TZS",
+    ];
     if (!SUPPORTED_CURRENCIES.includes(currency)) {
       console.warn(`⚠️ Unsupported currency "${currency}", defaulting to USD`);
       currency = "USD";
     }
 
-    // 💵 Convert ₦50,000 equivalent
-    const baseAmountNGN = 50000;
-    const fxRate = FX_RATES[currency] || FX_RATES.USD;
-    const amount = Number((baseAmountNGN * fxRate).toFixed(2));
+    // Ensure amount is a number
+    amount = Number(amount);
+    if (!amount || amount <= 0) return next(createError(400, "Invalid amount"));
 
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
-    // 🧾 Flutterwave checkout payload
+    // Flutterwave checkout payload
     const payload = {
       tx_ref,
       amount,
       currency,
-      redirect_url: `http://localhost:3000/org-processing`,
-      payment_options: "card", // 💳 Card only
+      redirect_url: `${FRONTEND_URL}/org-processing`,
+      payment_options: "card",
       customer: {
         email: user.email,
         name: user.fullname || user.username || "Organization User",
