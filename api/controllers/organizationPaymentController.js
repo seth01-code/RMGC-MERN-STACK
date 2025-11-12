@@ -4,6 +4,7 @@ import createError from "../utils/createError.js";
 import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
+const FLW_ENCRYPTION_KEY = process.env.FLW_ENCRYPTION_KEY; // correct key
 const FRONTEND_URL = "http://localhost:3000";
 
 const SUPPORTED_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
@@ -25,16 +26,15 @@ const getExchangeRate = async (currency) => {
   }
 };
 
-// 💳 Step 1 — Create Flutterwave checkout (card-only)
+// 💳 Step 1 — Create Flutterwave checkout
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) return next(createError(401, "Unauthorized"));
 
     const user = await User.findById(userId);
-    if (!user || user.role !== "organization") {
+    if (!user || user.role !== "organization")
       return next(createError(400, "Only organizations can subscribe"));
-    }
 
     let { currency } = req.body;
     currency = (currency || "USD").toUpperCase();
@@ -59,8 +59,6 @@ export const createOrganizationSubscription = async (req, res, next) => {
       },
       meta: { card_only: true },
     };
-
-    console.log("ℹ️ Sending subscription request to Flutterwave:", payload);
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/payments",
@@ -117,7 +115,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       if (!user) return next(createError(404, "User not found"));
 
       const now = new Date();
-      const endDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 minute test
+      const endDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 min test
 
       user.vipSubscription = {
         active: true,
@@ -126,7 +124,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         transactionId: data.id,
         amount: data.amount,
         currency: data.currency,
-        cardToken: data.card?.token, // save token for auto-renew
+        cardToken: data.card?.token, // auto-renew token
         startDate: now,
         endDate,
       };
@@ -146,29 +144,20 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             currency: data.currency,
             email: user.email,
             tx_ref: `RENEW-${Date.now()}-${user._id}`,
-            authorization: {
-              mode: "tokenized",
-              token: user.vipSubscription.cardToken,
-            },
+            authorization: { mode: "tokenized", token: user.vipSubscription.cardToken },
           };
 
-          // Encrypt correctly
-          const encryptedPayload = encryptPayload(chargePayload, FLW_SECRET);
+          const encryptedPayload = encryptPayload(chargePayload, FLW_ENCRYPTION_KEY);
 
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
-            { client: encryptedPayload }, // pass as { client: "..." }
-            {
-              headers: {
-                Authorization: `Bearer ${FLW_SECRET}`,
-                "Content-Type": "application/json",
-              },
-            }
+            { client: encryptedPayload },
+            { headers: { Authorization: `Bearer ${FLW_SECRET}`, "Content-Type": "application/json" } }
           );
 
           if (renewRes.data.status === "success") {
             const newStart = new Date();
-            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000); // 1 minute test
+            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000); // 1 min test
             user.vipSubscription.startDate = newStart;
             user.vipSubscription.endDate = newEnd;
             user.vipSubscription.amount = newAmount;
@@ -178,10 +167,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             console.warn("⚠️ Auto-renew failed:", renewRes.data);
           }
         } catch (err) {
-          console.error(
-            "❌ Auto-renew error:",
-            err.response?.data || err.message
-          );
+          console.error("❌ Auto-renew error:", err.response?.data || err.message);
         }
       }, 60 * 1000);
 
@@ -199,10 +185,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error(
-      "❌ Verification error:",
-      error.response?.data || error.message
-    );
+    console.error("❌ Verification error:", error.response?.data || error.message);
     next(createError(400, "Payment verification failed"));
   }
 };
