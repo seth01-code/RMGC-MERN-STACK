@@ -128,8 +128,8 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         paymentReference: data.tx_ref,
         transactionId: data.id,
         amount: data.amount,
-        currency: data.currency,
-        cardToken: data.card?.token,
+        currency: data.currency,        // store currency from Flutterwave
+        cardToken: data.card?.token || null, // safely store token or null
         startDate: now,
         endDate,
       };
@@ -138,10 +138,15 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
 
       // 🔁 Auto-renew after 1 minute (test)
-      // 🔁 Auto-renew after 1 minute (test)
       setTimeout(async () => {
         try {
           console.log(`🔁 Auto-renew attempt for ${user.email}`);
+
+          // Check if token exists before attempting charge
+          if (!user.vipSubscription.cardToken) {
+            console.warn("⚠️ Auto-renew skipped: no card token available");
+            return;
+          }
 
           const rate = await getExchangeRate(user.vipSubscription.currency);
           const newAmount = Math.round(BASE_AMOUNT_NGN * rate * 100) / 100;
@@ -153,17 +158,14 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             tx_ref: `RENEW-${Date.now()}-${user._id}`,
             authorization: {
               mode: "tokenized",
-              token: user.vipSubscription.cardToken, // might be undefined
+              token: user.vipSubscription.cardToken,
             },
           };
 
           console.log("📦 Charge payload before encryption:", chargePayload);
           console.log("🔑 Encryption key:", FLW_ENCRYPTION_KEY);
 
-          const encryptedPayload = encryptPayload(
-            chargePayload,
-            FLW_ENCRYPTION_KEY
-          );
+          const encryptedPayload = encryptPayload(chargePayload, FLW_ENCRYPTION_KEY);
           console.log("🔐 Encrypted payload:", encryptedPayload);
 
           const renewRes = await axios.post(
@@ -181,7 +183,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           if (renewRes.data.status === "success") {
             const newStart = new Date();
-            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000);
+            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000); // 1 min test
             user.vipSubscription.startDate = newStart;
             user.vipSubscription.endDate = newEnd;
             user.vipSubscription.amount = newAmount;
@@ -191,10 +193,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             console.warn("⚠️ Auto-renew failed:", renewRes.data);
           }
         } catch (err) {
-          console.error(
-            "❌ Auto-renew error:",
-            err.response?.data || err.message
-          );
+          console.error("❌ Auto-renew error:", err.response?.data || err.message);
         }
       }, 60 * 1000);
 
@@ -212,10 +211,8 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error(
-      "❌ Verification error:",
-      error.response?.data || error.message
-    );
+    console.error("❌ Verification error:", error.response?.data || error.message);
     next(createError(400, "Payment verification failed"));
   }
 };
+

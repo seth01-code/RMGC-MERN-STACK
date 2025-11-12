@@ -63,11 +63,15 @@ const UserSchema = new mongoose.Schema(
       endDate: { type: Date },
       active: { type: Boolean, default: false },
       paymentReference: { type: String },
+      transactionId: { type: String }, // store Flutterwave transaction ID
       gateway: {
         type: String,
         enum: ["paystack", "flutterwave", "stripe", null],
         default: null,
       },
+      amount: { type: Number }, // store the amount charged
+      currency: { type: String }, // store currency from Flutterwave
+      cardToken: { type: String }, // store the token for auto-renew (can be null)
     },
 
     // (4) Organization-specific fields (for role === 'organization')
