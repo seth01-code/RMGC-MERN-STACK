@@ -3,7 +3,7 @@ import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const FRONTEND_URL = "http://localhost:3000";
 
 const SUPPORTED_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
 const BASE_AMOUNT_NGN = 50000;
@@ -192,13 +192,11 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     }
 
     console.warn("🚫 Payment not successful or pending:", status);
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: `Payment not verified (status: ${status})`,
-        data,
-      });
+    return res.status(400).json({
+      success: false,
+      message: `Payment not verified (status: ${status})`,
+      data,
+    });
   } catch (error) {
     console.error(
       "❌ Verification error:",
