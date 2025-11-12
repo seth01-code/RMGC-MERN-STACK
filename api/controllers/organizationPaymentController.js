@@ -138,21 +138,22 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
 
       // 🔁 Auto-renew after 1 minute (test)
+      // 🔁 Auto-renew after 1 minute (test)
       setTimeout(async () => {
         try {
           console.log(`🔁 Auto-renew attempt for ${user.email}`);
 
-          const rate = await getExchangeRate(data.currency);
+          const rate = await getExchangeRate(user.vipSubscription.currency);
           const newAmount = Math.round(BASE_AMOUNT_NGN * rate * 100) / 100;
 
           const chargePayload = {
             amount: newAmount,
-            currency: data.currency,
+            currency: user.vipSubscription.currency,
             email: user.email,
             tx_ref: `RENEW-${Date.now()}-${user._id}`,
             authorization: {
               mode: "tokenized",
-              token: user.vipSubscription.cardToken,
+              token: user.vipSubscription.cardToken, // might be undefined
             },
           };
 
