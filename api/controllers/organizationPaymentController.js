@@ -122,14 +122,15 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       const now = new Date();
       const endDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 min test
 
+      // ✅ Save VIP subscription info including card token
       user.vipSubscription = {
         active: true,
         gateway: "flutterwave",
         paymentReference: data.tx_ref,
         transactionId: data.id,
         amount: data.amount,
-        currency: data.currency,        // store currency from Flutterwave
-        cardToken: data.card?.token || null, // safely store token or null
+        currency: data.currency,
+        cardToken: data.card?.token || null,
         startDate: now,
         endDate,
       };
@@ -142,7 +143,6 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         try {
           console.log(`🔁 Auto-renew attempt for ${user.email}`);
 
-          // Check if token exists before attempting charge
           if (!user.vipSubscription.cardToken) {
             console.warn("⚠️ Auto-renew skipped: no card token available");
             return;
@@ -152,25 +152,22 @@ export const verifyOrganizationPayment = async (req, res, next) => {
           const newAmount = Math.round(BASE_AMOUNT_NGN * rate * 100) / 100;
 
           const chargePayload = {
+            tx_ref: `RENEW-${Date.now()}-${user._id}`,
             amount: newAmount,
             currency: user.vipSubscription.currency,
             email: user.email,
-            tx_ref: `RENEW-${Date.now()}-${user._id}`,
             authorization: {
               mode: "tokenized",
               token: user.vipSubscription.cardToken,
             },
           };
 
-          console.log("📦 Charge payload before encryption:", chargePayload);
-          console.log("🔑 Encryption key:", FLW_ENCRYPTION_KEY);
+          console.log("📦 Charge payload for auto-renew:", chargePayload);
 
-          const encryptedPayload = encryptPayload(chargePayload, FLW_ENCRYPTION_KEY);
-          console.log("🔐 Encrypted payload:", encryptedPayload);
-
+          // 🚫 No encryption needed, send tokenized charge directly
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
-            { client: encryptedPayload },
+            chargePayload,
             {
               headers: {
                 Authorization: `Bearer ${FLW_SECRET}`,
@@ -193,7 +190,10 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             console.warn("⚠️ Auto-renew failed:", renewRes.data);
           }
         } catch (err) {
-          console.error("❌ Auto-renew error:", err.response?.data || err.message);
+          console.error(
+            "❌ Auto-renew error:",
+            err.response?.data || err.message
+          );
         }
       }, 60 * 1000);
 
@@ -211,8 +211,10 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error("❌ Verification error:", error.response?.data || error.message);
+    console.error(
+      "❌ Verification error:",
+      error.response?.data || error.message
+    );
     next(createError(400, "Payment verification failed"));
   }
 };
-
