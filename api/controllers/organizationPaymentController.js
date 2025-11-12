@@ -152,11 +152,12 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             },
           };
 
+          // Encrypt correctly
           const encryptedPayload = encryptPayload(chargePayload, FLW_SECRET);
 
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
-            { client: encryptedPayload },
+            { client: encryptedPayload }, // pass as { client: "..." }
             {
               headers: {
                 Authorization: `Bearer ${FLW_SECRET}`,
