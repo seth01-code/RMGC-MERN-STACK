@@ -92,10 +92,13 @@ export const createOrganizationSubscription = async (req, res, next) => {
 };
 
 // 💳 Step 2 — Verify payment & setup auto-renew
+// 💳 Step 2 — Verify payment & setup auto-renew with detailed logs
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
     if (!tx_ref) return next(createError(400, "Missing transaction reference"));
+
+    console.log("🔎 Verifying transaction:", tx_ref);
 
     const verifyRes = await axios.get(
       `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
@@ -104,6 +107,8 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
     const { data } = verifyRes.data;
     const status = data.status?.toLowerCase();
+    console.log("ℹ️ Verification response:", data);
+
     const isTestMode = process.env.NODE_ENV === "development";
 
     if (
@@ -124,7 +129,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         transactionId: data.id,
         amount: data.amount,
         currency: data.currency,
-        cardToken: data.card?.token, // auto-renew token
+        cardToken: data.card?.token,
         startDate: now,
         endDate,
       };
@@ -136,6 +141,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       setTimeout(async () => {
         try {
           console.log(`🔁 Auto-renew attempt for ${user.email}`);
+
           const rate = await getExchangeRate(data.currency);
           const newAmount = Math.round(BASE_AMOUNT_NGN * rate * 100) / 100;
 
@@ -144,20 +150,37 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             currency: data.currency,
             email: user.email,
             tx_ref: `RENEW-${Date.now()}-${user._id}`,
-            authorization: { mode: "tokenized", token: user.vipSubscription.cardToken },
+            authorization: {
+              mode: "tokenized",
+              token: user.vipSubscription.cardToken,
+            },
           };
 
-          const encryptedPayload = encryptPayload(chargePayload, FLW_ENCRYPTION_KEY);
+          console.log("📦 Charge payload before encryption:", chargePayload);
+          console.log("🔑 Encryption key:", FLW_ENCRYPTION_KEY);
+
+          const encryptedPayload = encryptPayload(
+            chargePayload,
+            FLW_ENCRYPTION_KEY
+          );
+          console.log("🔐 Encrypted payload:", encryptedPayload);
 
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
             { client: encryptedPayload },
-            { headers: { Authorization: `Bearer ${FLW_SECRET}`, "Content-Type": "application/json" } }
+            {
+              headers: {
+                Authorization: `Bearer ${FLW_SECRET}`,
+                "Content-Type": "application/json",
+              },
+            }
           );
+
+          console.log("💬 Auto-renew API response:", renewRes.data);
 
           if (renewRes.data.status === "success") {
             const newStart = new Date();
-            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000); // 1 min test
+            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000);
             user.vipSubscription.startDate = newStart;
             user.vipSubscription.endDate = newEnd;
             user.vipSubscription.amount = newAmount;
@@ -167,7 +190,10 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             console.warn("⚠️ Auto-renew failed:", renewRes.data);
           }
         } catch (err) {
-          console.error("❌ Auto-renew error:", err.response?.data || err.message);
+          console.error(
+            "❌ Auto-renew error:",
+            err.response?.data || err.message
+          );
         }
       }, 60 * 1000);
 
@@ -185,7 +211,10 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error("❌ Verification error:", error.response?.data || error.message);
+    console.error(
+      "❌ Verification error:",
+      error.response?.data || error.message
+    );
     next(createError(400, "Payment verification failed"));
   }
 };
