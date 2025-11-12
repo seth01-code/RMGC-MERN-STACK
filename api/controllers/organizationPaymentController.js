@@ -4,7 +4,7 @@ import createError from "../utils/createError.js";
 import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FLW_ENCRYPTION_KEY = process.env.FLW_ENCRYPTION_KEY; // correct key
+const FLW_ENCRYPTION_KEY = process.env.FLW_ENCRYPTION_KEY; // Flutterwave 3DES key
 const FRONTEND_URL = "http://localhost:3000";
 
 const SUPPORTED_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
@@ -92,7 +92,6 @@ export const createOrganizationSubscription = async (req, res, next) => {
 };
 
 // 💳 Step 2 — Verify payment & setup auto-renew
-// 💳 Step 2 — Verify payment & setup auto-renew with detailed logs
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
@@ -129,7 +128,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         paymentReference: data.tx_ref,
         transactionId: data.id,
         amount: data.amount,
-        currency: data.currency,
+        currency: data.currency, // store currency from Flutterwave
         cardToken: data.card?.token || null,
         startDate: now,
         endDate,
@@ -164,10 +163,16 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           console.log("📦 Charge payload for auto-renew:", chargePayload);
 
-          // 🚫 No encryption needed, send tokenized charge directly
+          // 🔐 3DES Encryption required by Flutterwave
+          const encryptedPayload = encryptPayload(
+            chargePayload,
+            FLW_ENCRYPTION_KEY
+          );
+          console.log("🔐 Encrypted payload:", encryptedPayload);
+
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
-            chargePayload,
+            { client: encryptedPayload },
             {
               headers: {
                 Authorization: `Bearer ${FLW_SECRET}`,
