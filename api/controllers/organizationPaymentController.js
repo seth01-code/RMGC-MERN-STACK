@@ -236,3 +236,4 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     next(createError(400, "Payment verification failed"));
   }
 };
+
