@@ -1,7 +1,8 @@
 import crypto from "crypto";
 
 export const encryptPayload = (payload, secretKey) => {
-  const text = JSON.stringify(payload);
+  // payload must be an object
+  const text = typeof payload === "string" ? payload : JSON.stringify(payload);
 
   // 1. Hash secret key (SHA-256) → take first 24 bytes
   const hash = crypto.createHash("sha256").update(secretKey).digest();
@@ -11,7 +12,10 @@ export const encryptPayload = (payload, secretKey) => {
   const cipher = crypto.createCipheriv("des-ede3-ecb", key, null);
   cipher.setAutoPadding(true);
 
-  let encrypted = cipher.update(text, "utf8", "base64");
-  encrypted += cipher.final("base64");
-  return encrypted;
+  const encrypted = Buffer.concat([
+    cipher.update(Buffer.from(text, "utf8")),
+    cipher.final(),
+  ]);
+
+  return encrypted.toString("base64");
 };
