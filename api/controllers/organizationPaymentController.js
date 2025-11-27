@@ -176,13 +176,14 @@ export const verifyOrganizationPayment = async (req, res, next) => {
           console.log("📦 Charge payload for auto-renew:", chargePayload);
 
           // 🔐 Encrypt as JSON string
+          // 🔐 Encrypt as JSON string
           const encryptedPayload = encryptPayload(
             JSON.stringify(chargePayload),
             FLW_ENCRYPTION_KEY
           );
           console.log("🔐 Encrypted payload:", encryptedPayload);
 
-          // ✅ Send as x-www-form-urlencoded
+          // ✅ Send as x-www-form-urlencoded string
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
             `client=${encodeURIComponent(encryptedPayload)}`,
@@ -236,4 +237,3 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     next(createError(400, "Payment verification failed"));
   }
 };
-
