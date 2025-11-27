@@ -2,6 +2,7 @@ import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
+import qs from 'qs'
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FLW_ENCRYPTION_KEY = process.env.FLW_ENCRYPTION_KEY; // Flutterwave 3DES key
