@@ -9,6 +9,7 @@ const FRONTEND_URL = "http://localhost:3000";
 
 const SUPPORTED_CURRENCIES = ["NGN", "USD", "GBP", "EUR", "KES", "GHS", "ZAR"];
 const BASE_AMOUNT_NGN = 50000;
+const FEE_PERCENT = 7.5; // 7.5% fee
 
 // ✅ Fetch exchange rate
 const getExchangeRate = async (currency) => {
@@ -41,7 +42,12 @@ export const createOrganizationSubscription = async (req, res, next) => {
     if (!SUPPORTED_CURRENCIES.includes(currency)) currency = "USD";
 
     const exchangeRate = await getExchangeRate(currency);
-    const amount = Math.round(BASE_AMOUNT_NGN * exchangeRate * 100) / 100;
+
+    // Add 7.5% fee
+    const amount =
+      Math.round(
+        BASE_AMOUNT_NGN * exchangeRate * (1 + FEE_PERCENT / 100) * 100
+      ) / 100;
 
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
@@ -128,7 +134,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         paymentReference: data.tx_ref,
         transactionId: data.id,
         amount: data.amount,
-        currency: data.currency, // store currency from Flutterwave
+        currency: data.currency,
         cardToken: data.card?.token || null,
         startDate: now,
         endDate,
@@ -148,7 +154,11 @@ export const verifyOrganizationPayment = async (req, res, next) => {
           }
 
           const rate = await getExchangeRate(user.vipSubscription.currency);
-          const newAmount = Math.round(BASE_AMOUNT_NGN * rate * 100) / 100;
+
+          // Include 7.5% fee in auto-renew as well
+          const newAmount =
+            Math.round(BASE_AMOUNT_NGN * rate * (1 + FEE_PERCENT / 100) * 100) /
+            100;
 
           const chargePayload = {
             tx_ref: `RENEW-${Date.now()}-${user._id}`,
@@ -163,7 +173,6 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           console.log("📦 Charge payload for auto-renew:", chargePayload);
 
-          // 🔐 3DES Encryption required by Flutterwave
           const encryptedPayload = encryptPayload(
             chargePayload,
             FLW_ENCRYPTION_KEY
@@ -185,7 +194,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           if (renewRes.data.status === "success") {
             const newStart = new Date();
-            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000); // 1 min test
+            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000);
             user.vipSubscription.startDate = newStart;
             user.vipSubscription.endDate = newEnd;
             user.vipSubscription.amount = newAmount;
