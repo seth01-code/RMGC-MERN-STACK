@@ -170,11 +170,11 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
-            qs.stringify({ client: encryptedPayload }),
+            { client: encryptedPayload },
             {
               headers: {
                 Authorization: `Bearer ${FLW_SECRET}`,
-                "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/json",
               },
             }
           );
