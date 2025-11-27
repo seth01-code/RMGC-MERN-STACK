@@ -143,6 +143,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
 
       // Auto-renew
+      // Auto-renew
       setTimeout(async () => {
         try {
           console.log(`🔁 Auto-renew attempt for ${user.email}`);
@@ -166,15 +167,17 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           console.log("📦 Charge payload for auto-renew:", chargePayload);
 
+          // Encrypt payload correctly
           const encryptedPayload = encryptPayload(
             chargePayload,
             FLW_ENCRYPTION_KEY
           );
           console.log("🔐 Encrypted payload:", encryptedPayload);
 
+          // Send raw base64 string (DO NOT encodeURIComponent)
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
-            `client=${encodeURIComponent(encryptedPayload)}`,
+            `client=${encryptedPayload}`,
             {
               headers: {
                 Authorization: `Bearer ${FLW_SECRET}`,
