@@ -11,8 +11,9 @@ export const encryptPayload = (payload, secretKey) => {
   cipher.setAutoPadding(true);
 
   const encrypted = Buffer.concat([
-    cipher.update(Buffer.from(text, "utf8")),
+    cipher.update(text, "utf8"),
     cipher.final(),
   ]);
-  return encrypted.toString("base64");
+
+  return encrypted.toString("base64"); // <-- MUST be a string
 };
