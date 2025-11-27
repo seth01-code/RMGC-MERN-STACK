@@ -1,7 +1,6 @@
 import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
-import crypto from "crypto";
 import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
@@ -99,26 +98,6 @@ export const createOrganizationSubscription = async (req, res, next) => {
 };
 
 // 💳 Step 2 — Verify payment & setup auto-renew
-const encryptPayload = (payload, secretKey) => {
-  // Ensure payload is an object
-  const text = typeof payload === "string" ? payload : JSON.stringify(payload);
-
-  // Hash secret key → take first 24 bytes
-  const hash = crypto.createHash("sha256").update(secretKey).digest();
-  const key = hash.slice(0, 24); // 24-byte 3DES key
-
-  // ECB mode (Flutterwave)
-  const cipher = crypto.createCipheriv("des-ede3-ecb", key, null);
-  cipher.setAutoPadding(true);
-
-  const encrypted = Buffer.concat([
-    cipher.update(Buffer.from(text, "utf8")),
-    cipher.final(),
-  ]);
-
-  return encrypted.toString("base64");
-};
-
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
