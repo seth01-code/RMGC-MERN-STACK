@@ -149,41 +149,27 @@ export const verifyOrganizationPayment = async (req, res, next) => {
           console.log(`🔁 Auto-renew attempt for ${user.email}`);
 
           const cardToken = user.vipSubscription.cardToken;
-          if (!cardToken) {
-            console.warn("⚠️ Auto-renew skipped: no card token available");
-            return;
-          }
+          if (!cardToken)
+            return console.warn("⚠️ No card token for auto-renew");
 
           const rate = await getExchangeRate(user.vipSubscription.currency);
-
-          // Include 7.5% fee
           const newAmount =
             Math.round(BASE_AMOUNT_NGN * rate * (1 + FEE_PERCENT / 100) * 100) /
             100;
 
-          // ✅ Proper payload for Flutterwave 3DES tokenized charge
           const chargePayload = {
             tx_ref: `RENEW-${Date.now()}-${user._id}`,
             amount: newAmount,
             currency: user.vipSubscription.currency,
             email: user.email,
-            authorization: {
-              mode: "tokenized",
-              token: cardToken,
-            },
+            authorization: { mode: "tokenized", token: cardToken },
           };
 
-          console.log("📦 Charge payload for auto-renew:", chargePayload);
-
-          // 🔐 Encrypt as JSON string
-          // 🔐 Encrypt as JSON string
           const encryptedPayload = encryptPayload(
             JSON.stringify(chargePayload),
             FLW_ENCRYPTION_KEY
           );
-          console.log("🔐 Encrypted payload:", encryptedPayload);
 
-          // ✅ Send as x-www-form-urlencoded string
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
             `client=${encodeURIComponent(encryptedPayload)}`,
@@ -199,7 +185,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           if (renewRes.data.status === "success") {
             const newStart = new Date();
-            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000); // 1 min test
+            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000);
             user.vipSubscription.startDate = newStart;
             user.vipSubscription.endDate = newEnd;
             user.vipSubscription.amount = newAmount;
