@@ -2,7 +2,7 @@ import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
-import qs from 'qs'
+import qs from "qs";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FLW_ENCRYPTION_KEY = process.env.FLW_ENCRYPTION_KEY; // Flutterwave 3DES key
@@ -144,7 +144,6 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
 
       // Auto-renew
-      // Auto-renew
       setTimeout(async () => {
         try {
           const cardToken = user.vipSubscription.cardToken;
@@ -161,7 +160,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
             amount: newAmount,
             currency: user.vipSubscription.currency,
             email: user.email,
-            authorization: { mode: "tokenized", token: cardToken },
+            token: cardToken, // <-- FIXED!
           };
 
           const encryptedPayload = encryptPayload(
