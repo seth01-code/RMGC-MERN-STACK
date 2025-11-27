@@ -1,19 +1,19 @@
-// utils/flutterwaveEncrypt.js
 import crypto from "crypto";
 
 export const encryptPayload = (payload, secretKey) => {
   const text = typeof payload === "string" ? payload : JSON.stringify(payload);
 
-  const hash = crypto.createHash("sha256").update(secretKey).digest();
-  const key = hash.slice(0, 24);
+  const key = crypto
+    .createHash("md5")
+    .update(secretKey)
+    .digest("hex")
+    .substring(0, 24);
 
-  const cipher = crypto.createCipheriv("des-ede3-ecb", key, null);
+  const cipher = crypto.createCipheriv("des-ede3", key, null);
   cipher.setAutoPadding(true);
 
-  const encrypted = Buffer.concat([
-    cipher.update(text, "utf8"),
-    cipher.final(),
-  ]);
+  let encrypted = cipher.update(text, "utf8", "base64");
+  encrypted += cipher.final("base64");
 
-  return encrypted.toString("base64"); // <-- MUST be a string
+  return encrypted;
 };
