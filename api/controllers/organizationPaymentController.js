@@ -1,6 +1,7 @@
 import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
+import crypto from "crypto";
 import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
@@ -98,6 +99,26 @@ export const createOrganizationSubscription = async (req, res, next) => {
 };
 
 // 💳 Step 2 — Verify payment & setup auto-renew
+const encryptPayload = (payload, secretKey) => {
+  // Ensure payload is an object
+  const text = typeof payload === "string" ? payload : JSON.stringify(payload);
+
+  // Hash secret key → take first 24 bytes
+  const hash = crypto.createHash("sha256").update(secretKey).digest();
+  const key = hash.slice(0, 24); // 24-byte 3DES key
+
+  // ECB mode (Flutterwave)
+  const cipher = crypto.createCipheriv("des-ede3-ecb", key, null);
+  cipher.setAutoPadding(true);
+
+  const encrypted = Buffer.concat([
+    cipher.update(Buffer.from(text, "utf8")),
+    cipher.final(),
+  ]);
+
+  return encrypted.toString("base64");
+};
+
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
@@ -125,9 +146,8 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       if (!user) return next(createError(404, "User not found"));
 
       const now = new Date();
-      const endDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 min test
+      const endDate = new Date(now.getTime() + 1 * 60 * 1000); // test
 
-      // Save VIP subscription info including card token
       user.vipSubscription = {
         active: true,
         gateway: "flutterwave",
@@ -143,23 +163,20 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       await user.save();
       console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
 
-      // Auto-renew after 1 minute (test)
+      // Auto-renew
       setTimeout(async () => {
         try {
           console.log(`🔁 Auto-renew attempt for ${user.email}`);
 
           const cardToken = user.vipSubscription.cardToken;
-          if (!cardToken) {
-            console.warn("⚠️ Auto-renew skipped: no card token available");
-            return;
-          }
+          if (!cardToken)
+            return console.warn("⚠️ No card token for auto-renew");
 
           const rate = await getExchangeRate(user.vipSubscription.currency);
           const newAmount =
             Math.round(BASE_AMOUNT_NGN * rate * (1 + FEE_PERCENT / 100) * 100) /
             100;
 
-          // Proper payload for Flutterwave 3DES tokenized charge
           const chargePayload = {
             tx_ref: `RENEW-${Date.now()}-${user._id}`,
             amount: newAmount,
@@ -170,14 +187,12 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           console.log("📦 Charge payload for auto-renew:", chargePayload);
 
-          // Encrypt payload (pass object directly)
           const encryptedPayload = encryptPayload(
             chargePayload,
             FLW_ENCRYPTION_KEY
           );
           console.log("🔐 Encrypted payload:", encryptedPayload);
 
-          // Send as x-www-form-urlencoded
           const renewRes = await axios.post(
             "https://api.flutterwave.com/v3/charges?type=card",
             `client=${encodeURIComponent(encryptedPayload)}`,
@@ -193,7 +208,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
 
           if (renewRes.data.status === "success") {
             const newStart = new Date();
-            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000); // 1 min test
+            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000);
             user.vipSubscription.startDate = newStart;
             user.vipSubscription.endDate = newEnd;
             user.vipSubscription.amount = newAmount;
