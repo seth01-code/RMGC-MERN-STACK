@@ -6,8 +6,10 @@ const UserSchema = new mongoose.Schema(
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    isSeller: { type: Boolean, default: false }, // ⚠️ Leave untouched for freelancer logic
+
+    isSeller: { type: Boolean, default: false },
     isAdmin: { type: Boolean, default: false },
+
     img: { type: String, default: "" },
     bio: { type: String, default: "" },
     country: { type: String, default: "" },
@@ -15,6 +17,7 @@ const UserSchema = new mongoose.Schema(
     desc: { type: String, default: "" },
     portfolioLink: { type: [String], default: [] },
     languages: { type: [String], default: [] },
+
     isVerified: { type: Boolean, default: false },
     otp: { type: String },
     otpExpires: { type: Date },
@@ -41,40 +44,53 @@ const UserSchema = new mongoose.Schema(
 
     services: { type: [String], default: [] },
 
-    // ===== New Additions for RMGC Expansion =====
+    // ===== New RMGC Fields =====
 
-    // (1) Role definition for new types
+    /**
+     * ROLE:
+     * - null → Freelancer (default, backward-compatible)
+     * - "organization"
+     * - "remote_worker"
+     */
     role: {
       type: String,
-      enum: ["organization", "remote_worker"],
-      default: null, // ⚠️ null ensures freelancers remain unaffected
+      enum: ["organization", "remote_worker", null],
+      default: null,
     },
 
-    // (2) For remote workers — Free or VIP tier
+    /**
+     * TIER:
+     * - null → Not a remote worker (freelancer or organization)
+     * - "free" → Remote worker (free tier)
+     * - "vip" → Remote worker (VIP tier, uses vipSubscription)
+     */
     tier: {
       type: String,
       enum: ["free", "vip", null],
       default: null,
     },
 
-    // (3) VIP subscription tracking (applies only if tier === 'vip')
+    /**
+     * VIP SUBSCRIPTION:
+     * Used only when tier === "vip"
+     */
     vipSubscription: {
       startDate: { type: Date },
       endDate: { type: Date },
       active: { type: Boolean, default: false },
       paymentReference: { type: String },
-      transactionId: { type: String }, // store Flutterwave transaction ID
+      transactionId: { type: String },
       gateway: {
         type: String,
         enum: ["paystack", "flutterwave", "stripe", null],
         default: null,
       },
-      amount: { type: Number }, // store the amount charged
-      currency: { type: String }, // store currency from Flutterwave
-      cardToken: { type: String }, // store the token for auto-renew (can be null)
+      amount: { type: Number },
+      currency: { type: String },
+      cardToken: { type: String }, // For auto-renewal
     },
 
-    // (4) Organization-specific fields (for role === 'organization')
+    // ===== Organization Fields =====
     organization: {
       name: { type: String },
       regNumber: { type: String },
@@ -85,12 +101,12 @@ const UserSchema = new mongoose.Schema(
       contactPhone: { type: String },
       logo: { type: String },
 
-      // ===== New fields to match frontend form =====
       address: { type: String },
       state: { type: String },
       country: { type: String },
       industry: { type: String },
       companySize: { type: String },
+
       socialLinks: {
         linkedin: { type: String, default: "" },
         twitter: { type: String, default: "" },
@@ -98,13 +114,7 @@ const UserSchema = new mongoose.Schema(
       },
     },
 
-    // (5) List of jobs posted by this organization
-    postedJobs: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Job",
-      },
-    ],
+    postedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
   },
   { timestamps: true }
 );
