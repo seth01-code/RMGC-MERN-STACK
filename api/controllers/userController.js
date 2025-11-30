@@ -44,33 +44,109 @@ export const getUserData = async (req, res, next) => {
 
     // Check if user is authenticated
     if (req.user?.id) {
-      user = await User.findById(req.user.id);
+      user = await User.findById(req.user.id)
+        .select("-password -resetPasswordToken -resetPasswordExpires"); 
+      // Removes sensitive fields
     }
 
+    // If user is NOT logged in → return guest defaults
     if (!user) {
       return res.status(200).json({
         id: null,
         username: "Guest",
         email: "N/A",
         country: "Unknown",
-        language: "English", // Default language
+        language: "English",
+        role: "guest",
         isSeller: false,
+        isAdmin: false,
         img: "https://example.com/default-avatar.png",
         portfolioLink: [],
+        languages: [],
+        services: [],
+        organization: null,
+        postedJobs: [],
+        vipSubscription: null,
       });
     }
 
+    // Auto-detect language
     const language = getLanguageFromCountry(user.country);
 
-    res.status(200).json({
+    // Return complete profile
+    return res.status(200).json({
       id: user._id,
       username: user.username,
       email: user.email,
-      country: user.country,
-      language: language,
-      isSeller: user.isSeller,
       img: user.img,
+      isSeller: user.isSeller,
+      isAdmin: user.isAdmin,
+      bio: user.bio,
+      country: user.country,
+      phone: user.phone,
+      desc: user.desc,
       portfolioLink: user.portfolioLink,
+      languages: user.languages,
+      isVerified: user.isVerified,
+      address: user.address,
+      yearsOfExperience: user.yearsOfExperience,
+      stateOfResidence: user.stateOfResidence,
+      countryOfResidence: user.countryOfResidence,
+      role: user.role,
+      tier: user.tier,
+
+      // Next of Kin
+      nextOfKin: {
+        fullName: user?.nextOfKin?.fullName || "",
+        dob: user?.nextOfKin?.dob || null,
+        stateOfResidence: user?.nextOfKin?.stateOfResidence || "",
+        countryOfResidence: user?.nextOfKin?.countryOfResidence || "",
+        email: user?.nextOfKin?.email || "",
+        address: user?.nextOfKin?.address || "",
+        phone: user?.nextOfKin?.phone || "",
+      },
+
+      // Organization Data
+      organization: user.organization
+        ? {
+            name: user.organization.name,
+            regNumber: user.organization.regNumber,
+            website: user.organization.website,
+            description: user.organization.description,
+            verified: user.organization.verified,
+            contactEmail: user.organization.contactEmail,
+            contactPhone: user.organization.contactPhone,
+            logo: user.organization.logo,
+            address: user.organization.address,
+            state: user.organization.state,
+            country: user.organization.country,
+            industry: user.organization.industry,
+            companySize: user.organization.companySize,
+            socialLinks: user.organization.socialLinks,
+          }
+        : null,
+
+      // VIP Subscription
+      vipSubscription: user.vipSubscription
+        ? {
+            startDate: user.vipSubscription.startDate,
+            endDate: user.vipSubscription.endDate,
+            active: user.vipSubscription.active,
+            paymentReference: user.vipSubscription.paymentReference,
+            transactionId: user.vipSubscription.transactionId,
+            gateway: user.vipSubscription.gateway,
+            amount: user.vipSubscription.amount,
+            currency: user.vipSubscription.currency,
+            cardToken: user.vipSubscription.cardToken,
+          }
+        : null,
+
+      services: user.services || [],
+      postedJobs: user.postedJobs || [],
+
+      language,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     });
   } catch (err) {
     console.error("Error fetching user data:", err);
