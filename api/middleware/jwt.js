@@ -5,30 +5,13 @@ import createError from "../utils/createError.js";
    🔐 MAIN TOKEN VERIFICATION
 ================================ */
 export const verifyToken = (req, res, next) => {
-  const token = req.cookies.accessToken;
-
-  if (!token) {
-    console.error("❌ No token in cookies");
-    return next(createError(401, "You are not authenticated"));
-  }
+  const token =
+    req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
+  if (!token) return next(createError(401, "You are not authenticated"));
 
   jwt.verify(token, process.env.JWT_KEY, (err, payload) => {
-    if (err) {
-      console.error("❌ Invalid Token:", err.message);
-      return next(createError(403, "Token is not valid"));
-    }
-
-    console.log("✅ Token Verified:", payload);
-
-    req.user = {
-      id: payload.id,
-      role: payload.role, // organization, freelancer, remoteWorker, admin
-      isSeller: payload.isSeller || false,
-      isAdmin: payload.isAdmin || false,
-      isOrganization: payload.isOrganization || false,
-      isRemoteWorker: payload.isRemoteWorker || false,
-    };
-
+    if (err) return next(createError(403, "Token is not valid"));
+    req.user = { ...payload };
     next();
   });
 };
