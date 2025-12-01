@@ -9,7 +9,7 @@ import {
   verifyToken,
   verifyRemoteWorker,
   verifyOrganization,
-} from "../middleware/verifyToken.js";
+} from "../middleware/jwt.js";
 
 const router = express.Router();
 

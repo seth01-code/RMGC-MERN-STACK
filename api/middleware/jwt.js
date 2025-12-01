@@ -115,3 +115,15 @@ export const verifySelfOrAdmin = (req, res, next) => {
 
   next();
 };
+
+export const verifySeller = (req, res, next) => {
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({ message: "Unauthorized - No user found" });
+  }
+
+  if (!req.user.isSeller) {
+    return res.status(403).json({ message: "Access denied - Not a seller" });
+  }
+
+  next();
+};

@@ -8,10 +8,7 @@ import {
   getOrganizationJobs,
 } from "../controllers/jobController.js";
 
-import {
-  verifyToken,
-  verifyOrganization,
-} from "../middleware/verifyToken.js";
+import { verifyToken, verifyOrganization } from "../middleware/jwt.js";
 
 const router = express.Router();
 
@@ -20,7 +17,12 @@ router.put("/:id", verifyToken, verifyOrganization, updateJob);
 router.delete("/:id", verifyToken, verifyOrganization, deleteJob);
 
 router.get("/", getAllJobs);
-router.get("/organization", verifyToken, verifyOrganization, getOrganizationJobs);
+router.get(
+  "/organization",
+  verifyToken,
+  verifyOrganization,
+  getOrganizationJobs
+);
 router.get("/:id", getJob);
 
 export default router;
