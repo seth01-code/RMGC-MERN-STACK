@@ -161,7 +161,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
           token: user.vipSubscription.cardToken,
         };
 
-        const encrypted = encryptPayload(chargePayload, FLW_ENCRYPTION_KEY);
+        const encrypted = encryptPayload(chargePayload, FLW_SECRET); // <-- use FLW_SECRET
 
         const renewRes = await axios.post(
           "https://api.flutterwave.com/v3/charges?type=card",
