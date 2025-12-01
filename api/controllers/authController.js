@@ -506,6 +506,7 @@ export const verifyOtp = async (req, res, next) => {
 };
 
 // ✅ Login
+
 export const login = async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -524,37 +525,47 @@ export const login = async (req, res) => {
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Incorrect password" });
 
-    const token = jwt.sign(
-      { id: user._id, isSeller: user.isSeller, isAdmin: user.isAdmin },
-      process.env.JWT_KEY,
-      { expiresIn: "7d" }
-    );
-
-    res.cookie("accessToken", token, {
-      httpOnly: true,
-      sameSite: "None",
-      secure: true,
-    });
-
     // Determine role
     let role = "user";
     if (user.isAdmin) role = "admin";
     else if (user.isSeller) role = "seller";
     else if (user.role === "organization" || user.organization?.regNumber)
       role = "organization";
+    else if (user.role === "remoteWorker") role = "remoteWorker";
 
-    // Respond with all needed info
+    // Sign JWT with correct role
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role, // <-- include role explicitly
+        isSeller: user.isSeller,
+        isAdmin: user.isAdmin,
+        isOrganization: role === "organization",
+        isRemoteWorker: role === "remoteWorker",
+      },
+      process.env.JWT_KEY,
+      { expiresIn: "7d" }
+    );
+
+    // Set cookie
+    res.cookie("accessToken", token, {
+      httpOnly: true,
+      sameSite: "None", // set to "Lax" if localhost
+      secure: true, // set to false if testing on localhost without HTTPS
+    });
+
+    // Respond with user info
     res.status(200).json({
       id: user._id,
       username: user.username,
       email: user.email,
-      isSeller: user.isSeller,
-      isAdmin: user.isAdmin,
       img: user.img || null,
       bio: user.bio || "",
       country: user.country || "",
       portfolioLink: user.portfolioLink || [],
       role,
+      isSeller: user.isSeller,
+      isAdmin: user.isAdmin,
       vipSubscription: {
         active: user.vipSubscription?.active ?? false,
         gateway: user.vipSubscription?.gateway ?? null,
