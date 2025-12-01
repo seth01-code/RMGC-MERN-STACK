@@ -98,119 +98,109 @@ export const createOrganizationSubscription = async (req, res, next) => {
   }
 };
 
-// 💳 Step 2 — Verify payment & setup auto-renew
+// 💳 FIXED — Step 2: Verify Payment & Activate Subscription
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
     if (!tx_ref) return next(createError(400, "Missing transaction reference"));
 
-    console.log("🔎 Verifying transaction:", tx_ref);
-
     const verifyRes = await axios.get(
       `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${tx_ref}`,
-      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+      {
+        headers: { Authorization: `Bearer ${FLW_SECRET}` },
+      }
     );
 
     const { data } = verifyRes.data;
     const status = data.status?.toLowerCase();
-    console.log("ℹ️ Verification response:", data);
 
-    const isTestMode = process.env.NODE_ENV === "development";
+    if (status !== "successful")
+      return next(createError(400, "Payment not successful"));
 
-    if (
-      (status === "successful" || (isTestMode && status === "pending")) &&
-      data.currency &&
-      Number(data.amount) > 0
-    ) {
-      const user = await User.findById(req.user?.id);
-      if (!user) return next(createError(404, "User not found"));
+    const user = await User.findById(req.user?.id);
+    if (!user) return next(createError(404, "User not found"));
 
-      const now = new Date();
-      const endDate = new Date(now.getTime() + 1 * 60 * 1000); // test
+    const cardToken = data.card?.token || null;
 
-      user.vipSubscription = {
-        active: true,
-        gateway: "flutterwave",
-        paymentReference: data.tx_ref,
-        transactionId: data.id,
-        amount: data.amount,
-        currency: data.currency,
-        cardToken: data.card?.token || null,
-        startDate: now,
-        endDate,
-      };
+    const now = new Date();
+    const endDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 minute test
 
-      await user.save();
-      console.log(`🎉 VIP activated for ${user.email} (${data.currency})`);
+    user.vipSubscription = {
+      active: true,
+      gateway: "flutterwave",
+      paymentReference: data.tx_ref,
+      transactionId: data.id,
+      amount: data.amount,
+      currency: data.currency,
+      cardToken,
+      startDate: now,
+      endDate,
+    };
 
-      // Auto-renew
-      setTimeout(async () => {
-        try {
-          const cardToken = user.vipSubscription.cardToken;
-          if (!cardToken)
-            return console.warn("⚠️ No card token for auto-renew");
+    await user.save();
 
-          const rate = await getExchangeRate(user.vipSubscription.currency);
-          const newAmount =
-            Math.round(BASE_AMOUNT_NGN * rate * (1 + FEE_PERCENT / 100) * 100) /
-            100;
+    console.log(`🎉 VIP ACTIVATED for ${user.email}`);
+    console.log("⏳ Auto-renew will run in 1 minute...");
 
-          const chargePayload = {
-            tx_ref: `RENEW-${Date.now()}-${user._id}`,
-            amount: newAmount,
-            currency: user.vipSubscription.currency,
-            email: user.email,
-            token: cardToken, // <-- FIXED!
-          };
+    // --------------------------------------------------------------------
+    // ⚡ ONE-MINUTE AUTO-RENEW TEST (Simulated Subscription)
+    // --------------------------------------------------------------------
+    setTimeout(async () => {
+      try {
+        console.log("🔁 Running TEST AUTO-RENEW for:", user.email);
 
-          const encryptedPayload = encryptPayload(
-            chargePayload,
-            FLW_ENCRYPTION_KEY
-          );
-
-          const renewRes = await axios.post(
-            "https://api.flutterwave.com/v3/charges?type=card",
-            { client: encryptedPayload },
-            {
-              headers: {
-                Authorization: `Bearer ${FLW_SECRET}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          console.log("💬 Auto-renew API response:", renewRes.data);
-
-          if (renewRes.data.status === "success") {
-            const newStart = new Date();
-            const newEnd = new Date(newStart.getTime() + 1 * 60 * 1000);
-            user.vipSubscription.startDate = newStart;
-            user.vipSubscription.endDate = newEnd;
-            user.vipSubscription.amount = newAmount;
-            await user.save();
-            console.log(`✅ Auto-renew successful for ${user.email}`);
-          } else {
-            console.warn("⚠️ Auto-renew failed:", renewRes.data);
-          }
-        } catch (err) {
-          console.error(
-            "❌ Auto-renew error:",
-            err.response?.data || err.message
-          );
+        if (!user.vipSubscription.cardToken) {
+          return console.log("⚠️ No card token — cannot auto renew");
         }
-      }, 60 * 1000);
 
-      return res.status(200).json({
-        success: true,
-        message: "✅ Payment verified — VIP activated (1 minute test)",
-        data,
-      });
-    }
+        const chargePayload = {
+          tx_ref: `RENEW-${Date.now()}-${user._id}`,
+          amount: user.vipSubscription.amount,
+          currency: user.vipSubscription.currency,
+          email: user.email,
+          token: user.vipSubscription.cardToken,
+        };
 
-    console.warn("🚫 Payment not successful or pending:", status);
-    return res.status(400).json({
-      success: false,
-      message: `Payment not verified (status: ${status})`,
+        const encrypted = encryptPayload(chargePayload, FLW_ENCRYPTION_KEY);
+
+        const renewRes = await axios.post(
+          "https://api.flutterwave.com/v3/charges?type=card",
+          { client: encrypted },
+          {
+            headers: {
+              Authorization: `Bearer ${FLW_SECRET}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("🔍 Auto-renew response:", renewRes.data);
+
+        if (renewRes.data.status === "success") {
+          const renewStart = new Date();
+          const renewEnd = new Date(renewStart.getTime() + 1 * 60 * 1000);
+
+          user.vipSubscription.startDate = renewStart;
+          user.vipSubscription.endDate = renewEnd;
+          await user.save();
+
+          console.log(`✅ AUTO-RENEW SUCCESS: ${user.email}`);
+        } else {
+          console.log("❌ AUTO-RENEW FAILED:", renewRes.data);
+        }
+      } catch (err) {
+        console.error(
+          "❌ AUTO-RENEW ERROR:",
+          err.response?.data || err.message
+        );
+      }
+    }, 60 * 1000); // <-- runs 1 minute after activation
+
+    // --------------------------------------------------------------------
+
+    return res.status(200).json({
+      success: true,
+      message: "VIP activated — Auto-renew test in 1 minute",
       data,
     });
   } catch (error) {
@@ -218,6 +208,6 @@ export const verifyOrganizationPayment = async (req, res, next) => {
       "❌ Verification error:",
       error.response?.data || error.message
     );
-    next(createError(400, "Payment verification failed"));
+    next(createError(500, "Payment verification failed"));
   }
 };
