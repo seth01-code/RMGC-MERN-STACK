@@ -175,6 +175,8 @@ import reviewRoute from "./routes/ReviewRoute.js";
 import sellerRoutes from "./routes/sellerRoutes.js";
 import exchangeRateRoute from "./routes/exchangeRoute.js";
 import paymentRoute from "./routes/paymentroute.js";
+import jobRoute from "./routes/jobRoute.js";
+import applicationRoute from "./routes/applicationRoute.js";
 
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
@@ -186,6 +188,8 @@ app.use("/api/reviews", reviewRoute);
 app.use("/api", exchangeRateRoute);
 app.use("/api/sellers", sellerRoutes);
 app.use("/api/payments", paymentRoute);
+app.use("/api/jobs", jobRoute);
+app.use("/api/application", applicationRoute);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {

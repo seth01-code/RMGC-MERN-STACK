@@ -7,29 +7,24 @@ const ApplicationSchema = new mongoose.Schema(
       ref: "Job",
       required: true,
     },
-    workerId: {
+
+    applicantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    organizationId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
+
     coverLetter: { type: String, default: "" },
+
+    cvUrl: { type: String, required: true },
+
     status: {
       type: String,
       enum: ["pending", "reviewed", "accepted", "rejected"],
       default: "pending",
     },
-    appliedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
-const Application =
-  mongoose.models.Application ||
-  mongoose.model("Application", ApplicationSchema);
-
-export default Application;
+export default mongoose.model("Application", ApplicationSchema);
