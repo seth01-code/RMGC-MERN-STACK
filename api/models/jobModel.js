@@ -26,7 +26,7 @@ const JobSchema = new mongoose.Schema(
 
     deadline: { type: Date, required: true },
 
-    status: { type: String, enum: ["open", "closed"], default: "open" },
+    status: { type: String, enum: ["Active", "Closed"], default: "Active" },
 
     type: { type: String, default: "remote" },
 
