@@ -18,9 +18,10 @@ export const handleFlutterwaveWebhook = async (req, res) => {
 
     if (eventType === "charge.completed" || eventType === "CARD_TRANSACTION") {
       const data = event.data;
+      const meta = event.meta_data;
 
-      // ✅ FIX: Flutterwave places metadata in event.meta_data
-      const userId = event.meta_data?.userId;
+      // Flutterwave metadata fix
+      const userId = meta?.userId;
       if (!userId) {
         console.log("⚠ No userId in meta_data");
         return res.status(400).send("Missing userId");
@@ -33,6 +34,28 @@ export const handleFlutterwaveWebhook = async (req, res) => {
       }
 
       const isSuccessful = data.status === "successful";
+
+      // --------------------------------------------------------
+      // ⭐ STORE INVOICE FOR EVERY CHARGE
+      // --------------------------------------------------------
+      const invoice = {
+        invoiceId: data.flw_ref,
+        txRef: data.tx_ref,
+        amount: data.amount,
+        currency: data.currency,
+        status: data.status,
+        chargedAt: new Date(data.created_at),
+        processorResponse: data.processor_response,
+        appFee: data.app_fee,
+        merchantFee: data.merchant_fee,
+      };
+
+      if (!user.vipSubscription.invoices) {
+        user.vipSubscription.invoices = [];
+      }
+
+      user.vipSubscription.invoices.push(invoice);
+      // --------------------------------------------------------
 
       if (isSuccessful) {
         const now = new Date();
@@ -57,23 +80,24 @@ export const handleFlutterwaveWebhook = async (req, res) => {
         };
 
         await user.save();
-        console.log("✅ Successful charge processed for user:", userId);
+        console.log("✅ Successful charge processed + invoice saved");
         return res.status(200).send("Successful charge processed");
-      } else {
-        user.vipSubscription.lastCharge = {
-          amount: data.amount,
-          currency: data.currency,
-          status: "failed",
-          chargedAt: new Date(data.created_at),
-          processorResponse: data.processor_response,
-          appFee: data.app_fee,
-          merchantFee: data.merchant_fee,
-        };
-
-        await user.save();
-        console.log("⚠ Failed charge processed for user:", userId);
-        return res.status(200).send("Failed charge processed");
       }
+
+      // Failed charge
+      user.vipSubscription.lastCharge = {
+        amount: data.amount,
+        currency: data.currency,
+        status: "failed",
+        chargedAt: new Date(data.created_at),
+        processorResponse: data.processor_response,
+        appFee: data.app_fee,
+        merchantFee: data.merchant_fee,
+      };
+
+      await user.save();
+      console.log("⚠ Failed charge processed + invoice saved");
+      return res.status(200).send("Failed charge processed");
     }
 
     return res.status(200).send("Event ignored");

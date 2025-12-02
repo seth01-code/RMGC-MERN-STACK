@@ -78,6 +78,7 @@ const UserSchema = new mongoose.Schema(
       startDate: { type: Date },
       endDate: { type: Date },
       active: { type: Boolean, default: false },
+
       paymentReference: { type: String }, // tx_ref
       transactionId: { type: String }, // flw_ref
       gateway: {
@@ -85,9 +86,25 @@ const UserSchema = new mongoose.Schema(
         enum: ["paystack", "flutterwave", "stripe", null],
         default: null,
       },
+
       amount: { type: Number },
       currency: { type: String },
-      cardToken: { type: String }, // For auto-renewal
+      cardToken: { type: String },
+
+      invoices: [
+        {
+          invoiceId: { type: String }, // flw_ref or generated ID
+          txRef: { type: String },
+          amount: { type: Number },
+          currency: { type: String },
+          status: { type: String }, // successful | failed
+          chargedAt: { type: Date },
+          processorResponse: { type: String },
+          appFee: { type: Number },
+          merchantFee: { type: Number },
+        },
+      ],
+
       lastCharge: {
         amount: { type: Number },
         currency: { type: String },
@@ -96,7 +113,7 @@ const UserSchema = new mongoose.Schema(
         processorResponse: { type: String },
         appFee: { type: Number },
         merchantFee: { type: Number },
-      }, // For auto-renewal
+      },
     },
 
     // ===== Organization Fields =====
