@@ -104,7 +104,7 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     };
 
     const subRes = await axios.post(
-      "https://api.flutterwave.com/v3/subscriptions",
+      "https://api.flutterwave.com/v3/payment-plans",
       subscriptionPayload,
       { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
     );
