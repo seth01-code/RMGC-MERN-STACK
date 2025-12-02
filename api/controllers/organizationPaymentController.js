@@ -6,7 +6,7 @@ const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000";
 const BASE_AMOUNT_NGN = 52000;
 
-// Plan IDs per currency
+// Plan IDs per currency (must match Flutterwave)
 const PLAN_IDS = {
   NGN: "227759",
   USD: "227761",
@@ -56,7 +56,7 @@ startSubscriptionRolloverChecker();
 // -----------------------------------------------------------------
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
-    const { currency } = req.body; // e.g., NGN, USD, EUR, GBP
+    let { currency } = req.body; // e.g., NGN, USD, EUR, GBP
     const userId = req.user?.id;
     if (!userId) return next(createError(401, "Unauthorized"));
 
@@ -66,27 +66,28 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
+    // ------------------- Normalize currency -------------------
+    currency = (currency || "NGN").toUpperCase();
+
     // ------------------- Determine plan ID -------------------
     const planId = PLAN_IDS[currency] || PLAN_IDS["NGN"];
-    let amount = BASE_AMOUNT_NGN;
-    let convertedCurrency = currency || "NGN";
+    const planCurrency = Object.keys(PLAN_IDS).includes(currency)
+      ? currency
+      : "NGN";
 
-    // ------------------- Currency conversion if not NGN -------------------
-    if (convertedCurrency !== "NGN") {
+    // ------------------- Convert amount for display only -------------------
+    let amount = BASE_AMOUNT_NGN;
+    if (planCurrency !== "NGN") {
       try {
-        const rateRes = await axios.get(
-          `https://open.er-api.com/v6/latest/NGN`
-        );
-        const rate = rateRes.data.rates[convertedCurrency];
+        const rateRes = await axios.get(`https://open.er-api.com/v6/latest/NGN`);
+        const rate = rateRes.data.rates[planCurrency];
         if (rate) {
           amount = parseFloat((BASE_AMOUNT_NGN * rate).toFixed(2));
         } else {
-          convertedCurrency = "NGN";
           amount = BASE_AMOUNT_NGN;
         }
       } catch (err) {
         console.warn("⚠️ Currency conversion failed, defaulting to NGN", err);
-        convertedCurrency = "NGN";
         amount = BASE_AMOUNT_NGN;
       }
     }
@@ -102,7 +103,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       subscriptionId: tx_ref,
       startDate: now,
       endDate: endDate,
-      currency: convertedCurrency,
+      currency: planCurrency,
       amount: amount,
     };
 
@@ -112,7 +113,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
     const payload = {
       tx_ref,
       amount,
-      currency: convertedCurrency,
+      currency: planCurrency,
       redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
       payment_plan: planId,
