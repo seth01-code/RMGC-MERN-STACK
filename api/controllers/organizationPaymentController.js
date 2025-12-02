@@ -5,7 +5,7 @@ import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000"; // update for production
-const PLAN_ID = "227747"; // your plan ID
+const PLAN_ID = "227750"; // your plan ID
 const BASE_AMOUNT_NGN = 51000;
 
 // Helper: extend subscription if endDate passed
