@@ -1,9 +1,9 @@
 import express from "express";
-import { handleSubscriptionWebhook } from "../controllers/flutterwaveWebhookController.js";
+import { handleFlutterwaveWebhook } from "../controllers/flutterwaveWebhookController.js";
 
 const router = express.Router();
 
-// Webhook endpoint
-router.post("/flutterwave/webhook", express.json(), handleSubscriptionWebhook);
+// Flutterwave webhook endpoint
+router.post("/flutterwave/webhook", express.raw({ type: "*/*" }), handleFlutterwaveWebhook);
 
 export default router;
