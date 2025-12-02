@@ -16,13 +16,13 @@ export const handleFlutterwaveWebhook = async (req, res) => {
 
     const eventType = event["event.type"] || event.event;
 
-    // Handle card transactions (successful + failed)
     if (eventType === "charge.completed" || eventType === "CARD_TRANSACTION") {
       const data = event.data;
 
-      const userId = data.meta?.userId;
+      // ✅ FIX: Flutterwave places metadata in event.meta_data
+      const userId = event.meta_data?.userId;
       if (!userId) {
-        console.log("⚠ No userId in meta");
+        console.log("⚠ No userId in meta_data");
         return res.status(400).send("Missing userId");
       }
 
@@ -42,7 +42,7 @@ export const handleFlutterwaveWebhook = async (req, res) => {
           ...user.vipSubscription,
           active: true,
           startDate: now,
-          endDate: endDate,
+          endDate,
           transactionId: data.flw_ref,
           lastCharge: {
             amount: data.amount,
