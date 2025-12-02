@@ -44,8 +44,9 @@ export const getUserData = async (req, res, next) => {
 
     // Check if user is authenticated
     if (req.user?.id) {
-      user = await User.findById(req.user.id)
-        .select("-password -resetPasswordToken -resetPasswordExpires"); 
+      user = await User.findById(req.user.id).select(
+        "-password -resetPasswordToken -resetPasswordExpires"
+      );
       // Removes sensitive fields
     }
 
@@ -127,6 +128,7 @@ export const getUserData = async (req, res, next) => {
         : null,
 
       // VIP Subscription
+      // VIP Subscription
       vipSubscription: user.vipSubscription
         ? {
             startDate: user.vipSubscription.startDate,
@@ -138,6 +140,14 @@ export const getUserData = async (req, res, next) => {
             amount: user.vipSubscription.amount,
             currency: user.vipSubscription.currency,
             cardToken: user.vipSubscription.cardToken,
+
+            // FIXED: Return the invoice array
+            invoices: Array.isArray(user.vipSubscription.invoices)
+              ? user.vipSubscription.invoices
+              : [],
+
+            // FIXED: Return last charge
+            lastCharge: user.vipSubscription.lastCharge || null,
           }
         : null,
 
