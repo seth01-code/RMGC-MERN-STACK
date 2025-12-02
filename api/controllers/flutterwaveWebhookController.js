@@ -16,35 +16,34 @@ export const handleFlutterwaveWebhook = async (req, res) => {
 
     const eventType = event["event.type"] || event.event;
 
-    // Handle card transactions (success & failed)
+    // Handle card transactions (successful + failed)
     if (eventType === "charge.completed" || eventType === "CARD_TRANSACTION") {
       const data = event.data;
-      const tx_ref = data.tx_ref;
-      const flw_ref = data.flw_ref;
-      const email = data.customer?.email;
 
-      const user = await User.findOne({
-        "vipSubscription.subscriptionId": tx_ref,
-      });
+      const userId = data.meta?.userId;
+      if (!userId) {
+        console.log("⚠ No userId in meta");
+        return res.status(400).send("Missing userId");
+      }
 
+      const user = await User.findById(userId);
       if (!user) {
-        console.log("⚠ User not found for tx_ref:", tx_ref);
+        console.log("⚠ User not found:", userId);
         return res.status(404).send("User not found");
       }
 
       const isSuccessful = data.status === "successful";
 
       if (isSuccessful) {
-        // Set start & end date on first successful charge
         const now = new Date();
-        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
         user.vipSubscription = {
           ...user.vipSubscription,
           active: true,
           startDate: now,
           endDate: endDate,
-          transactionId: flw_ref,
+          transactionId: data.flw_ref,
           lastCharge: {
             amount: data.amount,
             currency: data.currency,
@@ -58,10 +57,9 @@ export const handleFlutterwaveWebhook = async (req, res) => {
         };
 
         await user.save();
-        console.log("✅ Successful charge processed for:", email);
+        console.log("✅ Successful charge processed for user:", userId);
         return res.status(200).send("Successful charge processed");
       } else {
-        // Failed charge
         user.vipSubscription.lastCharge = {
           amount: data.amount,
           currency: data.currency,
@@ -73,12 +71,11 @@ export const handleFlutterwaveWebhook = async (req, res) => {
         };
 
         await user.save();
-        console.log("⚠ Failed charge processed for:", email);
+        console.log("⚠ Failed charge processed for user:", userId);
         return res.status(200).send("Failed charge processed");
       }
     }
 
-    // Ignore other events
     return res.status(200).send("Event ignored");
   } catch (err) {
     console.error("❌ Webhook error:", err);
