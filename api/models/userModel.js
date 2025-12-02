@@ -78,8 +78,8 @@ const UserSchema = new mongoose.Schema(
       startDate: { type: Date },
       endDate: { type: Date },
       active: { type: Boolean, default: false },
-      paymentReference: { type: String },
-      transactionId: { type: String },
+      paymentReference: { type: String }, // tx_ref
+      transactionId: { type: String }, // flw_ref
       gateway: {
         type: String,
         enum: ["paystack", "flutterwave", "stripe", null],
@@ -88,6 +88,15 @@ const UserSchema = new mongoose.Schema(
       amount: { type: Number },
       currency: { type: String },
       cardToken: { type: String }, // For auto-renewal
+      lastCharge: {
+        amount: { type: Number },
+        currency: { type: String },
+        status: { type: String },
+        chargedAt: { type: Date },
+        processorResponse: { type: String },
+        appFee: { type: Number },
+        merchantFee: { type: Number },
+      }, // For auto-renewal
     },
 
     // ===== Organization Fields =====

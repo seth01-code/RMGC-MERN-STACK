@@ -1,3 +1,4 @@
+// controllers/flutterwaveWebhookController.js
 import User from "../models/userModel.js";
 
 const FLW_HASH = process.env.FLUTTERWAVE_WEBHOOK_SECRET;
@@ -5,72 +6,79 @@ const FLW_HASH = process.env.FLUTTERWAVE_WEBHOOK_SECRET;
 export const handleFlutterwaveWebhook = async (req, res) => {
   try {
     const signature = req.headers["verif-hash"];
-
     if (!signature || signature !== FLW_HASH) {
       console.log("❌ Invalid Flutterwave signature");
       return res.status(401).send("Invalid signature");
     }
 
-    // req.body is already a JS object
     const event = req.body;
-
     console.log("🔥 Webhook received:", event);
 
     const eventType = event["event.type"] || event.event;
 
-    // Successful charge
-    if (
-      eventType === "CARD_TRANSACTION" &&
-      event.data.status === "successful"
-    ) {
-      const email = event.data.customer.email;
-      const tx_ref = event.data.tx_ref;
+    // Handle card transactions (success & failed)
+    if (eventType === "charge.completed" || eventType === "CARD_TRANSACTION") {
+      const data = event.data;
+      const tx_ref = data.tx_ref;
+      const flw_ref = data.flw_ref;
+      const email = data.customer?.email;
 
       const user = await User.findOne({
         "vipSubscription.subscriptionId": tx_ref,
       });
+
       if (!user) {
         console.log("⚠ User not found for tx_ref:", tx_ref);
         return res.status(404).send("User not found");
       }
 
-      user.vipSubscription.lastCharge = {
-        amount: event.data.amount,
-        currency: event.data.currency,
-        status: event.data.status,
-        chargedAt: new Date(event.data.created_at),
-      };
+      const isSuccessful = data.status === "successful";
 
-      if (event.data.card?.token) {
-        user.cardToken = event.data.card.token;
+      if (isSuccessful) {
+        // Set start & end date on first successful charge
+        const now = new Date();
+        const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+        user.vipSubscription = {
+          ...user.vipSubscription,
+          active: true,
+          startDate: now,
+          endDate: endDate,
+          transactionId: flw_ref,
+          lastCharge: {
+            amount: data.amount,
+            currency: data.currency,
+            status: data.status,
+            chargedAt: new Date(data.created_at),
+            processorResponse: data.processor_response,
+            appFee: data.app_fee,
+            merchantFee: data.merchant_fee,
+          },
+          cardToken: data.card?.token || user.vipSubscription.cardToken,
+        };
+
+        await user.save();
+        console.log("✅ Successful charge processed for:", email);
+        return res.status(200).send("Successful charge processed");
+      } else {
+        // Failed charge
+        user.vipSubscription.lastCharge = {
+          amount: data.amount,
+          currency: data.currency,
+          status: "failed",
+          chargedAt: new Date(data.created_at),
+          processorResponse: data.processor_response,
+          appFee: data.app_fee,
+          merchantFee: data.merchant_fee,
+        };
+
+        await user.save();
+        console.log("⚠ Failed charge processed for:", email);
+        return res.status(200).send("Failed charge processed");
       }
-
-      await user.save();
-
-      console.log("✅ Charge saved for:", email);
-      return res.status(200).send("Charge processed");
     }
 
-    // Failed auto debit
-    if (eventType === "CARD_TRANSACTION" && event.data.status === "failed") {
-      const email = event.data.customer.email;
-
-      const user = await User.findOne({ email });
-      if (!user) return res.status(404).send("User not found");
-
-      user.vipSubscription.lastCharge = {
-        amount: event.data.amount,
-        currency: event.data.currency,
-        status: "failed",
-        chargedAt: new Date(event.data.created_at),
-      };
-
-      await user.save();
-      console.log("⚠ Auto debit failed for:", email);
-
-      return res.status(200).send("Failed charge handled");
-    }
-
+    // Ignore other events
     return res.status(200).send("Event ignored");
   } catch (err) {
     console.error("❌ Webhook error:", err);
