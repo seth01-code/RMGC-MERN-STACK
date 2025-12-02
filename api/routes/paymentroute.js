@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createOrganizationSubscription,
-  // verifyOrganizationPayment,
+  verifyOrganizationPayment,
 } from "../controllers/organizationPaymentController.js";
 import { verifyToken } from "../middleware/jwt.js";
 
@@ -12,6 +12,6 @@ router.post(
   verifyToken,
   createOrganizationSubscription
 );
-// router.post("/organization/verify", verifyToken, verifyOrganizationPayment);
+router.post("/organization/verify", verifyToken, verifyOrganizationPayment);
 
 export default router;
