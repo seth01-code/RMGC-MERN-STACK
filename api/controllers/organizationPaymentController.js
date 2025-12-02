@@ -5,11 +5,11 @@ import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000";
-const BASE_AMOUNT_NGN = 52000;
+const BASE_AMOUNT_NGN = 53000;
 
 // Plan IDs per currency (hardcoded or fetched dynamically)
 const PLAN_IDS = {
-  NGN: "227758",
+  NGN: "227772",
   USD: "227761",
   EUR: "227762",
   GBP: "227763",
