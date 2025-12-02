@@ -4,8 +4,15 @@ import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000";
-const PLAN_ID = "227759";
 const BASE_AMOUNT_NGN = 52000;
+
+// Plan IDs per currency
+const PLAN_IDS = {
+  NGN: "227759",
+  USD: "227761",
+  EUR: "227762",
+  GBP: "227763",
+};
 
 // ------------------- Helper: Rollover -------------------
 const rolloverSubscription = (vipSubscription) => {
@@ -47,10 +54,9 @@ startSubscriptionRolloverChecker();
 // -----------------------------------------------------------------
 // ------------------- CREATE SUBSCRIPTION (INITIAL PAYMENT) --------
 // -----------------------------------------------------------------
-
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
-    const { currency } = req.body; // e.g., NGN, USD, EUR
+    const { currency } = req.body; // e.g., NGN, USD, EUR, GBP
     const userId = req.user?.id;
     if (!userId) return next(createError(401, "Unauthorized"));
 
@@ -60,27 +66,28 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
-    // ------------------- Currency Conversion -------------------
-    let amount = BASE_AMOUNT_NGN; // default NGN
-    let convertedCurrency = "NGN";
+    // ------------------- Determine plan ID -------------------
+    const planId = PLAN_IDS[currency] || PLAN_IDS["NGN"];
+    let amount = BASE_AMOUNT_NGN;
+    let convertedCurrency = currency || "NGN";
 
-    if (currency && currency !== "NGN") {
+    // ------------------- Currency conversion if not NGN -------------------
+    if (convertedCurrency !== "NGN") {
       try {
         const rateRes = await axios.get(
           `https://open.er-api.com/v6/latest/NGN`
         );
-        const rate = rateRes.data.rates[currency];
+        const rate = rateRes.data.rates[convertedCurrency];
         if (rate) {
           amount = parseFloat((BASE_AMOUNT_NGN * rate).toFixed(2));
-          convertedCurrency = currency;
         } else {
-          amount = BASE_AMOUNT_NGN;
           convertedCurrency = "NGN";
+          amount = BASE_AMOUNT_NGN;
         }
       } catch (err) {
         console.warn("⚠️ Currency conversion failed, defaulting to NGN", err);
-        amount = BASE_AMOUNT_NGN;
         convertedCurrency = "NGN";
+        amount = BASE_AMOUNT_NGN;
       }
     }
 
@@ -91,7 +98,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
     user.vipSubscription = {
       active: true,
       gateway: "flutterwave",
-      planId: PLAN_ID,
+      planId: planId,
       subscriptionId: tx_ref,
       startDate: now,
       endDate: endDate,
@@ -108,7 +115,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       currency: convertedCurrency,
       redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
-      payment_plan: PLAN_ID,
+      payment_plan: planId,
       customer: {
         email: user.email,
         name: user.fullname || user.username,
@@ -119,7 +126,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
       meta: {
-        plan: PLAN_ID,
+        plan: planId,
       },
     };
 
