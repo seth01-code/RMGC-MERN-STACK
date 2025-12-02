@@ -67,12 +67,20 @@ export const createOrganizationSubscription = async (req, res, next) => {
     if (currency && currency !== "NGN") {
       try {
         const rateRes = await axios.get(
-          `https://api.exchangerate.host/convert?from=NGN&to=${currency}&amount=${BASE_AMOUNT_NGN}`
+          `https://open.er-api.com/v6/latest/NGN`
         );
-        amount = parseFloat(rateRes.data.result.toFixed(2));
-        convertedCurrency = currency;
+        const rate = rateRes.data.rates[currency];
+        if (rate) {
+          amount = parseFloat((BASE_AMOUNT_NGN * rate).toFixed(2));
+          convertedCurrency = currency;
+        } else {
+          amount = BASE_AMOUNT_NGN;
+          convertedCurrency = "NGN";
+        }
       } catch (err) {
         console.warn("⚠️ Currency conversion failed, defaulting to NGN", err);
+        amount = BASE_AMOUNT_NGN;
+        convertedCurrency = "NGN";
       }
     }
 
