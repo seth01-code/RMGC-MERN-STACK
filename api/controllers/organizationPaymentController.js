@@ -5,7 +5,7 @@ import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_LIVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000";
-const BASE_AMOUNT_NGN = 53000;
+const BASE_AMOUNT_NGN = 50;
 
 // Plan IDs per currency (hardcoded or fetched dynamically)
 const PLAN_IDS = {
