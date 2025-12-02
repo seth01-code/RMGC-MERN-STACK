@@ -5,8 +5,49 @@ import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000"; // update for production
-const PLAN_ID = "227747"; // your hourly plan ID
+const PLAN_ID = "227747"; // your plan ID
 const BASE_AMOUNT_NGN = 51000;
+
+// Helper: extend subscription if endDate passed
+const rolloverSubscription = (vipSubscription) => {
+  const now = new Date();
+  if (vipSubscription && vipSubscription.endDate) {
+    const endDate = new Date(vipSubscription.endDate);
+    if (now >= endDate) {
+      vipSubscription.startDate = endDate;
+      vipSubscription.endDate = new Date(
+        endDate.getTime() + 30 * 24 * 60 * 60 * 1000
+      ); // +30 days
+    }
+  }
+  return vipSubscription;
+};
+
+// ------------------- Auto-rollover for all users -------------------
+const startSubscriptionRolloverChecker = () => {
+  // Check every hour (3600000 ms) — you can adjust
+  setInterval(async () => {
+    try {
+      const users = await User.find({ "vipSubscription.active": true });
+      for (const user of users) {
+        const oldEndDate = user.vipSubscription.endDate;
+        const updatedSub = rolloverSubscription(user.vipSubscription);
+        if (oldEndDate !== updatedSub.endDate) {
+          user.vipSubscription = updatedSub;
+          await user.save();
+          console.log(`✅ Rolled over VIP subscription for ${user.email}`);
+        }
+      }
+    } catch (err) {
+      console.error("❌ Auto-rollover error:", err.message);
+    }
+  }, 3600000); // 1 hour interval
+};
+
+// Start the rollover checker when the controller file is imported
+startSubscriptionRolloverChecker();
+
+// ------------------- Payment Controllers -------------------
 
 // Step 1: Initialize payment
 export const createOrganizationSubscription = async (req, res, next) => {
@@ -18,7 +59,6 @@ export const createOrganizationSubscription = async (req, res, next) => {
     if (!user || user.role !== "organization")
       return next(createError(400, "Only organizations can subscribe"));
 
-    // Fixed amount for plan
     const amount = BASE_AMOUNT_NGN;
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
@@ -69,7 +109,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
   }
 };
 
-// Step 2: Verify payment & subscribe to plan
+// Step 2: Verify payment & update subscription in DB
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
@@ -96,41 +136,28 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     // Save token for future charges
     user.cardToken = cardToken;
 
-    // Subscribe user to the hourly plan
-    const subscriptionPayload = {
-      customer: user.email,
-      payment_plan: PLAN_ID,
-      authorization: cardToken,
-      start_date: new Date().toISOString(),
-    };
-
-    const subRes = await axios.post(
-      "https://api.flutterwave.com/v3/payments",
-      subscriptionPayload,
-      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
-    );
-
-    if (subRes.data.status !== "success") {
-      console.error("❌ Subscription creation failed:", subRes.data);
-      return next(createError(500, "Subscription creation failed"));
+    // Set initial 30-day interval if new, or roll over if expired
+    if (!user.vipSubscription) {
+      const now = new Date();
+      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      user.vipSubscription = {
+        active: true,
+        gateway: "flutterwave",
+        planId: PLAN_ID,
+        subscriptionId: tx_ref,
+        startDate: now,
+        endDate: endDate,
+      };
+    } else {
+      user.vipSubscription = rolloverSubscription(user.vipSubscription);
     }
-
-    // Save subscription info in user
-    user.vipSubscription = {
-      active: true,
-      gateway: "flutterwave",
-      planId: PLAN_ID,
-      subscriptionId: subRes.data.data.id,
-      startDate: new Date(),
-      endDate: null, // Flutterwave handles hourly recurring
-    };
 
     await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "Subscribed to hourly plan successfully",
-      subscriptionId: subRes.data.data.id,
+      message: "Subscription verified and VIP updated",
+      vipSubscription: user.vipSubscription,
     });
   } catch (err) {
     console.error("❌ Verification error:", err.response?.data || err.message);
