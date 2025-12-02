@@ -9,7 +9,7 @@ const BASE_AMOUNT_NGN = 52000;
 
 // Plan IDs per currency (hardcoded or fetched dynamically)
 const PLAN_IDS = {
-  NGN: "227759",
+  NGN: "227758",
   USD: "227761",
   EUR: "227762",
   GBP: "227763",
@@ -26,43 +26,29 @@ export const createOrganizationSubscription = async (req, res, next) => {
     if (!user || user.role !== "organization")
       return next(createError(400, "Only organizations can subscribe"));
 
-    currency = (currency || "NGN").toUpperCase();
-    const planId = PLAN_IDS[currency] ?? PLAN_IDS["NGN"];
-    const planCurrency = Object.keys(PLAN_IDS).includes(currency)
-      ? currency
-      : "NGN";
-
-    // Convert amount if currency is not NGN
-    let amount = BASE_AMOUNT_NGN;
-    if (planCurrency !== "NGN") {
-      try {
-        const rateRes = await axios.get(`https://open.er-api.com/v6/latest/NGN`);
-        const rate = rateRes.data.rates[planCurrency];
-        if (rate) amount = parseFloat((BASE_AMOUNT_NGN * rate).toFixed(2));
-      } catch (err) {
-        console.warn("⚠️ Currency conversion failed, defaulting to NGN", err);
-      }
-    }
+    currency = "NGN"; // force NGN
+    const planId = PLAN_IDS.NGN;
+    const amount = BASE_AMOUNT_NGN;
 
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
-    // ------------------- Set initial vipSubscription (inactive) -------------------
+    // Set initial vipSubscription
     user.vipSubscription = {
-      active: false, // will be updated on successful payment
+      active: false,
       gateway: "flutterwave",
       planId: planId,
       subscriptionId: tx_ref,
-      currency: planCurrency,
-      amount: amount,
+      currency,
+      amount,
     };
 
     await user.save();
 
-    // ------------------- Flutterwave payment payload -------------------
+    // Flutterwave payment payload
     const payload = {
       tx_ref,
       amount,
-      currency: planCurrency,
+      currency,
       redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
       payment_plan: planId,
@@ -75,11 +61,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
         description: "Initial payment for recurring subscription",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
-      meta: {
-        planId,
-        currency: planCurrency,
-        userId,
-      },
+      meta: { planId, currency, userId },
     };
 
     const flwRes = await axios.post(
@@ -104,7 +86,10 @@ export const createOrganizationSubscription = async (req, res, next) => {
 
     throw new Error("Unable to initialize Flutterwave payment");
   } catch (err) {
-    console.error("❌ Subscription creation error:", err.response?.data || err.message);
+    console.error(
+      "❌ Subscription creation error:",
+      err.response?.data || err.message
+    );
     next(createError(500, "Subscription creation failed"));
   }
 };
