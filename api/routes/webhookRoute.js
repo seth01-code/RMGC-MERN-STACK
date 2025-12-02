@@ -3,7 +3,7 @@ import { handleFlutterwaveWebhook } from "../controllers/flutterwaveWebhookContr
 
 const router = express.Router();
 
-// Flutterwave webhook endpoint
-router.post("/flutterwave/webhook", express.raw({ type: "*/*" }), handleFlutterwaveWebhook);
+// Use express.json() instead of raw
+router.post("/flutterwave/webhook", express.json({ type: "*/*" }), handleFlutterwaveWebhook);
 
 export default router;
