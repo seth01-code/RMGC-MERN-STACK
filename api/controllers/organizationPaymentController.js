@@ -1,4 +1,3 @@
-// controllers/organizationPaymentController.js
 import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
@@ -28,11 +27,9 @@ const startSubscriptionRolloverChecker = () => {
   setInterval(async () => {
     try {
       const users = await User.find({ "vipSubscription.active": true });
-
       for (const user of users) {
         const oldEnd = user.vipSubscription.endDate;
         const updated = rolloverSubscription(user.vipSubscription);
-
         if (oldEnd !== updated.endDate) {
           user.vipSubscription = updated;
           await user.save();
@@ -53,6 +50,7 @@ startSubscriptionRolloverChecker();
 
 export const createOrganizationSubscription = async (req, res, next) => {
   try {
+    const { currency } = req.body; // e.g., NGN, USD, EUR
     const userId = req.user?.id;
     if (!userId) return next(createError(401, "Unauthorized"));
 
@@ -61,11 +59,24 @@ export const createOrganizationSubscription = async (req, res, next) => {
       return next(createError(400, "Only organizations can subscribe"));
 
     const tx_ref = `ORG-${Date.now()}-${userId}`;
-    const amount = BASE_AMOUNT_NGN;
 
-    // ================================================
-    // ✅ SET/UPDATE VIP SUBSCRIPTION *BEFORE* PAYMENT
-    // ================================================
+    // ------------------- Currency Conversion -------------------
+    let amount = BASE_AMOUNT_NGN; // default NGN
+    let convertedCurrency = "NGN";
+
+    if (currency && currency !== "NGN") {
+      try {
+        const rateRes = await axios.get(
+          `https://api.exchangerate.host/convert?from=NGN&to=${currency}&amount=${BASE_AMOUNT_NGN}`
+        );
+        amount = parseFloat(rateRes.data.result.toFixed(2));
+        convertedCurrency = currency;
+      } catch (err) {
+        console.warn("⚠️ Currency conversion failed, defaulting to NGN", err);
+      }
+    }
+
+    // ------------------- Set VIP subscription -------------------
     const now = new Date();
     const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
@@ -76,18 +87,18 @@ export const createOrganizationSubscription = async (req, res, next) => {
       subscriptionId: tx_ref,
       startDate: now,
       endDate: endDate,
+      currency: convertedCurrency,
+      amount: amount,
     };
 
     await user.save();
 
-    // ======================================
-    // 🔥 INITIATE FLUTTERWAVE PAYMENT
-    // ======================================
+    // ------------------- Initiate Flutterwave payment -------------------
     const payload = {
       tx_ref,
       amount,
-      currency: "NGN",
-      redirect_url: `${FRONTEND_URL}/organization/dashboard`, // updated
+      currency: convertedCurrency,
+      redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
       payment_plan: PLAN_ID,
       customer: {
@@ -133,5 +144,3 @@ export const createOrganizationSubscription = async (req, res, next) => {
     next(createError(500, "Subscription creation failed"));
   }
 };
-
-// ❌ Completely scrap verifyOrganizationPayment (you no longer need it)
