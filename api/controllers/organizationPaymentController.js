@@ -28,6 +28,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       currency: "NGN",
       redirect_url: `${FRONTEND_URL}/org-processing`,
       payment_options: "card",
+      payment_plan: PLAN_ID,
       customer: { email: user.email, name: user.fullname || user.username },
       customizations: {
         title: "RMGC Organization Plan",
@@ -98,13 +99,13 @@ export const verifyOrganizationPayment = async (req, res, next) => {
     // Subscribe user to the hourly plan
     const subscriptionPayload = {
       customer: user.email,
-      plan: PLAN_ID,
+      payment_plan: PLAN_ID,
       authorization: cardToken,
       start_date: new Date().toISOString(),
     };
 
     const subRes = await axios.post(
-      "https://api.flutterwave.com/v3/payment-plans",
+      "https://api.flutterwave.com/v3/payments",
       subscriptionPayload,
       { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
     );
