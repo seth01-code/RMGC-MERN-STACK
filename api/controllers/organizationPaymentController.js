@@ -2,29 +2,11 @@
 import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
-import { encryptPayload } from "../utils/flutterwaveEncrypt.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FLW_ENCRYPTION_KEY = process.env.FLW_ENCRYPTION_KEY;
 const FRONTEND_URL = "http://localhost:3000"; // update for production
-const BASE_AMOUNT_NGN = 51000; // Updated initial payment
-const FEE_PERCENT = 7.5;
-
-// Fetch exchange rate
-const getExchangeRate = async (currency) => {
-  try {
-    if (currency === "NGN") return 1;
-    const res = await axios.get("https://open.er-api.com/v6/latest/USD");
-    const rates = res.data?.rates || {};
-    const usdToCurrency = rates[currency];
-    const usdToNgn = rates["NGN"];
-    if (!usdToCurrency || !usdToNgn) return 1;
-    return usdToCurrency / usdToNgn;
-  } catch (err) {
-    console.error("⚠️ Exchange rate fetch failed:", err.message);
-    return 1;
-  }
-};
+const PLAN_ID = "227735"; // your hourly plan ID
+const BASE_AMOUNT_NGN = 51000;
 
 // Step 1: Initialize payment
 export const createOrganizationSubscription = async (req, res, next) => {
@@ -36,22 +18,14 @@ export const createOrganizationSubscription = async (req, res, next) => {
     if (!user || user.role !== "organization")
       return next(createError(400, "Only organizations can subscribe"));
 
-    let { currency } = req.body;
-    currency = (currency || "NGN").toUpperCase();
-
-    const exchangeRate = await getExchangeRate(currency);
-
-    const amount =
-      Math.round(
-        BASE_AMOUNT_NGN * exchangeRate * (1 + FEE_PERCENT / 100) * 100
-      ) / 100;
-
+    // Fixed amount for plan
+    const amount = BASE_AMOUNT_NGN;
     const tx_ref = `ORG-${Date.now()}-${userId}`;
 
     const payload = {
       tx_ref,
       amount,
-      currency,
+      currency: "NGN",
       redirect_url: `${FRONTEND_URL}/org-processing`,
       payment_options: "card",
       customer: { email: user.email, name: user.fullname || user.username },
@@ -60,7 +34,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
         description: "Initial payment for recurring subscription",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
-      meta: { card_only: true },
+      meta: { plan: PLAN_ID },
     };
 
     const flwRes = await axios.post(
@@ -80,7 +54,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
         checkoutLink: flwRes.data.data.link,
         tx_ref,
         amount,
-        currency,
+        currency: "NGN",
       });
     }
 
@@ -94,7 +68,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
   }
 };
 
-// Step 2: Verify payment and store card token
+// Step 2: Verify payment & subscribe to plan
 export const verifyOrganizationPayment = async (req, res, next) => {
   try {
     const { tx_ref } = req.body;
@@ -118,77 +92,44 @@ export const verifyOrganizationPayment = async (req, res, next) => {
         createError(400, "Card token not available for recurring charges")
       );
 
-    // Save token for future auto-renew
+    // Save token for future charges
     user.cardToken = cardToken;
 
-    // Save initial VIP subscription info
-    const now = new Date();
-    const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30-day trial/test
+    // Subscribe user to the hourly plan
+    const subscriptionPayload = {
+      customer: user.email,
+      plan: PLAN_ID,
+      authorization: cardToken,
+      start_date: new Date().toISOString(),
+    };
+
+    const subRes = await axios.post(
+      "https://api.flutterwave.com/v3/subscriptions",
+      subscriptionPayload,
+      { headers: { Authorization: `Bearer ${FLW_SECRET}` } }
+    );
+
+    if (subRes.data.status !== "success") {
+      console.error("❌ Subscription creation failed:", subRes.data);
+      return next(createError(500, "Subscription creation failed"));
+    }
+
+    // Save subscription info in user
     user.vipSubscription = {
       active: true,
       gateway: "flutterwave",
-      paymentReference: data.tx_ref,
-      transactionId: data.id,
-      amount: data.amount,
-      currency: data.currency,
-      cardToken,
-      startDate: now,
-      endDate,
+      planId: PLAN_ID,
+      subscriptionId: subRes.data.data.id,
+      startDate: new Date(),
+      endDate: null, // Flutterwave handles hourly recurring
     };
 
     await user.save();
 
-    // 🔁 Optional: Simulate auto-renew after 1 min (for testing)
-    setTimeout(async () => {
-      try {
-        if (!user.cardToken)
-          return console.log("⚠️ No card token — cannot auto renew");
-
-        const chargePayload = {
-          tx_ref: `RENEW-${Date.now()}-${user._id}`,
-          amount: user.vipSubscription.amount,
-          currency: user.vipSubscription.currency,
-          email: user.email,
-          token: user.vipSubscription.cardToken,
-        };
-
-        const encrypted = encryptPayload(chargePayload, FLW_ENCRYPTION_KEY);
-
-        const renewRes = await axios.post(
-          "https://api.flutterwave.com/v3/charges?type=card",
-          { client: encrypted },
-          {
-            headers: {
-              Authorization: `Bearer ${FLW_SECRET}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log("🔍 Auto-renew response:", renewRes.data);
-
-        if (renewRes.data.status === "success") {
-          const renewStart = new Date();
-          const renewEnd = new Date(
-            renewStart.getTime() + 30 * 24 * 60 * 60 * 1000
-          ); // 30 days
-          user.vipSubscription.startDate = renewStart;
-          user.vipSubscription.endDate = renewEnd;
-          await user.save();
-          console.log(`✅ AUTO-RENEW SUCCESS: ${user.email}`);
-        }
-      } catch (err) {
-        console.error(
-          "❌ AUTO-RENEW ERROR:",
-          err.response?.data || err.message
-        );
-      }
-    }, 60 * 1000);
-
     return res.status(200).json({
       success: true,
-      message: "VIP activated — card token stored for recurring payments",
-      data,
+      message: "Subscribed to hourly plan successfully",
+      subscriptionId: subRes.data.data.id,
     });
   } catch (err) {
     console.error("❌ Verification error:", err.response?.data || err.message);
