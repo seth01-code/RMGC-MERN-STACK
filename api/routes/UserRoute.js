@@ -10,8 +10,8 @@ import {
   getTotalRevenue, // Import the new function
 } from "../controllers/userController.js";
 import {
-  verifyOrganization,
   verifySeller,
+  verifySellerOrOrganization,
   verifyToken,
   verifyTokenOptional,
 } from "../middleware/jwt.js";
@@ -29,7 +29,7 @@ router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
 // Get user profile info
 
 // Update user profile info
-router.patch("/profile", verifyToken, verifySeller, verifyOrganization, updateUser);
+router.patch("/profile", verifyToken, verifySellerOrOrganization, updateUser);
 
 // Get total revenue (earnings) for the seller
 router.get("/revenue", verifySeller, getTotalRevenue);

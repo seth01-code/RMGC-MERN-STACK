@@ -110,3 +110,23 @@ export const verifySeller = (req, res, next) => {
 
   next();
 };
+
+export const verifySellerOrOrganization = (req, res, next) => {
+  if (!req.user) {
+    return next(createError(401, "Not authenticated"));
+  }
+
+  const isSeller = req.user.isSeller === true;
+  const isOrg = req.user.role === "organization" || req.user.isOrganization;
+
+  if (!isSeller && !isOrg) {
+    return next(
+      createError(
+        403,
+        "Access denied. Only sellers or organizations can perform this action"
+      )
+    );
+  }
+
+  next();
+};
