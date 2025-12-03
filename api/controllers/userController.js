@@ -233,42 +233,47 @@ export const getUsers = async (req, res, next) => {
 };
 
 // In the controller where you handle profile update:
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error in getUserProfile:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
 export const updateUser = async (req, res, next) => {
   try {
     const { newPassword, organization, ...otherUpdates } = req.body;
 
     const updatePayload = { ...otherUpdates };
 
-    // ==============================
-    // 1. PASSWORD UPDATE (if provided)
-    // ==============================
+    // Handle password change
     if (newPassword) {
       const salt = await bcrypt.genSalt(10);
       updatePayload.password = await bcrypt.hash(newPassword, salt);
     }
 
-    // ==============================
-    // 2. ORGANIZATION UPDATE HANDLING
-    // ==============================
+    // Handle organization fields safely
     if (organization) {
-      const safeOrgData = { ...organization };
+      const safeOrg = { ...organization };
 
-      // ❌ Do NOT allow regNumber modification
-      if (safeOrgData.regNumber) {
-        delete safeOrgData.regNumber;
-      }
+      // Prevent changing regNumber
+      if (safeOrg.regNumber) delete safeOrg.regNumber;
 
-      // Wrap properly: update organization.* fields
-      updatePayload["organization"] = {
+      updatePayload.organization = {
         ...(req.user.organization || {}),
-        ...safeOrgData,
+        ...safeOrg,
       };
     }
 
-    // ==============================
-    // 3. BLOCK FIELDS USER MUST NOT EDIT
-    // ==============================
-    const blockedFields = [
+    // Block fields users must not touch
+    const blocked = [
       "role",
       "email",
       "isVerified",
@@ -280,22 +285,15 @@ export const updateUser = async (req, res, next) => {
       "resetPasswordExpires",
     ];
 
-    blockedFields.forEach((field) => {
-      if (updatePayload[field] !== undefined) {
-        delete updatePayload[field];
-      }
-    });
+    blocked.forEach((f) => delete updatePayload[f]);
 
-    // ==============================
-    // 4. UPDATE USER SAFELY
-    // ==============================
-    const updatedUser = await User.findByIdAndUpdate(
+    const updated = await User.findByIdAndUpdate(
       req.user.id,
       { $set: updatePayload },
       { new: true }
-    );
+    ).select("-password");
 
-    res.status(200).json(updatedUser);
+    res.status(200).json(updated);
   } catch (err) {
     next(err);
   }
@@ -360,24 +358,6 @@ export const updateOrganization = async (req, res, next) => {
     res.status(200).json(updatedOrg);
   } catch (err) {
     next(err);
-  }
-};
-
-// Get Seller Profile
-export const getUserProfile = async (req, res) => {
-  try {
-    // console.log("Fetching seller profile for user:", req.user);
-
-    const user = await User.findById(req.user.id).select("-password");
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.error("Error in getUserProfile:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
