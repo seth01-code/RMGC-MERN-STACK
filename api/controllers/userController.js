@@ -322,17 +322,17 @@ export const updateOrganization = async (req, res, next) => {
     if (organization) {
       const safeOrgData = { ...organization };
 
-      // Do not allow regNumber to be updated
+      // ❌ Do not allow regNumber to be updated
       if (safeOrgData.regNumber) delete safeOrgData.regNumber;
 
-      // Merge new data into existing organization data
+      // Merge new data into existing organization info
       updatePayload.organization = {
         ...(req.user.organization || {}),
         ...safeOrgData,
       };
     }
 
-    // 3️⃣ Block fields that cannot be updated manually
+    // 3️⃣ Block fields the user should not edit
     const blockedFields = [
       "role",
       "email",
@@ -346,12 +346,16 @@ export const updateOrganization = async (req, res, next) => {
     ];
     blockedFields.forEach((field) => delete updatePayload[field]);
 
-    // 4️⃣ Update the organization user by JWT id
+    // 4️⃣ Update the organization safely using the JWT ID
     const updatedOrg = await User.findByIdAndUpdate(
-      req.user.id, // ✅ string from JWT
+      req.user.id, // ✅ always comes from JWT, never from route param
       { $set: updatePayload },
       { new: true }
     );
+
+    if (!updatedOrg) {
+      return next(createError(404, "Organization not found"));
+    }
 
     res.status(200).json(updatedOrg);
   } catch (err) {
