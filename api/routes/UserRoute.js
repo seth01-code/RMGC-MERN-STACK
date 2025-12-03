@@ -29,7 +29,7 @@ router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
 // Get user profile info
 
 // Update user profile info
-router.patch("/profile", verifyToken, verifySellerOrOrganization, updateUser);
+router.patch("/profile", verifyToken, updateUser);
 
 // Get total revenue (earnings) for the seller
 router.get("/revenue", verifySeller, getTotalRevenue);
