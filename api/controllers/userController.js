@@ -301,6 +301,74 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
+export const updateOrganization = async (req, res, next) => {
+  try {
+    if (!req.user || req.user.role !== "organization") {
+      return next(createError(403, "Access denied. Not an organization."));
+    }
+
+    const { newPassword, organization, ...otherUpdates } = req.body;
+
+    const updatePayload = { ...otherUpdates };
+
+    // ==============================
+    // 1. PASSWORD UPDATE (if provided)
+    // ==============================
+    if (newPassword) {
+      const salt = await bcrypt.genSalt(10);
+      updatePayload.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    // ==============================
+    // 2. ORGANIZATION UPDATE HANDLING
+    // ==============================
+    if (organization) {
+      const safeOrgData = { ...organization };
+
+      // ❌ Do NOT allow regNumber modification
+      if (safeOrgData.regNumber) delete safeOrgData.regNumber;
+
+      // Wrap properly: update organization.* fields
+      updatePayload["organization"] = {
+        ...(req.user.organization || {}),
+        ...safeOrgData,
+      };
+    }
+
+    // ==============================
+    // 3. BLOCK FIELDS USER MUST NOT EDIT
+    // ==============================
+    const blockedFields = [
+      "role",
+      "email",
+      "isVerified",
+      "vipSubscription",
+      "postedJobs",
+      "createdAt",
+      "updatedAt",
+      "resetPasswordToken",
+      "resetPasswordExpires",
+    ];
+
+    blockedFields.forEach((field) => {
+      if (updatePayload[field] !== undefined) delete updatePayload[field];
+    });
+
+    // ==============================
+    // 4. UPDATE ORGANIZATION SAFELY
+    // ==============================
+    const updatedOrg = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: updatePayload },
+      { new: true }
+    );
+
+    res.status(200).json(updatedOrg);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Get Seller Profile
 export const getUserProfile = async (req, res) => {
   try {
