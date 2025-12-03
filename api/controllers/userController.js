@@ -303,6 +303,7 @@ export const updateUser = async (req, res, next) => {
 
 export const updateOrganization = async (req, res, next) => {
   try {
+    // Ensure the user is an organization
     if (!req.user || req.user.role !== "organization") {
       return next(createError(403, "Access denied. Not an organization."));
     }
@@ -311,33 +312,27 @@ export const updateOrganization = async (req, res, next) => {
 
     const updatePayload = { ...otherUpdates };
 
-    // ==============================
-    // 1. PASSWORD UPDATE (if provided)
-    // ==============================
+    // 1️⃣ Update password if provided
     if (newPassword) {
       const salt = await bcrypt.genSalt(10);
       updatePayload.password = await bcrypt.hash(newPassword, salt);
     }
 
-    // ==============================
-    // 2. ORGANIZATION UPDATE HANDLING
-    // ==============================
+    // 2️⃣ Update organization info
     if (organization) {
       const safeOrgData = { ...organization };
 
-      // ❌ Do NOT allow regNumber modification
+      // Do not allow regNumber to be updated
       if (safeOrgData.regNumber) delete safeOrgData.regNumber;
 
-      // Wrap properly: update organization.* fields
-      updatePayload["organization"] = {
+      // Merge new data into existing organization data
+      updatePayload.organization = {
         ...(req.user.organization || {}),
         ...safeOrgData,
       };
     }
 
-    // ==============================
-    // 3. BLOCK FIELDS USER MUST NOT EDIT
-    // ==============================
+    // 3️⃣ Block fields that cannot be updated manually
     const blockedFields = [
       "role",
       "email",
@@ -349,16 +344,11 @@ export const updateOrganization = async (req, res, next) => {
       "resetPasswordToken",
       "resetPasswordExpires",
     ];
+    blockedFields.forEach((field) => delete updatePayload[field]);
 
-    blockedFields.forEach((field) => {
-      if (updatePayload[field] !== undefined) delete updatePayload[field];
-    });
-
-    // ==============================
-    // 4. UPDATE ORGANIZATION SAFELY
-    // ==============================
+    // 4️⃣ Update the organization user by JWT id
     const updatedOrg = await User.findByIdAndUpdate(
-      req.user.id,
+      req.user.id, // ✅ string from JWT
       { $set: updatePayload },
       { new: true }
     );
