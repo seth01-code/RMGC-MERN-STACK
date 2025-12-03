@@ -8,8 +8,9 @@ import {
   getUserProfile,
   updateUser,
   getTotalRevenue,
-  updateOrganization, // Import the new function
+  updateOrganization,
 } from "../controllers/userController.js";
+
 import {
   verifyOrganization,
   verifySeller,
@@ -17,30 +18,31 @@ import {
   verifyToken,
   verifyTokenOptional,
 } from "../middleware/jwt.js";
+
 import { verifyAdmin } from "../middleware/verifyAdmin.js";
 
 const router = express.Router();
 
+// ───────── STATIC ROUTES (no params) ─────────
 router.get("/me", verifyTokenOptional, getUserData);
+
 router.get("/profile", verifyToken, verifySeller, getUserProfile);
+router.patch("/profile", verifyToken, verifySellerOrOrganization, updateUser);
+
 router.patch(
   "/org-profile",
   verifyToken,
   verifyOrganization,
   updateOrganization
 );
-router.get("/", verifyToken, getUsers); // Fetch all users route
-router.get("/sellers", getSellers); // Fetch all Sellers route
+
+router.get("/revenue", verifySeller, getTotalRevenue);
+
+router.get("/", verifyToken, getUsers);
+router.get("/sellers", getSellers);
+
+// ───────── DYNAMIC ROUTES (must always be last) ─────────
 router.get("/:id", verifyToken, getUser);
 router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
-
-// Get user profile info
-
-// Update user profile info
-router.patch("/profile", verifyToken, verifySellerOrOrganization, updateUser);
-
-
-// Get total revenue (earnings) for the seller
-router.get("/revenue", verifySeller, getTotalRevenue);
 
 export default router;
