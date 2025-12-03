@@ -3,22 +3,28 @@ import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 
-const FLW_SECRET = process.env.FLUTTERWAVE_LIVE_SECRET_KEY;
+const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000";
-const BASE_AMOUNT_NGN = 50;
 
-// Plan IDs per currency (hardcoded or fetched dynamically)
-const PLAN_IDS = {
-  NGN: "151051",
-  USD: "227761",
-  EUR: "227762",
-  GBP: "227763",
+// Updated fixed pricing
+const PLAN_PRICES = {
+  NGN: 54000,
+  USD: 45,
+  EUR: 35,
+  GBP: 35,
 };
 
-// ------------------- CREATE SUBSCRIPTION (INITIAL PAYMENT) --------
-export const createOrganizationSubscription = async (req, res, next) => {
+// Flutterwave plan IDs
+const PLAN_IDS = {
+  NGN: "227783",
+  USD: "227784",
+  EUR: "227787",
+  GBP: "227786",
+};
+
+// ---------------- CREATE SUBSCRIPTION (GENERIC) ----------------
+const initializeSubscription = async (req, res, currency) => {
   try {
-    let { currency } = req.body;
     const userId = req.user?.id;
     if (!userId) return next(createError(401, "Unauthorized"));
 
@@ -26,25 +32,21 @@ export const createOrganizationSubscription = async (req, res, next) => {
     if (!user || user.role !== "organization")
       return next(createError(400, "Only organizations can subscribe"));
 
-    currency = "NGN"; // force NGN
-    const planId = PLAN_IDS.NGN;
-    const amount = BASE_AMOUNT_NGN;
+    const amount = PLAN_PRICES[currency];
+    const planId = PLAN_IDS[currency];
+    const tx_ref = `ORG-${currency}-${Date.now()}-${userId}`;
 
-    const tx_ref = `ORG-${Date.now()}-${userId}`;
-
-    // Set initial vipSubscription
+    // Update user subscription
     user.vipSubscription = {
       active: false,
       gateway: "flutterwave",
-      planId: planId,
-      subscriptionId: tx_ref,
       currency,
       amount,
+      planId,
+      subscriptionId: tx_ref,
     };
-
     await user.save();
 
-    // Flutterwave payment payload
     const payload = {
       tx_ref,
       amount,
@@ -58,7 +60,7 @@ export const createOrganizationSubscription = async (req, res, next) => {
       },
       customizations: {
         title: "RMGC Organization Plan",
-        description: "Initial payment for recurring subscription",
+        description: `${currency} Subscription Plan`,
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
       meta: { planId, currency, userId },
@@ -75,21 +77,28 @@ export const createOrganizationSubscription = async (req, res, next) => {
       }
     );
 
-    if (flwRes.data.status === "success") {
-      return res.status(200).json({
-        success: true,
-        message: "Subscription payment initialized",
-        checkoutLink: flwRes.data.data.link,
-        vipSubscription: user.vipSubscription,
-      });
-    }
-
-    throw new Error("Unable to initialize Flutterwave payment");
+    return res.status(200).json({
+      success: true,
+      checkoutLink: flwRes.data.data.link,
+      vipSubscription: user.vipSubscription,
+    });
   } catch (err) {
-    console.error(
-      "❌ Subscription creation error:",
-      err.response?.data || err.message
-    );
-    next(createError(500, "Subscription creation failed"));
+    console.log("❌ Subscription error:", err.response?.data || err.message);
+    return res
+      .status(500)
+      .json({ success: false, message: "Subscription failed" });
   }
 };
+
+// -------------------- EXPORTED CURRENCY CONTROLLERS --------------------
+export const subscribeNGN = async (req, res) =>
+  initializeSubscription(req, res, "NGN");
+
+export const subscribeUSD = async (req, res) =>
+  initializeSubscription(req, res, "USD");
+
+export const subscribeGBP = async (req, res) =>
+  initializeSubscription(req, res, "GBP");
+
+export const subscribeEUR = async (req, res) =>
+  initializeSubscription(req, res, "EUR");
