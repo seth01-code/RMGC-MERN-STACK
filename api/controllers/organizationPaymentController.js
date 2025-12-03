@@ -16,7 +16,7 @@ const PLAN_PRICES = {
 
 // Flutterwave plan IDs
 const PLAN_IDS = {
-  NGN: "151073",
+  NGN: "227783",
   USD: "151075",
   EUR: "151076",
   GBP: "151077",
