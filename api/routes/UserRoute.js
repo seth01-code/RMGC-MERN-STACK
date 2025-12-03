@@ -10,6 +10,7 @@ import {
   getTotalRevenue, // Import the new function
 } from "../controllers/userController.js";
 import {
+  verifyOrganization,
   verifySeller,
   verifyToken,
   verifyTokenOptional,
@@ -28,7 +29,7 @@ router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
 // Get user profile info
 
 // Update user profile info
-router.patch("/profile", verifyToken, verifySeller, updateUser);
+router.patch("/profile", verifyToken, verifySeller, verifyOrganization, updateUser);
 
 // Get total revenue (earnings) for the seller
 router.get("/revenue", verifySeller, getTotalRevenue);

@@ -235,18 +235,65 @@ export const getUsers = async (req, res, next) => {
 // In the controller where you handle profile update:
 export const updateUser = async (req, res, next) => {
   try {
-    const { newPassword, ...updatedData } = req.body;
+    const { newPassword, organization, ...otherUpdates } = req.body;
 
-    // If the password is being updated, hash the new password
+    const updatePayload = { ...otherUpdates };
+
+    // ==============================
+    // 1. PASSWORD UPDATE (if provided)
+    // ==============================
     if (newPassword) {
       const salt = await bcrypt.genSalt(10);
-      updatedData.password = await bcrypt.hash(newPassword, salt);
+      updatePayload.password = await bcrypt.hash(newPassword, salt);
     }
 
-    // Update the user in the database
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updatedData, {
-      new: true,
+    // ==============================
+    // 2. ORGANIZATION UPDATE HANDLING
+    // ==============================
+    if (organization) {
+      const safeOrgData = { ...organization };
+
+      // ❌ Do NOT allow regNumber modification
+      if (safeOrgData.regNumber) {
+        delete safeOrgData.regNumber;
+      }
+
+      // Wrap properly: update organization.* fields
+      updatePayload["organization"] = {
+        ...(req.user.organization || {}),
+        ...safeOrgData,
+      };
+    }
+
+    // ==============================
+    // 3. BLOCK FIELDS USER MUST NOT EDIT
+    // ==============================
+    const blockedFields = [
+      "role",
+      "email",
+      "isVerified",
+      "vipSubscription",
+      "postedJobs",
+      "createdAt",
+      "updatedAt",
+      "resetPasswordToken",
+      "resetPasswordExpires",
+    ];
+
+    blockedFields.forEach((field) => {
+      if (updatePayload[field] !== undefined) {
+        delete updatePayload[field];
+      }
     });
+
+    // ==============================
+    // 4. UPDATE USER SAFELY
+    // ==============================
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: updatePayload },
+      { new: true }
+    );
 
     res.status(200).json(updatedUser);
   } catch (err) {
