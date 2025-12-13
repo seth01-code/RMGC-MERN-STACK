@@ -16,7 +16,7 @@ const PLAN_PRICES = {
 
 // Flutterwave plan IDs (create separate plans in Flutterwave for remote worker)
 const PLAN_IDS = {
-  NGN: "227751", // example IDs, replace with actual
+  NGN: "228055", // example IDs, replace with actual
   USD: "228056",
   EUR: "228057",
   GBP: "228058",
