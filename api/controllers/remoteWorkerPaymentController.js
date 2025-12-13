@@ -77,6 +77,8 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
+    console.log("💰 Flutterwave response:", flwRes.data);
+
     return res.status(200).json({
       success: true,
       checkoutLink: flwRes.data.data.link,
