@@ -246,7 +246,6 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-
 export const updateUser = async (req, res, next) => {
   try {
     const { newPassword, organization, ...otherUpdates } = req.body;

@@ -495,11 +495,13 @@ export const verifyOtp = async (req, res, next) => {
       userData.tier
     );
 
-    // ✅ Return the role in the response
-    res.status(200).json({
-      message: "OTP verified. Account created successfully.",
-      role: newUser.role, // 👈 add this line
-    });
+    // ✅ Return the role and tier in the response
+res.status(200).json({
+  message: "OTP verified. Account created successfully.",
+  role: newUser.role,       // "remote_worker", "organization", or null
+  tier: newUser.role === "remote_worker" ? newUser.tier : null, // "free" or "vip"
+});
+
   } catch (err) {
     next(err);
   }
