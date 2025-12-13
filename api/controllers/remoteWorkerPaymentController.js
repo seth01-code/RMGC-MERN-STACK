@@ -14,9 +14,9 @@ const PLAN_PRICES = {
   GBP: 25,
 };
 
-// Flutterwave plan IDs (create separate plans in Flutterwave for remote worker)
+// Flutterwave plan IDs (replace with actual IDs)
 const PLAN_IDS = {
-  NGN: "228055", // example IDs, replace with actual
+  NGN: "228055",
   USD: "228056",
   EUR: "228057",
   GBP: "228058",
@@ -25,16 +25,31 @@ const PLAN_IDS = {
 // ---------------- CREATE SUBSCRIPTION (REMOTE WORKER) ----------------
 const initializeSubscription = async (req, res, currency) => {
   try {
+    console.log("🔹 Initializing subscription for remote worker...");
+
     const userId = req.user?.id;
-    if (!userId) return next(createError(401, "Unauthorized"));
+    console.log("User ID from token:", userId);
+
+    if (!userId) {
+      console.log("❌ No user ID found in request");
+      return next(createError(401, "Unauthorized"));
+    }
 
     const user = await User.findById(userId);
-    if (!user || user.role !== "remote_worker")
+    console.log("Fetched user from DB:", user);
+
+    if (!user || user.role !== "remote_worker") {
+      console.log("❌ User is not a remote worker or does not exist");
       return next(createError(400, "Only remote workers can subscribe"));
+    }
 
     const amount = PLAN_PRICES[currency];
     const planId = PLAN_IDS[currency];
+
+    console.log(`Selected currency: ${currency}, amount: ${amount}, planId: ${planId}`);
+
     const tx_ref = `RW-${currency}-${Date.now()}-${userId}`;
+    console.log("Transaction reference:", tx_ref);
 
     // Update remote worker VIP subscription in DB
     user.vipSubscription = {
@@ -45,7 +60,9 @@ const initializeSubscription = async (req, res, currency) => {
       planId,
       subscriptionId: tx_ref,
     };
+
     await user.save();
+    console.log("✅ User VIP subscription updated in DB");
 
     const payload = {
       tx_ref,
@@ -65,6 +82,8 @@ const initializeSubscription = async (req, res, currency) => {
       },
       meta: { planId, currency, userId },
     };
+
+    console.log("Payload for Flutterwave:", JSON.stringify(payload, null, 2));
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/payments",
@@ -86,7 +105,7 @@ const initializeSubscription = async (req, res, currency) => {
     });
   } catch (err) {
     console.log(
-      "❌ Remote worker subscription error:",
+      "❌ Remote worker subscription error full:",
       err.response?.data || err.message
     );
     return res
