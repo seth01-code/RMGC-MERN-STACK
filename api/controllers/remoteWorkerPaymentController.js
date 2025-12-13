@@ -14,14 +14,6 @@ const PLAN_PRICES = {
   GBP: 25,
 };
 
-// Flutterwave plan IDs (replace with actual IDs)
-const PLAN_IDS = {
-  NGN: "228055",
-  USD: "228056",
-  EUR: "228057",
-  GBP: "228058",
-};
-
 // ---------------- CREATE SUBSCRIPTION (REMOTE WORKER) ----------------
 const initializeSubscription = async (req, res, currency) => {
   try {
@@ -30,23 +22,39 @@ const initializeSubscription = async (req, res, currency) => {
     const userId = req.user?.id;
     console.log("User ID from token:", userId);
 
-    if (!userId) {
-      console.log("❌ No user ID found in request");
-      return next(createError(401, "Unauthorized"));
-    }
+    if (!userId) return next(createError(401, "Unauthorized"));
 
     const user = await User.findById(userId);
     console.log("Fetched user from DB:", user);
 
     if (!user || user.role !== "remote_worker") {
-      console.log("❌ User is not a remote worker or does not exist");
       return next(createError(400, "Only remote workers can subscribe"));
     }
 
     const amount = PLAN_PRICES[currency];
-    const planId = PLAN_IDS[currency];
 
-    console.log(`Selected currency: ${currency}, amount: ${amount}, planId: ${planId}`);
+    // ---------------- CREATE A DYNAMIC PLAN ----------------
+    const planPayload = {
+      name: `VIP ${currency} - ${user.username}`,
+      amount,
+      interval: "monthly", // or yearly
+      currency,
+      description: `VIP subscription for ${user.username}`,
+    };
+
+    const planRes = await axios.post(
+      "https://api.flutterwave.com/v3/payment-plans",
+      planPayload,
+      {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const planId = planRes.data.data.id;
+    console.log("✅ Dynamic plan created:", planId);
 
     const tx_ref = `RW-${currency}-${Date.now()}-${userId}`;
     console.log("Transaction reference:", tx_ref);
@@ -60,7 +68,6 @@ const initializeSubscription = async (req, res, currency) => {
       planId,
       subscriptionId: tx_ref,
     };
-
     await user.save();
     console.log("✅ User VIP subscription updated in DB");
 
@@ -68,12 +75,13 @@ const initializeSubscription = async (req, res, currency) => {
       tx_ref,
       amount,
       currency,
-      redirect_url: `${FRONTEND_URL}/remote-vip-success`,
+      redirect_url: `${FRONTEND_URL}/`,
       payment_options: "card",
       payment_plan: planId,
       customer: {
-        email: user.email,
+        email: user.email, // ✅ force correct email
         name: user.fullName || user.username,
+        phone_number: user.phone || "",
       },
       customizations: {
         title: "RMGC Remote Worker VIP Plan",
@@ -117,12 +125,9 @@ const initializeSubscription = async (req, res, currency) => {
 // -------------------- EXPORTED CURRENCY CONTROLLERS --------------------
 export const subscribeNGN = async (req, res) =>
   initializeSubscription(req, res, "NGN");
-
 export const subscribeUSD = async (req, res) =>
   initializeSubscription(req, res, "USD");
-
 export const subscribeGBP = async (req, res) =>
   initializeSubscription(req, res, "GBP");
-
 export const subscribeEUR = async (req, res) =>
   initializeSubscription(req, res, "EUR");
