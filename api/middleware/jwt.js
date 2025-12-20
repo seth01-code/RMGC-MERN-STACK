@@ -78,8 +78,10 @@ export const verifyAdmin = (req, res, next) => {
 export const verifyRemoteWorker = (req, res, next) => {
   if (!req.user) return next(createError(401, "Not authenticated"));
 
-  if (req.user.role !== "remote_worker")
+  // ✅ Allow if role is "remote_worker" or isRemoteWorker flag is true
+  if (req.user.role !== "remote_worker" && !req.user.isRemoteWorker) {
     return next(createError(403, "Only remote workers can apply for jobs"));
+  }
 
   next();
 };
