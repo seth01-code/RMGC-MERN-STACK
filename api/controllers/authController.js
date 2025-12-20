@@ -533,7 +533,7 @@ export const login = async (req, res) => {
     else if (user.isSeller) role = "seller";
     else if (user.role === "organization" || user.organization?.regNumber)
       role = "organization";
-    else if (user.role === "remoteWorker") role = "remoteWorker";
+    else if (user.role === "remote_worker") role = "remote_worker";
 
     // Sign JWT with correct role
     const token = jwt.sign(
@@ -543,7 +543,7 @@ export const login = async (req, res) => {
         isSeller: user.isSeller,
         isAdmin: user.isAdmin,
         isOrganization: role === "organization",
-        isRemoteWorker: role === "remoteWorker",
+        isRemoteWorker: role === "remote_worker",
       },
       process.env.JWT_KEY,
       { expiresIn: "7d" }
