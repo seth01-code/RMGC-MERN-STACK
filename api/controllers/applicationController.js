@@ -75,7 +75,7 @@ export const getJobApplications = async (req, res, next) => {
 
     if (
       req.user.role === "organization" &&
-      job.organization.toString() !== req.user.id
+      job.organizationId.toString() !== req.user.id
     ) {
       return next(createError(403, "You do not own this job"));
     }
@@ -115,7 +115,7 @@ export const updateApplicationStatus = async (req, res, next) => {
 
     if (
       req.user.role === "organization" &&
-      application.jobId.organization.toString() !== req.user.id
+      application.jobId.organizationId.toString() !== req.user.id
     ) {
       return next(createError(403, "You do not own this job"));
     }

@@ -14,7 +14,9 @@ router.get("/user", verifyToken, verifyRemoteWorker, getUserApplications);
 router.post("/:jobId", verifyToken, verifyRemoteWorker, applyForJob);
 
 // Organization fetches applications for a job
-router.get("/:jobId", verifyToken, verifyOrganization, getJobApplications);
+
+router.get("/job/:jobId", verifyToken, verifyOrganization, getJobApplications);
+
 
 // Organization updates application status
 router.put("/:id/status", verifyToken, verifyOrganization, updateApplicationStatus);
