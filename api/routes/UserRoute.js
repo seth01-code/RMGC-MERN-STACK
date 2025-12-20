@@ -27,8 +27,14 @@ const router = express.Router();
 // ───────── STATIC ROUTES (no params) ─────────
 router.get("/me", verifyTokenOptional, getUserData);
 
-router.get("/profile", verifyToken, verifySellerOrOrganization, verifyRemoteWorker, getUserProfile);
-router.patch("/profile", verifyToken, verifySellerOrOrganization, verifyRemoteWorker, updateUser);
+// Sellers / Organizations
+router.get("/profile", verifyToken, verifySellerOrOrganization, getUserProfile);
+router.patch("/profile", verifyToken, verifySellerOrOrganization, updateUser);
+
+// Remote workers
+router.get("/worker-profile", verifyToken, verifyRemoteWorker, getUserProfile);
+router.patch("/worker-profile", verifyToken, verifyRemoteWorker, updateUser);
+
 
 router.patch(
   "/org-profile",
