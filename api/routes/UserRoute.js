@@ -17,6 +17,7 @@ import {
   verifySellerOrOrganization,
   verifyToken,
   verifyTokenOptional,
+  verifyRemoteWorker,
 } from "../middleware/jwt.js";
 
 import { verifyAdmin } from "../middleware/verifyAdmin.js";
@@ -26,8 +27,8 @@ const router = express.Router();
 // ───────── STATIC ROUTES (no params) ─────────
 router.get("/me", verifyTokenOptional, getUserData);
 
-router.get("/profile", verifyToken, verifySellerOrOrganization, getUserProfile);
-router.patch("/profile", verifyToken, verifySellerOrOrganization, updateUser);
+router.get("/profile", verifyToken, verifySellerOrOrganization, verifyRemoteWorker, getUserProfile);
+router.patch("/profile", verifyToken, verifySellerOrOrganization, verifyRemoteWorker, updateUser);
 
 router.patch(
   "/org-profile",
