@@ -9,6 +9,7 @@ import { verifyToken, verifyRemoteWorker, verifyOrganization } from "../middlewa
 
 const router = express.Router();
 
+router.get("/user", verifyToken, verifyRemoteWorker, getUserApplications);
 // Remote worker applies for a job
 router.post("/:jobId", verifyToken, verifyRemoteWorker, applyForJob);
 
@@ -19,6 +20,5 @@ router.get("/:jobId", verifyToken, verifyOrganization, getJobApplications);
 router.put("/:id/status", verifyToken, verifyOrganization, updateApplicationStatus);
 
 // Remote worker fetches their own applications
-router.get("/user", verifyToken, verifyRemoteWorker, getUserApplications);
 
 export default router;
