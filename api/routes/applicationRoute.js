@@ -3,13 +3,9 @@ import {
   applyForJob,
   getJobApplications,
   updateApplicationStatus,
+  getUserApplications,
 } from "../controllers/applicationController.js";
-import {
-  verifyToken,
-  verifyRemoteWorker,
-  verifyOrganization,
-} from "../middleware/jwt.js";
-import Application from "../models/applicationModel.js"; // for user applications
+import { verifyToken, verifyRemoteWorker, verifyOrganization } from "../middleware/jwt.js";
 
 const router = express.Router();
 
@@ -22,20 +18,7 @@ router.get("/:jobId", verifyToken, verifyOrganization, getJobApplications);
 // Organization updates application status
 router.put("/:id/status", verifyToken, verifyOrganization, updateApplicationStatus);
 
-/* =========================
-   Remote worker fetches their own applications
-========================= */
-router.get(
-  "/user",
-  verifyToken,
-  async (req, res, next) => {
-    try {
-      const apps = await Application.find({ applicantId: req.user.id }).populate("jobId");
-      res.status(200).json(apps);
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+// Remote worker fetches their own applications
+router.get("/user", verifyToken, verifyRemoteWorker, getUserApplications);
 
 export default router;

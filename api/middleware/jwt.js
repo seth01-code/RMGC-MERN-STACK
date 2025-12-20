@@ -71,16 +71,14 @@ export const verifyAdmin = (req, res, next) => {
   next();
 };
 
-/* ================================
-   👨‍💻 REMOTE WORKER GUARD
-   For applying to jobs only
-================================ */
 export const verifyRemoteWorker = (req, res, next) => {
   if (!req.user) return next(createError(401, "Not authenticated"));
 
-  // ✅ Allow if role is "remote_worker" or isRemoteWorker flag is true
+  // Check if the user is a remote worker
   if (req.user.role !== "remote_worker" && !req.user.isRemoteWorker) {
-    return next(createError(403, "Only remote workers can apply for jobs"));
+    return next(
+      createError(403, "Only remote workers can perform this action")
+    );
   }
 
   next();

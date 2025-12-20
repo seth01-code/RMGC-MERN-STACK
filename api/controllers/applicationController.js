@@ -65,3 +65,15 @@ export const updateApplicationStatus = async (req, res, next) => {
     next(err);
   }
 };
+
+/* =========================
+   📌 GET APPLICATIONS FOR LOGGED-IN REMOTE WORKER
+========================= */
+export const getUserApplications = async (req, res, next) => {
+  try {
+    const apps = await Application.find({ applicantId: req.user.id }).populate("jobId");
+    res.status(200).json(apps);
+  } catch (err) {
+    next(err);
+  }
+};
