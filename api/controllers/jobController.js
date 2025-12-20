@@ -62,7 +62,12 @@ export const deleteJob = async (req, res, next) => {
 =========================== */
 export const getAllJobs = async (req, res, next) => {
   try {
-    const jobs = await Job.find().sort({ createdAt: -1 });
+    const jobs = await Job.find({
+      $or: [
+        { "salaryRange.min": { $lt: 250 } }, // free jobs
+        { "salaryRange.min": { $gte: 250 }, vipOnly: false }, // optional field
+      ],
+    });
     res.status(200).json(jobs);
   } catch (err) {
     next(err);
