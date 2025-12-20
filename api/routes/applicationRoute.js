@@ -28,7 +28,6 @@ router.put("/:id/status", verifyToken, verifyOrganization, updateApplicationStat
 router.get(
   "/user",
   verifyToken,
-  verifyRemoteWorker,
   async (req, res, next) => {
     try {
       const apps = await Application.find({ applicantId: req.user.id }).populate("jobId");
