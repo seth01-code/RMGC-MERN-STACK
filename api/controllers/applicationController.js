@@ -69,10 +69,7 @@ export const getJobApplications = async (req, res, next) => {
     if (!job) return next(createError(404, "Job not found"));
 
     // Authorization: only owning organization or admin
-    if (
-      req.user.role !== "organization" &&
-      !req.user.isAdmin
-    ) {
+    if (req.user.role !== "organization" && !req.user.isAdmin) {
       return next(createError(403, "Access denied"));
     }
 
@@ -112,10 +109,7 @@ export const updateApplicationStatus = async (req, res, next) => {
     }
 
     // Authorization
-    if (
-      req.user.role !== "organization" &&
-      !req.user.isAdmin
-    ) {
+    if (req.user.role !== "organization" && !req.user.isAdmin) {
       return next(createError(403, "Access denied"));
     }
 
@@ -150,7 +144,11 @@ export const getUserApplications = async (req, res, next) => {
     const applications = await Application.find({
       applicantId: req.user.id,
     })
-      .populate("jobId", "title salary remoteType organization status")
+      .populate({
+        path: "jobId",
+        select: "title salaryRange type status organizationId",
+        populate: { path: "organizationId", select: "name" },
+      })
       .sort({ createdAt: -1 });
 
     res.status(200).json(applications);
