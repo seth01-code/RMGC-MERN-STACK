@@ -431,6 +431,39 @@ export const register = async (req, res, next) => {
   }
 };
 
+export const freelancerPaymentSuccess = async (req, res, next) => {
+  const { email, txRef, flwRef, amount, currency } = req.body;
+
+  if (!pendingUsers.has(email))
+    return next(createError(404, "No pending registration found"));
+
+  const userData = pendingUsers.get(email);
+
+  // Store payment info in vipSubscription
+  userData.vipSubscription = {
+    startDate: new Date(),
+    endDate: null,
+    active: true,
+    paymentReference: txRef,
+    transactionId: flwRef,
+    gateway: "flutterwave",
+    amount,
+    currency,
+    lastCharge: {
+      amount,
+      currency,
+      status: "successful",
+      chargedAt: new Date(),
+      processorResponse: "Payment successful",
+    },
+  };
+
+  pendingUsers.set(email, userData);
+
+  res.status(200).json({ message: "Payment recorded successfully" });
+};
+
+
 // --- verifyOtp controller ---
 export const verifyOtp = async (req, res, next) => {
   try {
