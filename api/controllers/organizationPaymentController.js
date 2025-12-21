@@ -26,17 +26,17 @@ const PLAN_IDS = {
 const initializeSubscription = async (req, res, currency) => {
   try {
     const userId = req.user?.id;
-    if (!userId) return next(createError(401, "Unauthorized"));
+    if (!userId)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const user = await User.findById(userId);
     if (!user || user.role !== "organization")
-      return next(createError(400, "Only organizations can subscribe"));
+      return res.status(400).json({ success: false, message: "Only organizations can subscribe" });
 
     const amount = PLAN_PRICES[currency];
     const planId = PLAN_IDS[currency];
     const tx_ref = `ORG-${currency}-${Date.now()}-${userId}`;
 
-    // Update user subscription
     user.vipSubscription = {
       active: false,
       gateway: "flutterwave",
@@ -57,6 +57,7 @@ const initializeSubscription = async (req, res, currency) => {
       customer: {
         email: user.email,
         name: user.fullname || user.username,
+        phone_number: user.phone || "",
       },
       customizations: {
         title: "RMGC Organization Plan",
@@ -83,12 +84,15 @@ const initializeSubscription = async (req, res, currency) => {
       vipSubscription: user.vipSubscription,
     });
   } catch (err) {
-    console.log("❌ Subscription error:", err.response?.data || err.message);
-    return res
-      .status(500)
-      .json({ success: false, message: "Subscription failed" });
+    console.error("❌ Subscription error full:", {
+      message: err.message,
+      status: err.response?.status,
+      data: err.response?.data,
+    });
+    return res.status(500).json({ success: false, message: "Subscription failed" });
   }
 };
+
 
 // -------------------- EXPORTED CURRENCY CONTROLLERS --------------------
 export const subscribeNGN = async (req, res) =>
