@@ -437,41 +437,23 @@ export const register = async (req, res, next) => {
   }
 };
 
-export const flutterwaveFreelancerIntent = async (req, res, next) => {
+export const flutterwaveFreelancerIntent = async (req, res) => {
   try {
-    const { email, country } = req.body;
+    const { email } = req.body;
 
-    if (!email)
-      return next(createError(400, "Email is required"));
-
-    // 🔒 Hardcoded prices
-    let currency = "NGN";
-    let amount = 5200;
-
-    if (country === "USA") {
-      currency = "USD";
-      amount = 4;
-    } else if (["UK", "United Kingdom"].includes(country)) {
-      currency = "GBP";
-      amount = 4;
-    } else if (
-      ["Germany", "France", "Italy", "Spain", "Netherlands", "EU"].includes(
-        country
-      )
-    ) {
-      currency = "EUR";
-      amount = 4;
+    if (!email) {
+      return res.status(400).json("Email is required");
     }
 
-    const txRef = `freelancer_${Date.now()}_${email}`;
+    const txRef = `freelancer_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
     const response = await axios.post(
       "https://api.flutterwave.com/v3/payments",
       {
         tx_ref: txRef,
-        amount,
-        currency,
-        redirect_url: `${process.env.FRONTEND_URL}/payment/freelancers/success?tx_ref=${txRef}`,
+        amount: 5200,
+        currency: "NGN",
+        redirect_url: `http://localhost:3000/payment/freelancers/success?tx_ref=${txRef}&email=${email}`,
         customer: { email },
         customizations: {
           title: "Freelancer Registration",
@@ -485,21 +467,21 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
       {
         headers: {
           Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+          "Content-Type": "application/json",
         },
       }
     );
 
     const paymentLink = response?.data?.data?.link;
-    if (!paymentLink)
-      return next(createError(500, "Failed to generate payment link"));
 
-    res.status(200).json({
-      paymentLink,
-      txRef,
-    });
+    if (!paymentLink) {
+      return res.status(500).json("Failed to generate payment link");
+    }
+
+    return res.status(200).json({ paymentLink });
   } catch (err) {
-    console.error("Flutterwave intent error:", err.response?.data || err.message);
-    next(createError(500, "Error creating Flutterwave payment intent"));
+    console.error("Flutterwave intent error:", err?.response?.data || err.message);
+    return res.status(500).json("Error creating Flutterwave payment intent");
   }
 };
 
