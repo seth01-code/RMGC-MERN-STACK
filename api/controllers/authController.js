@@ -439,28 +439,24 @@ export const register = async (req, res, next) => {
 
 export const flutterwaveFreelancerIntent = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    if (!email) return next(createError(400, "Email is required"));
+    const { email, country } = req.body;
 
-    const pendingUser = pendingUsers.get(email);
-    if (!pendingUser)
-      return next(createError(404, "Pending registration not found"));
+    if (!email)
+      return next(createError(400, "Email is required"));
 
     // 🔒 Hardcoded prices
     let currency = "NGN";
     let amount = 5200;
 
-    if (pendingUser.country === "USA") {
+    if (country === "USA") {
       currency = "USD";
       amount = 4;
-    } else if (
-      ["UK", "United Kingdom"].includes(pendingUser.country)
-    ) {
+    } else if (["UK", "United Kingdom"].includes(country)) {
       currency = "GBP";
       amount = 4;
     } else if (
       ["Germany", "France", "Italy", "Spain", "Netherlands", "EU"].includes(
-        pendingUser.country
+        country
       )
     ) {
       currency = "EUR";
@@ -475,7 +471,7 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
         tx_ref: txRef,
         amount,
         currency,
-        redirect_url: `${process.env.FRONTEND_URL}/payment/freelancers/success?tx_ref=${txRef}&email=${email}`,
+        redirect_url: `${process.env.FRONTEND_URL}/payment/freelancers/success?tx_ref=${txRef}`,
         customer: { email },
         customizations: {
           title: "Freelancer Registration",
@@ -499,8 +495,6 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
 
     res.status(200).json({
       paymentLink,
-      amount,
-      currency,
       txRef,
     });
   } catch (err) {
@@ -508,7 +502,6 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
     next(createError(500, "Error creating Flutterwave payment intent"));
   }
 };
-
 
 
 export const freelancerPaymentSuccess = async (req, res, next) => {
@@ -542,7 +535,6 @@ export const freelancerPaymentSuccess = async (req, res, next) => {
 
   res.status(200).json({ message: "Payment recorded successfully" });
 };
-
 
 // --- verifyOtp controller ---
 export const verifyOtp = async (req, res, next) => {
@@ -609,12 +601,11 @@ export const verifyOtp = async (req, res, next) => {
     );
 
     // ✅ Return the role and tier in the response
-res.status(200).json({
-  message: "OTP verified. Account created successfully.",
-  role: newUser.role,       // "remote_worker", "organization", or null
-  tier: newUser.role === "remote_worker" ? newUser.tier : null, // "free" or "vip"
-});
-
+    res.status(200).json({
+      message: "OTP verified. Account created successfully.",
+      role: newUser.role, // "remote_worker", "organization", or null
+      tier: newUser.role === "remote_worker" ? newUser.tier : null, // "free" or "vip"
+    });
   } catch (err) {
     next(err);
   }
