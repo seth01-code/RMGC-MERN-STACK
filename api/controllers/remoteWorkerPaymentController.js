@@ -3,8 +3,8 @@ import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 
-const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
-const FRONTEND_URL = "http://localhost:3000";
+const FLW_SECRET = process.env.FLUTTERWAVE__SECRET_KEY;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Fixed pricing for remote worker VIP subscription
 const PLAN_PRICES = {
