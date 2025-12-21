@@ -1,3 +1,76 @@
+import axios from "axios";
+import User from "../models/userModel.js";
+import createError from "../utils/createError.js";
+
+// Currency mapping for global support
+const countryToCurrency = {
+  USA: "USD",
+  Canada: "CAD",
+  UK: "GBP",
+  Germany: "EUR",
+  France: "EUR",
+  Italy: "EUR",
+  Spain: "EUR",
+  Netherlands: "EUR",
+  Belgium: "EUR",
+  Austria: "EUR",
+  Finland: "EUR",
+  Ireland: "EUR",
+  Portugal: "EUR",
+  Slovakia: "EUR",
+  Slovenia: "EUR",
+  Cyprus: "EUR",
+  Estonia: "EUR",
+  Latvia: "EUR",
+  Lithuania: "EUR",
+  Malta: "EUR",
+  Nigeria: "NGN",
+  Kenya: "KES",
+  Ghana: "GHS",
+  "South Africa": "ZAR",
+  Uganda: "UGX",
+  Tanzania: "TZS",
+  Rwanda: "RWF",
+  Malawi: "MWK",
+  Zambia: "ZMW",
+  Egypt: "EGP",
+  Senegal: "XOF",
+  Cameroon: "XAF",
+  "Côte d'Ivoire": "XOF",
+  Ethiopia: "ETB",
+  Seychelles: "SCR",
+  Mauritius: "MUR",
+  Morocco: "MAD",
+  Tunisia: "TND",
+  Algeria: "DZD",
+  Botswana: "BWP",
+  Namibia: "NAD",
+  Lesotho: "LSL",
+  Eswatini: "SZL",
+  Mozambique: "MZN",
+  Angola: "AOA",
+  "Democratic Republic of Congo": "CDF",
+  SierraLeone: "SLL",
+  Liberia: "LRD",
+  Gambia: "GMD",
+  Guinea: "GNF",
+  BurkinaFaso: "XOF",
+  Niger: "XOF",
+  Togo: "XOF",
+  Benin: "XOF",
+  Gabon: "XAF",
+  "Congo-Brazzaville": "XAF",
+  Chad: "XAF",
+  "Central African Republic": "XAF",
+  "Equatorial Guinea": "XAF",
+  "São Tomé and Príncipe": "STN",
+};
+
+// 💰 Freelancer registration amount (NGN 5000 + VAT)
+const BASE_AMOUNT_NGN = 5000;
+const VAT_PERCENT = 7.5; // Example VAT
+const TOTAL_AMOUNT_NGN = BASE_AMOUNT_NGN * (1 + VAT_PERCENT / 100);
+
 export const flutterwaveFreelancerIntent = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -41,3 +114,4 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
     next(createError(500, "Error creating Flutterwave payment intent"));
   }
 };
+
