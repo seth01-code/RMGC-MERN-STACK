@@ -7,13 +7,15 @@ import {
   resendOtp,
   forgotPassword,
   resetPassword,
-  freelancerPaymentSuccess
+  freelancerPaymentSuccess,
+  flutterwaveFreelancerIntent,
   // verifyEditOtp,
 } from "../controllers/authController.js";
 
 const router = express.Router();
 
 router.post("/register", register);
+router.post("/flutterwave", flutterwaveFreelancerIntent);
 router.post("/freelancer-payment-success", freelancerPaymentSuccess);
 router.post("/login", login);
 router.post("/logout", logout);

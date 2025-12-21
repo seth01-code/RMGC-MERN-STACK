@@ -5,12 +5,18 @@ import dotenv from "dotenv";
 import createError from "../utils/createError.js";
 import User from "../models/userModel.js";
 import crypto from "crypto";
+import { getExchangeRate } from "../utils/getExchangeRate.js";
 
 dotenv.config();
 
 const OTP_EXPIRATION_TIME = 10 * 60 * 1000; // 2 minutes
 const ADMIN_DOMAIN = "@renewedmindsglobalconsult.com";
 const pendingUsers = new Map(); // Temporary storage for unverified users
+
+const BASE_AMOUNT_NGN = 5000;
+const VAT_PERCENT = 7.5;
+const TOTAL_AMOUNT_NGN = BASE_AMOUNT_NGN * (1 + VAT_PERCENT / 100);
+const SUPPORTED_CURRENCIES = ["NGN", "USD", "EUR"];
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -430,6 +436,63 @@ export const register = async (req, res, next) => {
     next(err);
   }
 };
+
+export const flutterwaveFreelancerIntent = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return next(createError(400, "Email is required"));
+
+    const pendingUser = pendingUsers.get(email);
+    if (!pendingUser) return next(createError(404, "Pending registration not found"));
+
+    let buyerCurrency = pendingUser.country === "USA" ? "USD"
+      : pendingUser.country === "EU" ? "EUR"
+      : "NGN"; // default NGN
+
+    if (!SUPPORTED_CURRENCIES.includes(buyerCurrency)) buyerCurrency = "NGN";
+
+    let amount = TOTAL_AMOUNT_NGN;
+    if (buyerCurrency !== "NGN") {
+      const rate = await getExchangeRate("NGN", buyerCurrency);
+      if (rate) amount = +(TOTAL_AMOUNT_NGN * rate).toFixed(2);
+    }
+
+    const txRef = `freelancer_${Date.now()}_${email}`;
+
+    const response = await axios.post(
+      "https://api.flutterwave.com/v3/payments",
+      {
+        tx_ref: txRef,
+        amount,
+        currency: buyerCurrency,
+        redirect_url: `http://localhost:3000/payment/freelancers/success?tx_ref=${txRef}&email=${email}`,
+        customer: { email },
+        customizations: {
+          title: "Freelancer Registration",
+          description: "One-time registration fee for RMGC freelancers",
+        },
+        meta: { email, purpose: "freelancer_registration" },
+      },
+      {
+        headers: { Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}` },
+      }
+    );
+
+    if (!response.data?.data?.link)
+      return next(createError(500, "Failed to generate payment link"));
+
+    res.status(200).json({
+      paymentLink: response.data.data.link,
+      transactionReference: txRef,
+      amount,
+      currency: buyerCurrency,
+    });
+  } catch (err) {
+    console.error("Flutterwave error:", err.response?.data || err);
+    next(createError(500, "Error creating Flutterwave payment intent"));
+  }
+};
+
 
 export const freelancerPaymentSuccess = async (req, res, next) => {
   const { email, txRef, flwRef, amount, currency } = req.body;
