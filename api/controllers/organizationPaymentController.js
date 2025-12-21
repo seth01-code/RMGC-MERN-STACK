@@ -51,22 +51,20 @@ const initializeSubscription = async (req, res, currency) => {
 
     const payload = {
       tx_ref,
-      amount,
-      currency,
       redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
-      payment_plan: planId,
+      payment_plan: planId, // use only planId for recurring subscription
       customer: {
         email: user.email,
         name: user.fullname || user.username,
-        phone_number: user.phone || "0000000000", // fallback if empty
+        phone_number: user.phone || "0000000000",
       },
       customizations: {
         title: "RMGC Organization Plan",
-        description: `${currency} Subscription Plan`,
+        description: "Subscription Plan",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
-      meta: { planId, currency, userId },
+      meta: { planId, userId },
     };
 
     const flwRes = await axios.post(
