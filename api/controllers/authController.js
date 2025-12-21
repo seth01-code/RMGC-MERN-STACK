@@ -443,18 +443,28 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
     if (!email) return next(createError(400, "Email is required"));
 
     const pendingUser = pendingUsers.get(email);
-    if (!pendingUser) return next(createError(404, "Pending registration not found"));
+    if (!pendingUser)
+      return next(createError(404, "Pending registration not found"));
 
-    let buyerCurrency = pendingUser.country === "USA" ? "USD"
-      : pendingUser.country === "EU" ? "EUR"
-      : "NGN"; // default NGN
+    // 🔒 Hardcoded prices
+    let currency = "NGN";
+    let amount = 5200;
 
-    if (!SUPPORTED_CURRENCIES.includes(buyerCurrency)) buyerCurrency = "NGN";
-
-    let amount = TOTAL_AMOUNT_NGN;
-    if (buyerCurrency !== "NGN") {
-      const rate = await getExchangeRate("NGN", buyerCurrency);
-      if (rate) amount = +(TOTAL_AMOUNT_NGN * rate).toFixed(2);
+    if (pendingUser.country === "USA") {
+      currency = "USD";
+      amount = 4;
+    } else if (
+      ["UK", "United Kingdom"].includes(pendingUser.country)
+    ) {
+      currency = "GBP";
+      amount = 4;
+    } else if (
+      ["Germany", "France", "Italy", "Spain", "Netherlands", "EU"].includes(
+        pendingUser.country
+      )
+    ) {
+      currency = "EUR";
+      amount = 4;
     }
 
     const txRef = `freelancer_${Date.now()}_${email}`;
@@ -464,34 +474,41 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
       {
         tx_ref: txRef,
         amount,
-        currency: buyerCurrency,
-        redirect_url: `http://localhost:3000/payment/freelancers/success?tx_ref=${txRef}&email=${email}`,
+        currency,
+        redirect_url: `${process.env.FRONTEND_URL}/payment/freelancers/success?tx_ref=${txRef}&email=${email}`,
         customer: { email },
         customizations: {
           title: "Freelancer Registration",
-          description: "One-time registration fee for RMGC freelancers",
+          description: "One-time registration fee",
         },
-        meta: { email, purpose: "freelancer_registration" },
+        meta: {
+          email,
+          role: "freelancer",
+        },
       },
       {
-        headers: { Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}` },
+        headers: {
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+        },
       }
     );
 
-    if (!response.data?.data?.link)
+    const paymentLink = response?.data?.data?.link;
+    if (!paymentLink)
       return next(createError(500, "Failed to generate payment link"));
 
     res.status(200).json({
-      paymentLink: response.data.data.link,
-      transactionReference: txRef,
+      paymentLink,
       amount,
-      currency: buyerCurrency,
+      currency,
+      txRef,
     });
   } catch (err) {
-    console.error("Flutterwave error:", err.response?.data || err);
+    console.error("Flutterwave intent error:", err.response?.data || err.message);
     next(createError(500, "Error creating Flutterwave payment intent"));
   }
 };
+
 
 
 export const freelancerPaymentSuccess = async (req, res, next) => {
