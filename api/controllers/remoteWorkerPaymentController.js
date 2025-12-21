@@ -17,27 +17,23 @@ const PLAN_PRICES = {
 // ---------------- CREATE SUBSCRIPTION (REMOTE WORKER) ----------------
 const initializeSubscription = async (req, res, currency) => {
   try {
-    console.log("🔹 Initializing subscription for remote worker...");
-
     const userId = req.user?.id;
-    console.log("User ID from token:", userId);
-
-    if (!userId) return next(createError(401, "Unauthorized"));
+    if (!userId)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const user = await User.findById(userId);
-    console.log("Fetched user from DB:", user);
-
-    if (!user || user.role !== "remote_worker") {
-      return next(createError(400, "Only remote workers can subscribe"));
-    }
+    if (!user || user.role !== "remote_worker")
+      return res.status(400).json({
+        success: false,
+        message: "Only remote workers can subscribe",
+      });
 
     const amount = PLAN_PRICES[currency];
 
-    // ---------------- CREATE A DYNAMIC PLAN ----------------
     const planPayload = {
       name: `VIP ${currency} - ${user.username}`,
       amount,
-      interval: "monthly", // or yearly
+      interval: "monthly",
       currency,
       description: `VIP subscription for ${user.username}`,
     };
@@ -54,12 +50,8 @@ const initializeSubscription = async (req, res, currency) => {
     );
 
     const planId = planRes.data.data.id;
-    console.log("✅ Dynamic plan created:", planId);
-
     const tx_ref = `RW-${currency}-${Date.now()}-${userId}`;
-    console.log("Transaction reference:", tx_ref);
 
-    // Update remote worker VIP subscription in DB
     user.vipSubscription = {
       active: false,
       gateway: "flutterwave",
@@ -69,7 +61,6 @@ const initializeSubscription = async (req, res, currency) => {
       subscriptionId: tx_ref,
     };
     await user.save();
-    console.log("✅ User VIP subscription updated in DB");
 
     const payload = {
       tx_ref,
@@ -79,19 +70,11 @@ const initializeSubscription = async (req, res, currency) => {
       payment_options: "card",
       payment_plan: planId,
       customer: {
-        email: user.email, // ✅ force correct email
+        email: user.email,
         name: user.fullName || user.username,
         phone_number: user.phone || "",
       },
-      customizations: {
-        title: "RMGC Remote Worker VIP Plan",
-        description: `${currency} Subscription Plan`,
-        logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
-      },
-      meta: { planId, currency, userId },
     };
-
-    console.log("Payload for Flutterwave:", JSON.stringify(payload, null, 2));
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/payments",
@@ -104,15 +87,13 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
-    console.log("💰 Flutterwave response:", flwRes.data);
-
     return res.status(200).json({
       success: true,
       checkoutLink: flwRes.data.data.link,
       vipSubscription: user.vipSubscription,
     });
   } catch (err) {
-    console.log(
+    console.error(
       "❌ Remote worker subscription error full:",
       err.response?.data || err.message
     );
