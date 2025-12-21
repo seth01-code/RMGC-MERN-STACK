@@ -3,7 +3,7 @@ import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 
-const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
+const FLW_SECRET = process.env.FLUTTERWAVE_LIVE_SECRET_KEY;
 const FRONTEND_URL = "http://localhost:3000";
 
 // Updated fixed pricing
@@ -16,7 +16,7 @@ const PLAN_PRICES = {
 
 // Flutterwave plan IDs
 const PLAN_IDS = {
-  NGN: "227783",
+  NGN: "151073",
   USD: "151075",
   EUR: "151076",
   GBP: "151077",

@@ -76,7 +76,7 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
     const { email } = req.body;
     if (!email) return next(createError(400, "Email is required"));
 
-    const amount = 5000; // NGN 5000 flat for testing
+    const amount = 5300; // NGN 5000 flat for testing
     const txRef = `freelancer_${Date.now()}_${email}`;
 
     const response = await axios.post(
@@ -95,7 +95,7 @@ export const flutterwaveFreelancerIntent = async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.FLUTTERWAVE_LIVE_SECRET_KEY}`,
         },
       }
     );
