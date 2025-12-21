@@ -179,7 +179,7 @@ import RemoteWorkerPaymentRoute from "./routes/remoteWorkerPaymentRoute.js";
 import jobRoute from "./routes/jobRoute.js";
 import applicationRoute from "./routes/applicationRoute.js";
 import webhookRoute from "./routes/webhookRoute.js";
-import freelancePay from "./routes/flutterwaveFreelancerRoute.js";
+import flutterwaveFreelancerRoute from "./routes/flutterwaveFreelancerRoute.js";
 
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
@@ -195,7 +195,7 @@ app.use("/api/payment", RemoteWorkerPaymentRoute);
 app.use("/api/jobs", jobRoute);
 app.use("/api/application", applicationRoute);
 app.use("/api/webhook", webhookRoute);
-app.use("/api/flutterwave", freelancePay);
+app.use("/api/flutterwave", flutterwaveFreelancerRoute);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
