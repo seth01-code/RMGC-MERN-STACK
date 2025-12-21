@@ -4,7 +4,7 @@ import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_LIVE_SECRET_KEY;
-const FRONTEND_URL =  process.env.FRONTEND_URL || "http://localhost:3000";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Updated fixed pricing
 const PLAN_PRICES = {
@@ -31,7 +31,9 @@ const initializeSubscription = async (req, res, currency) => {
 
     const user = await User.findById(userId);
     if (!user || user.role !== "organization")
-      return res.status(400).json({ success: false, message: "Only organizations can subscribe" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Only organizations can subscribe" });
 
     const amount = PLAN_PRICES[currency];
     const planId = PLAN_IDS[currency];
@@ -57,7 +59,7 @@ const initializeSubscription = async (req, res, currency) => {
       customer: {
         email: user.email,
         name: user.fullname || user.username,
-        phone_number: user.phone || "",
+        phone_number: user.phone || "0000000000", // fallback if empty
       },
       customizations: {
         title: "RMGC Organization Plan",
@@ -89,10 +91,11 @@ const initializeSubscription = async (req, res, currency) => {
       status: err.response?.status,
       data: err.response?.data,
     });
-    return res.status(500).json({ success: false, message: "Subscription failed" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Subscription failed" });
   }
 };
-
 
 // -------------------- EXPORTED CURRENCY CONTROLLERS --------------------
 export const subscribeNGN = async (req, res) =>
