@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Create a payment link for freelancer registration
 // POST /api/flutterwave/freelancer
-router.post("/freelancer", flutterwaveFreelancerIntent);
+router.post("/", flutterwaveFreelancerIntent);
 
 // ✅ Optional: You can add success webhook or endpoint later
 // router.get("/freelancer/success", flutterwaveFreelancerSuccess);
