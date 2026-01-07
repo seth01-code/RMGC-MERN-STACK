@@ -16,19 +16,41 @@ const PLAN_PRICES = {
 
 // ---------------- CREATE SUBSCRIPTION (REMOTE WORKER) ----------------
 const initializeSubscription = async (req, res, currency) => {
+  console.log("🔵 INIT SUBSCRIPTION START", {
+    currency,
+    userId: req.user?.id,
+    env: process.env.NODE_ENV,
+  });
+
   try {
     const userId = req.user?.id;
-    if (!userId)
+    if (!userId) {
+      console.error("🔴 AUTH ERROR: No userId on request");
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     const user = await User.findById(userId);
-    if (!user || user.role !== "remote_worker")
+    if (!user || user.role !== "remote_worker") {
+      console.error("🔴 ROLE ERROR:", {
+        found: !!user,
+        role: user?.role,
+      });
+
       return res.status(400).json({
         success: false,
         message: "Only remote workers can subscribe",
       });
+    }
 
     const amount = PLAN_PRICES[currency];
+    console.log("🟡 PLAN AMOUNT RESOLVED:", amount, currency);
+
+    // ---------- CREATE PLAN ----------
+    console.log("🟠 CREATING PAYMENT PLAN...", {
+      name: `VIP ${currency} - ${user.username}`,
+      interval: "monthly",
+      currency,
+    });
 
     const planPayload = {
       name: `VIP ${currency} - ${user.username}`,
@@ -49,7 +71,14 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
-    const planId = planRes.data.data.id;
+    console.log("🟢 PLAN CREATED SUCCESSFULLY:", planRes.data);
+
+    const planId = planRes.data?.data?.id;
+    if (!planId) {
+      console.error("🔴 PLAN ID MISSING FROM RESPONSE", planRes.data);
+      throw new Error("Plan creation returned no planId");
+    }
+
     const tx_ref = `RW-${currency}-${Date.now()}-${userId}`;
 
     user.vipSubscription = {
@@ -62,6 +91,13 @@ const initializeSubscription = async (req, res, currency) => {
     };
     await user.save();
 
+    console.log("🟢 USER UPDATED WITH PLAN:", {
+      userId,
+      planId,
+      tx_ref,
+    });
+
+    // ---------- INIT PAYMENT ----------
     const payload = {
       tx_ref,
       amount,
@@ -76,6 +112,8 @@ const initializeSubscription = async (req, res, currency) => {
       },
     };
 
+    console.log("🟠 INITIALIZING FLUTTERWAVE PAYMENT...", payload);
+
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/payments",
       payload,
@@ -87,19 +125,23 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
+    console.log("🟢 PAYMENT INIT SUCCESS:", flwRes.data);
+
     return res.status(200).json({
       success: true,
       checkoutLink: flwRes.data.data.link,
       vipSubscription: user.vipSubscription,
     });
   } catch (err) {
-    console.error(
-      "❌ Remote worker subscription error full:",
-      err.response?.data || err.message
-    );
-    return res
-      .status(500)
-      .json({ success: false, message: "Subscription failed" });
+    console.error("❌ SUBSCRIPTION FAILED");
+    console.error("STATUS:", err.response?.status);
+    console.error("FLW RESPONSE:", err.response?.data);
+    console.error("MESSAGE:", err.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Subscription failed",
+    });
   }
 };
 
