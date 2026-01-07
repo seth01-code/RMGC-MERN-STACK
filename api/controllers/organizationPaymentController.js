@@ -40,7 +40,9 @@ const initializeSubscription = async (req, res, currency) => {
     const user = await User.findById(userId);
     if (!user) {
       console.error("🔴 USER NOT FOUND:", userId);
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     if (user.role !== "organization") {
@@ -102,24 +104,27 @@ const initializeSubscription = async (req, res, currency) => {
       tx_ref,
       redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
-      payment_plan: planId,
+
+      amount: PLAN_PRICES[currency], // ✅ REQUIRED IN LIVE
+      currency, // ✅ REQUIRED IN LIVE
+      payment_plan: planId, // ✅ KEEP THIS
+
       customer: {
         email: user.email,
         name: user.fullname || user.username,
         phone_number: phoneNumber,
       },
+
       customizations: {
         title: "RMGC Organization Plan",
         description: "Subscription Plan",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
+
       meta: { planId, userId },
     };
 
-    console.log(
-      "🚀 PAYLOAD TO FLUTTERWAVE:",
-      JSON.stringify(payload, null, 2)
-    );
+    console.log("🚀 PAYLOAD TO FLUTTERWAVE:", JSON.stringify(payload, null, 2));
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/payments",
