@@ -1,25 +1,16 @@
 // controllers/organizationSubscriptionController.js
 import axios from "axios";
 import User from "../models/userModel.js";
-import createError from "../utils/createError.js";
 
-const FLW_SECRET = process.env.FLUTTERWAVE_LIVE_SECRET_KEY;
+const FLW_SECRET = process.env.FLUTTERWAVE_TEST_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://localhost:3000";
 
-// Updated fixed pricing
+// Base plan amounts for organizations
 const PLAN_PRICES = {
-  NGN: 54000,
+  NGN: 50000,
   USD: 45,
   EUR: 35,
   GBP: 35,
-};
-
-// Flutterwave plan IDs (LIVE dashboard)
-const PLAN_IDS = {
-  NGN: "151073",
-  USD: "151075",
-  EUR: "151076",
-  GBP: "151077",
 };
 
 // ---------------- CREATE SUBSCRIPTION ----------------
@@ -32,45 +23,52 @@ const initializeSubscription = async (req, res, currency) => {
 
   try {
     const userId = req.user?.id;
-    if (!userId) {
-      console.error("🔴 AUTH ERROR: Missing userId");
+    if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
 
     const user = await User.findById(userId);
-    if (!user) {
-      console.error("🔴 USER NOT FOUND:", userId);
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-
-    if (user.role !== "organization") {
-      console.error("🔴 ROLE ERROR:", user.role);
-      return res.status(400).json({
-        success: false,
-        message: "Only organizations can subscribe",
-      });
-    }
-
-    const planId = PLAN_IDS[currency];
-    const amount = PLAN_PRICES[currency];
-
-    console.log("🟡 PLAN RESOLUTION:", {
-      currency,
-      planId,
-      amount,
-    });
-
-    if (!planId || !amount) {
-      console.error("🔴 INVALID PLAN CONFIG", { currency });
+    if (!user || user.role !== "organization") {
+      console.error("🔴 ROLE ERROR", { found: !!user, role: user?.role });
       return res
         .status(400)
-        .json({ success: false, message: "Invalid currency or plan" });
+        .json({ success: false, message: "Only organizations can subscribe" });
     }
 
+    const amount = PLAN_PRICES[currency];
+    console.log("🟡 PLAN AMOUNT RESOLVED:", amount, currency);
+
+    // ---------- CREATE PLAN ON FLUTTERWAVE ----------
+    const planPayload = {
+      name: `VIP ${currency} - ${user.username}`,
+      amount,
+      interval: "monthly",
+      currency,
+      description: `VIP subscription for ${user.username}`,
+    };
+
+    console.log("🟠 CREATING PAYMENT PLAN...", planPayload);
+
+    const planRes = await axios.post(
+      "https://api.flutterwave.com/v3/payment-plans",
+      planPayload,
+      {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const planId = planRes.data?.data?.id;
+    if (!planId) {
+      console.error("🔴 PLAN CREATION FAILED", planRes.data);
+      throw new Error("Plan creation returned no planId");
+    }
+
+    console.log("🟢 PLAN CREATED SUCCESSFULLY:", planRes.data);
+
+    // ---------- CREATE TRANSACTION ----------
     const tx_ref = `ORG-${currency}-${Date.now()}-${userId}`;
-    console.log("🟡 TX_REF GENERATED:", tx_ref);
 
     user.vipSubscription = {
       active: false,
@@ -82,45 +80,29 @@ const initializeSubscription = async (req, res, currency) => {
     };
     await user.save();
 
-    console.log("🟢 USER UPDATED WITH SUBSCRIPTION META", {
-      userId,
-      planId,
-      currency,
-    });
+    console.log("🟢 USER UPDATED WITH PLAN:", { userId, planId, tx_ref });
 
     const phoneNumber = user.phone?.startsWith("+")
       ? user.phone
       : "+2340000000000";
 
-    console.log("🟡 CUSTOMER DETAILS:", {
-      email: user.email,
-      phoneNumber,
-      name: user.fullname || user.username,
-    });
-
-    console.log("🧪 FRONTEND_URL ENV:", FRONTEND_URL);
-
     const payload = {
       tx_ref,
+      amount, // REQUIRED
+      currency, // REQUIRED
       redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
-
-      amount: PLAN_PRICES[currency], // ✅ REQUIRED IN LIVE
-      currency, // ✅ REQUIRED IN LIVE
-      payment_plan: planId, // ✅ KEEP THIS
-
+      payment_plan: planId, // Newly created plan
       customer: {
         email: user.email,
         name: user.fullname || user.username,
         phone_number: phoneNumber,
       },
-
       customizations: {
         title: "RMGC Organization Plan",
         description: "Subscription Plan",
         logo: "https://www.renewedmindsglobalconsult.com/assets/logoo-18848d4b.webp",
       },
-
       meta: { planId, userId },
     };
 
@@ -137,7 +119,7 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
-    console.log("🟢 FLUTTERWAVE PAYMENT INIT SUCCESS:", flwRes.data);
+    console.log("🟢 PAYMENT INIT SUCCESS:", flwRes.data);
 
     return res.status(200).json({
       success: true,

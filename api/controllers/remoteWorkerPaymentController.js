@@ -3,18 +3,17 @@ import axios from "axios";
 import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 
-const FLW_SECRET = process.env.FLUTTERWAVE_LIVE_SECRET_KEY;
+const FLW_SECRET = process.env.FLUTTERWAVE_TEST_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Fixed pricing for remote worker VIP subscription
 const PLAN_PRICES = {
-  NGN: 12000,
+  NGN: 10000, // base amount
   USD: 30,
   EUR: 25,
   GBP: 25,
 };
 
-// ---------------- CREATE SUBSCRIPTION (REMOTE WORKER) ----------------
 const initializeSubscription = async (req, res, currency) => {
   console.log("🔵 INIT SUBSCRIPTION START", {
     currency,
@@ -24,34 +23,19 @@ const initializeSubscription = async (req, res, currency) => {
 
   try {
     const userId = req.user?.id;
-    if (!userId) {
-      console.error("🔴 AUTH ERROR: No userId on request");
+    if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
 
     const user = await User.findById(userId);
-    if (!user || user.role !== "remote_worker") {
-      console.error("🔴 ROLE ERROR:", {
-        found: !!user,
-        role: user?.role,
-      });
-
-      return res.status(400).json({
-        success: false,
-        message: "Only remote workers can subscribe",
-      });
-    }
+    if (!user || user.role !== "remote_worker")
+      return res
+        .status(400)
+        .json({ success: false, message: "Only remote workers can subscribe" });
 
     const amount = PLAN_PRICES[currency];
     console.log("🟡 PLAN AMOUNT RESOLVED:", amount, currency);
 
     // ---------- CREATE PLAN ----------
-    console.log("🟠 CREATING PAYMENT PLAN...", {
-      name: `VIP ${currency} - ${user.username}`,
-      interval: "monthly",
-      currency,
-    });
-
     const planPayload = {
       name: `VIP ${currency} - ${user.username}`,
       amount,
@@ -71,14 +55,7 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
-    console.log("🟢 PLAN CREATED SUCCESSFULLY:", planRes.data);
-
     const planId = planRes.data?.data?.id;
-    if (!planId) {
-      console.error("🔴 PLAN ID MISSING FROM RESPONSE", planRes.data);
-      throw new Error("Plan creation returned no planId");
-    }
-
     const tx_ref = `RW-${currency}-${Date.now()}-${userId}`;
 
     user.vipSubscription = {
@@ -91,16 +68,12 @@ const initializeSubscription = async (req, res, currency) => {
     };
     await user.save();
 
-    console.log("🟢 USER UPDATED WITH PLAN:", {
-      userId,
-      planId,
-      tx_ref,
-    });
+    console.log("🟢 USER UPDATED WITH PLAN:", { userId, planId, tx_ref });
 
-    // ---------- INIT PAYMENT ----------
+    // ---------- INIT PAYMENT -----------//
     const payload = {
       tx_ref,
-      amount,
+      amount, // must include this
       currency,
       redirect_url: `${FRONTEND_URL}/remote/dashboard`,
       payment_options: "card",
@@ -112,7 +85,7 @@ const initializeSubscription = async (req, res, currency) => {
       },
     };
 
-    console.log("🟠 INITIALIZING FLUTTERWAVE PAYMENT...", payload);
+    console.log("🚀 PAYLOAD TO FLUTTERWAVE:", JSON.stringify(payload, null, 2));
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/payments",
@@ -125,7 +98,7 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
-    console.log("🟢 PAYMENT INIT SUCCESS:", flwRes.data);
+    console.log("✅ PAYMENT INIT SUCCESS:", flwRes.data);
 
     return res.status(200).json({
       success: true,
@@ -133,15 +106,14 @@ const initializeSubscription = async (req, res, currency) => {
       vipSubscription: user.vipSubscription,
     });
   } catch (err) {
-    console.error("❌ SUBSCRIPTION FAILED");
-    console.error("STATUS:", err.response?.status);
-    console.error("FLW RESPONSE:", err.response?.data);
-    console.error("MESSAGE:", err.message);
-
-    return res.status(500).json({
-      success: false,
-      message: "Subscription failed",
+    console.error("❌ SUBSCRIPTION FAILED", {
+      status: err.response?.status,
+      data: err.response?.data,
+      message: err.message,
     });
+    return res
+      .status(500)
+      .json({ success: false, message: "Subscription failed" });
   }
 };
 
