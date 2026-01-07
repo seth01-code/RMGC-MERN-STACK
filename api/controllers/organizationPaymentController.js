@@ -4,7 +4,7 @@ import User from "../models/userModel.js";
 import createError from "../utils/createError.js";
 
 const FLW_SECRET = process.env.FLUTTERWAVE_LIVE_SECRET_KEY;
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://yourdomain.com"; // must be HTTPS
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://localhost:3000";
 
 // Updated fixed pricing
 const PLAN_PRICES = {
@@ -14,7 +14,7 @@ const PLAN_PRICES = {
   GBP: 35,
 };
 
-// Flutterwave plan IDs (must match live dashboard exactly)
+// Flutterwave plan IDs (LIVE dashboard)
 const PLAN_IDS = {
   NGN: "151073",
   USD: "151075",
@@ -24,47 +24,85 @@ const PLAN_IDS = {
 
 // ---------------- CREATE SUBSCRIPTION ----------------
 const initializeSubscription = async (req, res, currency) => {
+  console.log("🔵 INIT ORG SUBSCRIPTION START", {
+    currency,
+    userId: req.user?.id,
+    env: process.env.NODE_ENV,
+  });
+
   try {
     const userId = req.user?.id;
-    if (!userId)
+    if (!userId) {
+      console.error("🔴 AUTH ERROR: Missing userId");
       return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     const user = await User.findById(userId);
-    if (!user || user.role !== "organization")
-      return res
-        .status(400)
-        .json({ success: false, message: "Only organizations can subscribe" });
+    if (!user) {
+      console.error("🔴 USER NOT FOUND:", userId);
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.role !== "organization") {
+      console.error("🔴 ROLE ERROR:", user.role);
+      return res.status(400).json({
+        success: false,
+        message: "Only organizations can subscribe",
+      });
+    }
 
     const planId = PLAN_IDS[currency];
-    if (!planId)
+    const amount = PLAN_PRICES[currency];
+
+    console.log("🟡 PLAN RESOLUTION:", {
+      currency,
+      planId,
+      amount,
+    });
+
+    if (!planId || !amount) {
+      console.error("🔴 INVALID PLAN CONFIG", { currency });
       return res
         .status(400)
         .json({ success: false, message: "Invalid currency or plan" });
+    }
 
-    // Generate a unique transaction reference
     const tx_ref = `ORG-${currency}-${Date.now()}-${userId}`;
+    console.log("🟡 TX_REF GENERATED:", tx_ref);
 
-    // Update user VIP subscription in DB
     user.vipSubscription = {
       active: false,
       gateway: "flutterwave",
       currency,
-      amount: PLAN_PRICES[currency],
+      amount,
       planId,
       subscriptionId: tx_ref,
     };
     await user.save();
 
-    // Ensure phone number is in international format
+    console.log("🟢 USER UPDATED WITH SUBSCRIPTION META", {
+      userId,
+      planId,
+      currency,
+    });
+
     const phoneNumber = user.phone?.startsWith("+")
       ? user.phone
-      : "+2340000000000"; // fallback
+      : "+2340000000000";
+
+    console.log("🟡 CUSTOMER DETAILS:", {
+      email: user.email,
+      phoneNumber,
+      name: user.fullname || user.username,
+    });
+
+    console.log("🧪 FRONTEND_URL ENV:", FRONTEND_URL);
 
     const payload = {
       tx_ref,
       redirect_url: `${FRONTEND_URL}/organization/dashboard`,
       payment_options: "card",
-      payment_plan: planId, // use planId only
+      payment_plan: planId,
       customer: {
         email: user.email,
         name: user.fullname || user.username,
@@ -78,7 +116,10 @@ const initializeSubscription = async (req, res, currency) => {
       meta: { planId, userId },
     };
 
-    console.log("🚀 Payload to Flutterwave:", JSON.stringify(payload, null, 2));
+    console.log(
+      "🚀 PAYLOAD TO FLUTTERWAVE:",
+      JSON.stringify(payload, null, 2)
+    );
 
     const flwRes = await axios.post(
       "https://api.flutterwave.com/v3/payments",
@@ -91,7 +132,7 @@ const initializeSubscription = async (req, res, currency) => {
       }
     );
 
-    console.log("✅ Flutterwave response:", flwRes.data);
+    console.log("🟢 FLUTTERWAVE PAYMENT INIT SUCCESS:", flwRes.data);
 
     return res.status(200).json({
       success: true,
@@ -99,14 +140,15 @@ const initializeSubscription = async (req, res, currency) => {
       vipSubscription: user.vipSubscription,
     });
   } catch (err) {
-    console.error("❌ Subscription error full:", {
-      message: err.message,
-      status: err.response?.status,
-      data: err.response?.data,
+    console.error("❌ ORG SUBSCRIPTION FAILED");
+    console.error("STATUS:", err.response?.status);
+    console.error("FLW RESPONSE:", err.response?.data);
+    console.error("MESSAGE:", err.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Subscription failed",
     });
-    return res
-      .status(500)
-      .json({ success: false, message: "Subscription failed" });
   }
 };
 
