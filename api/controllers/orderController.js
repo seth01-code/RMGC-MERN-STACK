@@ -75,7 +75,7 @@ export const intent = async (req, res, next) => {
         amount: convertedPrice * 100, // Convert to kobo/cents
         email: user.email,
         currency: buyerCurrency,
-        callback_url: `http://localhost:3000/payment-processing`,
+        callback_url: `https://renewedmindsglobalconsult.com/payment-processing`,
         metadata: {
           gigId: gig._id,
           buyerId: userId,
@@ -103,7 +103,7 @@ export const intent = async (req, res, next) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_TEST_SECRET_KEY}`,
+          Authorization: `Bearer ${process.env.PAYSTACK_LIVE_SECRET_KEY}`,
         },
       }
     );
@@ -120,7 +120,7 @@ export const intent = async (req, res, next) => {
 
 export const paystackWebhook = async (req, res, next) => {
   try {
-    const paystackSecret = process.env.PAYSTACK_TEST_SECRET_KEY;
+    const paystackSecret = process.env.PAYSTACK_LIVE_SECRET_KEY;
     const hash = crypto
       .createHmac("sha512", paystackSecret)
       .update(JSON.stringify(req.body))
