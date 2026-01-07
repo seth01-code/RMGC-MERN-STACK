@@ -2,7 +2,7 @@
 import axios from "axios";
 import User from "../models/userModel.js";
 
-const FLW_SECRET = process.env.FLUTTERWAVE_TEST_SECRET_KEY;
+const FLW_SECRET = process.env.FLUTTERWAVE_SECRET_KEY;
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://localhost:3000";
 
 // Base plan amounts for organizations
