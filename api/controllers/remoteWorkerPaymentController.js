@@ -39,7 +39,7 @@ const initializeSubscription = async (req, res, currency) => {
     const planPayload = {
       name: `VIP ${currency} - ${user.username}`,
       amount,
-      interval: "monthly",
+      interval: "yearly", // <-- changed from monthly
       currency,
       description: `VIP subscription for ${user.username}`,
     };
@@ -73,7 +73,7 @@ const initializeSubscription = async (req, res, currency) => {
     // ---------- INIT PAYMENT -----------//
     const payload = {
       tx_ref,
-      amount, // must include this
+      amount,
       currency,
       redirect_url: `${FRONTEND_URL}/remote/dashboard`,
       payment_options: "card",
@@ -83,6 +83,7 @@ const initializeSubscription = async (req, res, currency) => {
         name: user.fullName || user.username,
         phone_number: user.phone || "0000000000",
       },
+      meta: { userId, planId }, // <-- add this for webhook identification
     };
 
     console.log("🚀 PAYLOAD TO FLUTTERWAVE:", JSON.stringify(payload, null, 2));

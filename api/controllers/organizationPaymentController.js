@@ -7,7 +7,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "https://localhost:3000";
 
 // Base plan amounts for organizations
 const PLAN_PRICES = {
-  NGN: 50000,
+  NGN: 54000,
   USD: 45,
   EUR: 35,
   GBP: 35,
@@ -41,7 +41,7 @@ const initializeSubscription = async (req, res, currency) => {
     const planPayload = {
       name: `VIP ${currency} - ${user.username}`,
       amount,
-      interval: "monthly",
+      interval: "yearly", // <-- changed from monthly
       currency,
       description: `VIP subscription for ${user.username}`,
     };
