@@ -8,7 +8,6 @@ export const createJob = async (req, res, next) => {
   try {
     const job = await Job.create({
       ...req.body,
-      type: "remote",
       organizationId: req.user.id,
     });
 

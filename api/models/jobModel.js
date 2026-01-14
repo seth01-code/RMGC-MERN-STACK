@@ -7,9 +7,9 @@ const JobSchema = new mongoose.Schema(
     description: { type: String, required: true },
 
     salaryRange: {
-      min: { type: Number, default: 0 },
-      max: { type: Number, default: 0 },
-      currency: { type: String, default: "NGN" },
+      min: Number,
+      max: Number,
+      currency: { type: String, enum: ["USD", "NGN"], default: "NGN" },
     },
 
     location: { type: String, default: "Remote" },
@@ -27,8 +27,11 @@ const JobSchema = new mongoose.Schema(
     deadline: { type: Date, required: true },
 
     status: { type: String, enum: ["Active", "Closed"], default: "Active" },
-
-    type: { type: String, default: "Full Time" },
+    type: {
+      type: String,
+      enum: ["Full-time", "Part-time", "Contract", "Internship", "Temporary"],
+      default: "Full-time",
+    },
 
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
