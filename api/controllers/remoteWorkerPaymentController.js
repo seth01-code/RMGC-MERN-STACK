@@ -8,7 +8,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Fixed pricing for remote worker VIP subscription
 const PLAN_PRICES = {
-  NGN: 10000, // base amount
+  NGN: 12000, // base amount
   USD: 30,
   EUR: 25,
   GBP: 25,
