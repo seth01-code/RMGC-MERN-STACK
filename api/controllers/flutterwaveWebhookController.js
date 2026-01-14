@@ -55,7 +55,8 @@ export const handleFlutterwaveWebhook = async (req, res) => {
     // ---------------- SUCCESSFUL CHARGE ----------------
     if (isSuccessful) {
       const now = new Date();
-      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const endDate = new Date(now);
+      endDate.setFullYear(now.getFullYear() + 1); // Adds 1 year
 
       user.vipSubscription = {
         ...user.vipSubscription,
