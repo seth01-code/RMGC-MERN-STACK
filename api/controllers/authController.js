@@ -6,6 +6,7 @@ import createError from "../utils/createError.js";
 import User from "../models/userModel.js";
 import crypto from "crypto";
 import { getExchangeRate } from "../utils/getExchangeRate.js";
+import { savePendingUserToSheet } from "../utils/pendingUserSheet.js";
 
 dotenv.config();
 
@@ -336,8 +337,9 @@ export const register = async (req, res, next) => {
       countryOfResidence,
       nextOfKin,
       services = [],
-      role, // "organization" or "remote_worker"
-      tier, // "free" or "vip"
+      role,
+      tier,
+
       // Organization fields
       organizationName,
       organizationWebsite,
@@ -350,7 +352,7 @@ export const register = async (req, res, next) => {
       organizationCountry,
       organizationIndustry,
       organizationCompanySize,
-      organizationSocialLinks = {}, // { linkedin, twitter, facebook }
+      organizationSocialLinks = {},
     } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -358,9 +360,9 @@ export const register = async (req, res, next) => {
 
     const otp = generateOTP();
     const hashedOtp = hashOTP(otp);
-    const otpExpires = Date.now() + OTP_EXPIRATION_TIME;
+    const otpExpires = Date.now() + 10 * 60 * 1000;
 
-    // Store pending user
+    // Store pending user (UNCHANGED)
     pendingUsers.set(email, {
       username: username?.trim(),
       email,
@@ -379,6 +381,7 @@ export const register = async (req, res, next) => {
       stateOfResidence,
       countryOfResidence,
       services,
+
       nextOfKin: {
         fullName: nextOfKin?.fullName || "",
         dob: nextOfKin?.dob || null,
@@ -389,19 +392,18 @@ export const register = async (req, res, next) => {
         phone: nextOfKin?.phone || "",
       },
 
-      // Role and tier
       role:
         role === "organization"
           ? "organization"
           : role === "remote_worker"
           ? "remote_worker"
           : null,
+
       tier:
         role === "remote_worker" && tier?.toLowerCase() === "vip"
           ? "vip"
           : "free",
 
-      // Organization data (only if role = organization)
       organization:
         role === "organization"
           ? {
@@ -430,8 +432,15 @@ export const register = async (req, res, next) => {
       otpExpires,
     });
 
+    // ✅ NEW: Save to spreadsheet (safe + non-blocking)
+    await savePendingUserToSheet(pendingUsers.get(email));
+
     await sendOtpEmail(email, username, otp);
-    res.status(201).json({ message: "OTP sent. Please verify.", email });
+
+    res.status(201).json({
+      message: "OTP sent. Please verify.",
+      email,
+    });
   } catch (err) {
     next(err);
   }
