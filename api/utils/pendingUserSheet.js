@@ -1,38 +1,86 @@
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
 
-let doc;
-
 /**
- * Initialize Google Sheet safely
+ * ---- SAFETY CHECK ----
+ * Spreadsheet logging must NEVER crash the app
  */
-async function initDoc() {
-  if (doc) return;
-
-  const {
-    GOOGLE_SHEET_ID,
-    GOOGLE_CLIENT_EMAIL,
-    GOOGLE_PRIVATE_KEY,
-  } = process.env;
-
-  // Hard safety guard — NEVER crash app
-  if (!GOOGLE_SHEET_ID || !GOOGLE_CLIENT_EMAIL || !GOOGLE_PRIVATE_KEY) {
-    console.error("❌ Google Sheets env vars missing");
-    return;
-  }
-
-  const auth = new JWT({
-    email: GOOGLE_CLIENT_EMAIL,
-    key: GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-
-  doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, auth);
-  await doc.loadInfo();
+if (
+  !process.env.GOOGLE_SHEET_ID ||
+  !process.env.GOOGLE_CLIENT_EMAIL ||
+  !process.env.GOOGLE_PRIVATE_KEY
+) {
+  console.warn("⚠️ Google Sheets env vars missing — logging disabled");
 }
 
 /**
- * Sheet routing logic (authoritative)
+ * ---- AUTH (v5 compatible) ----
+ */
+const serviceAccountAuth =
+  process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY
+    ? new JWT({
+        email: process.env.GOOGLE_CLIENT_EMAIL,
+        key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+      })
+    : null;
+
+/**
+ * ---- DOC INSTANCE ----
+ */
+const doc =
+  serviceAccountAuth && process.env.GOOGLE_SHEET_ID
+    ? new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth)
+    : null;
+
+/**
+ * ---- LOAD DOC ONCE ----
+ */
+async function initDoc() {
+  if (!doc) return;
+  if (!doc.title) {
+    await doc.loadInfo();
+  }
+}
+
+/**
+ * ---- ENSURE HEADERS EXIST (v5 REQUIREMENT) ----
+ */
+async function ensureHeaders(sheet) {
+  if (sheet.headerValues?.length) return;
+
+  await sheet.setHeaderRow([
+    "email",
+    "username",
+    "fullName",
+    "phone",
+
+    "accountType",
+    "isSeller",
+    "tier",
+
+    "country",
+    "stateOfResidence",
+    "countryOfResidence",
+    "yearsOfExperience",
+
+    "languages",
+    "services",
+
+    "nextOfKinName",
+    "nextOfKinPhone",
+
+    "organizationName",
+    "organizationIndustry",
+    "organizationSize",
+
+    "status",
+    "lastUpdated",
+  ]);
+}
+
+/**
+ * ---- AUTHORITATIVE SHEET ROUTING ----
  */
 function getSheetByRole(user) {
   if (user.role === "organization") return "Organizations_Pending";
@@ -42,14 +90,20 @@ function getSheetByRole(user) {
   return "Others_Pending";
 }
 
+/**
+ * ---- MAIN LOGGER (SAFE, SILENT FAIL) ----
+ */
 export async function savePendingUserToSheet(user) {
   try {
+    if (!doc) return;
+
     await initDoc();
-    if (!doc) return; // safety
 
     const sheetTitle = getSheetByRole(user);
     const sheet = doc.sheetsByTitle[sheetTitle];
     if (!sheet) return;
+
+    await ensureHeaders(sheet);
 
     const rows = await sheet.getRows();
     const existing = rows.find((r) => r.email === user.email);
@@ -65,21 +119,21 @@ export async function savePendingUserToSheet(user) {
 
     const rowData = {
       email: user.email,
-      username: user.username,
-      fullName: user.fullName,
-      phone: user.phone,
+      username: user.username || "",
+      fullName: user.fullName || "",
+      phone: user.phone || "",
 
       accountType,
       isSeller: user.isSeller ? "yes" : "no",
       tier: user.tier || "free",
 
-      country: user.country,
-      stateOfResidence: user.stateOfResidence,
-      countryOfResidence: user.countryOfResidence,
+      country: user.country || "",
+      stateOfResidence: user.stateOfResidence || "",
+      countryOfResidence: user.countryOfResidence || "",
       yearsOfExperience: user.yearsOfExperience || "",
 
-      languages: user.languages?.join(", "),
-      services: user.services?.join(", "),
+      languages: user.languages?.join(", ") || "",
+      services: user.services?.join(", ") || "",
 
       nextOfKinName: user.nextOfKin?.fullName || "",
       nextOfKinPhone: user.nextOfKin?.phone || "",
@@ -101,6 +155,7 @@ export async function savePendingUserToSheet(user) {
       await sheet.addRow(rowData);
     }
   } catch (err) {
+    // 🚨 NEVER break registration
     console.error("Spreadsheet logging failed:", err.message);
   }
 }
