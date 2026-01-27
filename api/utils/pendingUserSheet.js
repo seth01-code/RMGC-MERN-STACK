@@ -1,21 +1,34 @@
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
 
-const serviceAccountAuth = new JWT({
-  email: process.env.GOOGLE_CLIENT_EMAIL,
-  key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-});
+let doc;
 
-const doc = new GoogleSpreadsheet(
-  process.env.GOOGLE_SHEET_ID,
-  serviceAccountAuth
-);
-
+/**
+ * Initialize Google Sheet safely
+ */
 async function initDoc() {
-  if (!doc.title) {
-    await doc.loadInfo();
+  if (doc) return;
+
+  const {
+    GOOGLE_SHEET_ID,
+    GOOGLE_CLIENT_EMAIL,
+    GOOGLE_PRIVATE_KEY,
+  } = process.env;
+
+  // Hard safety guard — NEVER crash app
+  if (!GOOGLE_SHEET_ID || !GOOGLE_CLIENT_EMAIL || !GOOGLE_PRIVATE_KEY) {
+    console.error("❌ Google Sheets env vars missing");
+    return;
   }
+
+  const auth = new JWT({
+    email: GOOGLE_CLIENT_EMAIL,
+    key: GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  doc = new GoogleSpreadsheet(GOOGLE_SHEET_ID, auth);
+  await doc.loadInfo();
 }
 
 /**
@@ -32,6 +45,7 @@ function getSheetByRole(user) {
 export async function savePendingUserToSheet(user) {
   try {
     await initDoc();
+    if (!doc) return; // safety
 
     const sheetTitle = getSheetByRole(user);
     const sheet = doc.sheetsByTitle[sheetTitle];
