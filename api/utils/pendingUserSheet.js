@@ -1,28 +1,59 @@
+// utils/pendingUserSheet.js
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
 
+// --------------------
+// SAFETY CHECK: Env vars
+// --------------------
+const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
+let PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
+
+if (PRIVATE_KEY) {
+  // PM2 / Windows safe: remove extra quotes and fix newlines
+  PRIVATE_KEY = PRIVATE_KEY.replace(/\\n/g, "\n").replace(/^"|"$/g, "");
+}
+
+if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) {
+  console.warn(
+    "⚠️ Google Sheets env vars missing or invalid — logging disabled",
+  );
+}
+
+// --------------------
+// Auth & doc instance
+// --------------------
 const serviceAccountAuth =
-  process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY
+  CLIENT_EMAIL && PRIVATE_KEY
     ? new JWT({
-        email: process.env.GOOGLE_CLIENT_EMAIL,
-        key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        email: CLIENT_EMAIL,
+        key: PRIVATE_KEY,
         scopes: ["https://www.googleapis.com/auth/spreadsheets"],
       })
     : null;
 
 const doc =
-  serviceAccountAuth && process.env.GOOGLE_SHEET_ID
-    ? new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth)
+  serviceAccountAuth && SHEET_ID
+    ? new GoogleSpreadsheet(SHEET_ID, serviceAccountAuth)
     : null;
 
+// --------------------
+// Init doc once
+// --------------------
 async function initDoc() {
   if (!doc) return;
-  if (!doc.title) await doc.loadInfo();
+  if (!doc.title) {
+    await doc.loadInfo();
+    console.log(`📄 Loaded spreadsheet: ${doc.title}`);
+  }
 }
 
+// --------------------
+// Ensure headers exist
+// --------------------
 async function ensureHeaders(sheet) {
   if (!sheet.headerValues || sheet.headerValues.length === 0) {
-    await sheet.setHeaderRow([
+    const headers = [
       "email",
       "username",
       "fullName",
@@ -43,12 +74,17 @@ async function ensureHeaders(sheet) {
       "organizationSize",
       "status",
       "lastUpdated",
-    ]);
-    console.log(`Headers set for sheet: ${sheet.title}`);
+    ];
+    await sheet.setHeaderRow(headers);
+    console.log(`📝 Headers set for sheet: ${sheet.title}`);
   }
 }
 
+// --------------------
+// Sheet routing
+// --------------------
 function getSheetByRole(user) {
+  if (!user) return null;
   if (user.role === "organization") return "Organizations_Pending";
   if (user.role === "remote_worker") return "Remote_Workers_Pending";
   if (user.isSeller === true) return "Freelancers_Pending";
@@ -56,22 +92,27 @@ function getSheetByRole(user) {
   return "Others_Pending";
 }
 
+// --------------------
+// Main safe logger
+// --------------------
 export async function savePendingUserToSheet(user) {
   try {
-    if (!doc || !user) return console.warn("No doc or user provided");
+    if (!doc) return console.warn("No doc configured, skipping sheet logging");
+    if (!user) return console.warn("No user provided, skipping sheet logging");
 
     await initDoc();
 
-    const sheetTitle = getSheetByRole(user);
-    const sheet = doc.sheetsByTitle[sheetTitle];
-    if (!sheet)
+    const sheetName = getSheetByRole(user);
+    const sheet = doc.sheetsByTitle[sheetName];
+
+    if (!sheet) {
       return console.warn(
-        `Sheet not found: ${sheetTitle}. Check exact tab name in spreadsheet`,
+        `Sheet not found: ${sheetName}. Check the exact tab name in spreadsheet`,
       );
+    }
 
     await ensureHeaders(sheet);
 
-    // Check if duplicate email exists
     const rows = await sheet.getRows();
     const existing = rows.find((r) => r.email === user.email);
 
@@ -110,10 +151,10 @@ export async function savePendingUserToSheet(user) {
     if (existing) {
       Object.assign(existing, rowData);
       await existing.save();
-      console.log(`Updated row for email: ${user.email}`);
+      console.log(`♻️ Updated row for: ${user.email}`);
     } else {
       await sheet.addRow(rowData);
-      console.log(`Added row for email: ${user.email}`);
+      console.log(`✅ Added row for: ${user.email}`);
     }
   } catch (err) {
     console.error("Spreadsheet logging failed:", err.message);
