@@ -1,13 +1,19 @@
 import { GoogleSpreadsheet } from "google-spreadsheet";
+import { JWT } from "google-auth-library";
 
-const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
+const serviceAccountAuth = new JWT({
+  email: process.env.GOOGLE_CLIENT_EMAIL,
+  key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+});
+
+const doc = new GoogleSpreadsheet(
+  process.env.GOOGLE_SHEET_ID,
+  serviceAccountAuth
+);
 
 async function initDoc() {
-  if (!doc._rawProperties) {
-    await doc.useServiceAccountAuth({
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-    });
+  if (!doc.title) {
     await doc.loadInfo();
   }
 }
@@ -29,7 +35,6 @@ export async function savePendingUserToSheet(user) {
 
     const sheetTitle = getSheetByRole(user);
     const sheet = doc.sheetsByTitle[sheetTitle];
-
     if (!sheet) return;
 
     const rows = await sheet.getRows();
@@ -82,7 +87,6 @@ export async function savePendingUserToSheet(user) {
       await sheet.addRow(rowData);
     }
   } catch (err) {
-    // Silent fail — spreadsheet must NEVER break registration
     console.error("Spreadsheet logging failed:", err.message);
   }
 }
