@@ -49,6 +49,9 @@ export async function savePendingUserToSheet(user) {
     const sheet = doc.sheetsByTitle[sheetName];
     if (!sheet) return console.warn(`Sheet not found: ${sheetName}`);
 
+    // ✅ Load header row before using it
+    await sheet.loadHeaderRow();
+
     if (!sheet.headerValues?.length) {
       const headers = [
         "email","username","fullName","phone","accountType","isSeller","tier",
@@ -97,3 +100,4 @@ export async function savePendingUserToSheet(user) {
     console.error("Spreadsheet logging failed:", err.message);
   }
 }
+
