@@ -35,77 +35,21 @@ export async function savePendingUserToSheet(user) {
 
     await doc.loadInfo();
 
-    const sheetName =
-      user.role === "organization"
-        ? "Organizations_Pending"
-        : user.role === "remote_worker"
-          ? "Remote_Workers_Pending"
-          : user.isSeller
-            ? "Freelancers_Pending"
-            : "Clients_Pending";
+    const sheetName = "PendingUsers"; // your sheet tab name
+    const sheet = doc.sheetsByTitle[sheetName];
+    if (!sheet) return console.warn(`Sheet not found: ${sheetName}`);
 
-    let sheet = doc.sheetsByTitle[sheetName];
+    // ✅ No need to set headers since we did it manually
+    await sheet.loadHeaderRow(); // just to ensure headers are loaded
 
-    if (!sheet) {
-      // Optional: auto-create sheet if it doesn’t exist
-      sheet = await doc.addSheet({ title: sheetName, headerValues: [] });
-      console.log(`🆕 Created new sheet: ${sheetName}`);
-    }
-
-    const headers = [
-      "email",
-      "username",
-      "fullName",
-      "phone",
-      "accountType",
-      "isSeller",
-      "tier",
-      "country",
-      "stateOfResidence",
-      "countryOfResidence",
-      "yearsOfExperience",
-      "languages",
-      "services",
-      "nextOfKinName",
-      "nextOfKinPhone",
-      "organizationName",
-      "organizationIndustry",
-      "organizationSize",
-      "status",
-      "lastUpdated",
-    ];
-
-    // ✅ Ensure header row exists
-    if (!sheet.headerValues || sheet.headerValues.length === 0) {
-      await sheet.setHeaderRow(headers);
-      console.log(`📝 Header row set for sheet: ${sheetName}`);
-    }
-
-    // Reload rows after headers are guaranteed
     const rows = await sheet.getRows();
     const existing = rows.find((r) => r.email === user.email);
 
     const rowData = {
+      name: user.username || user.fullName || "",
       email: user.email,
-      username: user.username || "",
-      fullName: user.fullName || "",
       phone: user.phone || "",
       accountType: user.role || (user.isSeller ? "freelancer" : "client"),
-      isSeller: user.isSeller ? "yes" : "no",
-      tier: user.tier || "free",
-      country: user.country || "",
-      stateOfResidence: user.stateOfResidence || "",
-      countryOfResidence: user.countryOfResidence || "",
-      yearsOfExperience: user.yearsOfExperience || "",
-      languages: user.languages?.join(", ") || "",
-      services: user.services?.join(", ") || "",
-      nextOfKinName: user.nextOfKin?.fullName || "",
-      nextOfKinPhone: user.nextOfKin?.phone || "",
-      organizationName: user.organization?.name || "",
-      organizationIndustry: user.organization?.industry || "",
-      organizationSize: user.organization?.companySize || "",
-      status: "pending",
-      lastUpdated: new Date().toISOString(),
     };
 
     if (existing) {
