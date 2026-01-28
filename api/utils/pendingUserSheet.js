@@ -7,8 +7,7 @@ function getDoc() {
   let PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
 
   if (PRIVATE_KEY) {
-    PRIVATE_KEY = PRIVATE_KEY
-      .replace(/\\n/g, "\n")
+    PRIVATE_KEY = PRIVATE_KEY.replace(/\\n/g, "\n")
       .replace(/\r/g, "")
       .replace(/^"|"$/g, "")
       .trim();
@@ -40,10 +39,10 @@ export async function savePendingUserToSheet(user) {
       user.role === "organization"
         ? "Organizations_Pending"
         : user.role === "remote_worker"
-        ? "Remote_Workers_Pending"
-        : user.isSeller
-        ? "Freelancers_Pending"
-        : "Clients_Pending";
+          ? "Remote_Workers_Pending"
+          : user.isSeller
+            ? "Freelancers_Pending"
+            : "Clients_Pending";
 
     let sheet = doc.sheetsByTitle[sheetName];
     if (!sheet) return console.warn(`Sheet not found: ${sheetName}`);
@@ -51,26 +50,41 @@ export async function savePendingUserToSheet(user) {
     // ----------------------
     // Ensure headers exist
     // ----------------------
-    await sheet.loadCells("A1:Z1"); // Load first row
-    const firstRowEmpty = sheet.headerValues?.length === 0 || !sheet.headerValues;
-
     const headers = [
-      "email","username","fullName","phone","accountType","isSeller","tier",
-      "country","stateOfResidence","countryOfResidence","yearsOfExperience",
-      "languages","services","nextOfKinName","nextOfKinPhone","organizationName",
-      "organizationIndustry","organizationSize","status","lastUpdated"
+      "email",
+      "username",
+      "fullName",
+      "phone",
+      "accountType",
+      "isSeller",
+      "tier",
+      "country",
+      "stateOfResidence",
+      "countryOfResidence",
+      "yearsOfExperience",
+      "languages",
+      "services",
+      "nextOfKinName",
+      "nextOfKinPhone",
+      "organizationName",
+      "organizationIndustry",
+      "organizationSize",
+      "status",
+      "lastUpdated",
     ];
 
-    if (firstRowEmpty) {
+    // Load sheet info and check if header row exists
+    await sheet.loadCells("A1:Z1");
+    if (!sheet.headerValues || sheet.headerValues.length === 0) {
       await sheet.setHeaderRow(headers);
       console.log(`📝 Header row set for sheet: ${sheetName}`);
-      await sheet.loadHeaderRow(); // reload headers before using
+      await sheet.loadHeaderRow(); // reload after setting headers
     }
 
     // ----------------------
     // Add/update row
     // ----------------------
-    const rows = await sheet.getRows();
+    const rows = await sheet.getRows(); // now safe
     const existing = rows.find((r) => r.email === user.email);
 
     const rowData = {
