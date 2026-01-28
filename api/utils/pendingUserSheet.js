@@ -2,135 +2,72 @@
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
 
-// --------------------
-// SAFETY CHECK: Env vars
-// --------------------
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL;
-let PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
+function getDoc() {
+  const SHEET_ID = process.env.GOOGLE_SHEET_ID?.trim();
+  const CLIENT_EMAIL = process.env.GOOGLE_CLIENT_EMAIL?.trim();
+  let PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY;
 
-if (PRIVATE_KEY) {
-  // PM2 / Windows safe: remove extra quotes and fix newlines
-  PRIVATE_KEY = PRIVATE_KEY.replace(/\\n/g, "\n").replace(/^"|"$/g, "");
-}
-
-if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) {
-  console.warn(
-    "⚠️ Google Sheets env vars missing or invalid — logging disabled",
-  );
-}
-
-// --------------------
-// Auth & doc instance
-// --------------------
-const serviceAccountAuth =
-  CLIENT_EMAIL && PRIVATE_KEY
-    ? new JWT({
-        email: CLIENT_EMAIL,
-        key: PRIVATE_KEY,
-        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-      })
-    : null;
-
-const doc =
-  serviceAccountAuth && SHEET_ID
-    ? new GoogleSpreadsheet(SHEET_ID, serviceAccountAuth)
-    : null;
-
-// --------------------
-// Init doc once
-// --------------------
-async function initDoc() {
-  if (!doc) return;
-  if (!doc.title) {
-    await doc.loadInfo();
-    console.log(`📄 Loaded spreadsheet: ${doc.title}`);
+  if (PRIVATE_KEY) {
+    PRIVATE_KEY = PRIVATE_KEY
+      .replace(/\\n/g, "\n")
+      .replace(/\r/g, "")
+      .replace(/^"|"$/g, "")
+      .trim();
   }
-}
 
-// --------------------
-// Ensure headers exist
-// --------------------
-async function ensureHeaders(sheet) {
-  if (!sheet.headerValues || sheet.headerValues.length === 0) {
-    const headers = [
-      "email",
-      "username",
-      "fullName",
-      "phone",
-      "accountType",
-      "isSeller",
-      "tier",
-      "country",
-      "stateOfResidence",
-      "countryOfResidence",
-      "yearsOfExperience",
-      "languages",
-      "services",
-      "nextOfKinName",
-      "nextOfKinPhone",
-      "organizationName",
-      "organizationIndustry",
-      "organizationSize",
-      "status",
-      "lastUpdated",
-    ];
-    await sheet.setHeaderRow(headers);
-    console.log(`📝 Headers set for sheet: ${sheet.title}`);
+  if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) {
+    console.warn("⚠️ Google Sheets env vars missing or invalid");
+    return null;
   }
+
+  const serviceAccountAuth = new JWT({
+    email: CLIENT_EMAIL,
+    key: PRIVATE_KEY,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+
+  return new GoogleSpreadsheet(SHEET_ID, serviceAccountAuth);
 }
 
-// --------------------
-// Sheet routing
-// --------------------
-function getSheetByRole(user) {
-  if (!user) return null;
-  if (user.role === "organization") return "Organizations_Pending";
-  if (user.role === "remote_worker") return "Remote_Workers_Pending";
-  if (user.isSeller === true) return "Freelancers_Pending";
-  if (user.isSeller === false) return "Clients_Pending";
-  return "Others_Pending";
-}
-
-// --------------------
-// Main safe logger
-// --------------------
 export async function savePendingUserToSheet(user) {
   try {
+    const doc = getDoc();
     if (!doc) return console.warn("No doc configured, skipping sheet logging");
     if (!user) return console.warn("No user provided, skipping sheet logging");
 
-    await initDoc();
+    await doc.loadInfo();
 
-    const sheetName = getSheetByRole(user);
+    const sheetName =
+      user.role === "organization"
+        ? "Organizations_Pending"
+        : user.role === "remote_worker"
+        ? "Remote_Workers_Pending"
+        : user.isSeller
+        ? "Freelancers_Pending"
+        : "Clients_Pending";
+
     const sheet = doc.sheetsByTitle[sheetName];
+    if (!sheet) return console.warn(`Sheet not found: ${sheetName}`);
 
-    if (!sheet) {
-      return console.warn(
-        `Sheet not found: ${sheetName}. Check the exact tab name in spreadsheet`,
-      );
+    if (!sheet.headerValues?.length) {
+      const headers = [
+        "email","username","fullName","phone","accountType","isSeller","tier",
+        "country","stateOfResidence","countryOfResidence","yearsOfExperience",
+        "languages","services","nextOfKinName","nextOfKinPhone","organizationName",
+        "organizationIndustry","organizationSize","status","lastUpdated"
+      ];
+      await sheet.setHeaderRow(headers);
     }
-
-    await ensureHeaders(sheet);
 
     const rows = await sheet.getRows();
     const existing = rows.find((r) => r.email === user.email);
-
-    const accountType =
-      user.role === "organization"
-        ? "organization"
-        : user.role === "remote_worker"
-          ? "remote_worker"
-          : user.isSeller
-            ? "freelancer"
-            : "client";
 
     const rowData = {
       email: user.email,
       username: user.username || "",
       fullName: user.fullName || "",
       phone: user.phone || "",
-      accountType,
+      accountType: user.role || (user.isSeller ? "freelancer" : "client"),
       isSeller: user.isSeller ? "yes" : "no",
       tier: user.tier || "free",
       country: user.country || "",

@@ -25,6 +25,11 @@ const port = 4000;
 // Create an HTTP server and attach Express
 const server = createServer(app);
 
+console.log("DEBUG env vars:");
+console.log("SHEET_ID:", process.env.GOOGLE_SHEET_ID);
+console.log("CLIENT_EMAIL:", process.env.GOOGLE_CLIENT_EMAIL);
+console.log("PRIVATE_KEY length:", process.env.GOOGLE_PRIVATE_KEY?.length);
+
 // Prerender.io Middleware
 prerender.set("prerenderToken", "VN3i1Er0OnKphdok5ICr"); // Replace with your token
 app.use(prerender);
@@ -67,7 +72,7 @@ app.use(
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
-  })
+  }),
 );
 app.options("*", cors());
 
@@ -76,7 +81,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   "/uploads/audio",
-  express.static(path.join(__dirname, "uploads/audio"))
+  express.static(path.join(__dirname, "uploads/audio")),
 );
 
 // Set up express-session
@@ -90,7 +95,7 @@ app.use(
       secure: true,
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     },
-  })
+  }),
 );
 
 // Initialize Passport and restore authentication state
@@ -128,8 +133,8 @@ passport.use(
       } catch (error) {
         return done(error, null);
       }
-    }
-  )
+    },
+  ),
 );
 
 passport.serializeUser((user, done) => {
@@ -143,7 +148,7 @@ passport.deserializeUser((user, done) => {
 // Authentication Routes
 app.get(
   "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
 app.get(
@@ -157,7 +162,7 @@ app.get(
     });
 
     res.redirect("https://rmgc-mern-stack-7.onrender.com");
-  }
+  },
 );
 
 app.get("/user", (req, res) => {
@@ -241,7 +246,7 @@ io.on("connection", (socket) => {
         messageData.status = "delivered";
         io.to(receiverSocketId).emit("receiveMessage", messageData);
       }
-    }
+    },
   );
 
   // Message seen
@@ -250,7 +255,7 @@ io.on("connection", (socket) => {
       const message = await Message.findByIdAndUpdate(
         messageId,
         { status: "seen" },
-        { new: true }
+        { new: true },
       );
 
       if (!message) return;
