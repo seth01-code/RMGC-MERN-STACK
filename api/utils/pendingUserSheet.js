@@ -45,11 +45,13 @@ export async function savePendingUserToSheet(user) {
             : "Clients_Pending";
 
     let sheet = doc.sheetsByTitle[sheetName];
-    if (!sheet) return console.warn(`Sheet not found: ${sheetName}`);
 
-    // ----------------------
-    // Ensure headers exist
-    // ----------------------
+    if (!sheet) {
+      // Optional: auto-create sheet if it doesn’t exist
+      sheet = await doc.addSheet({ title: sheetName, headerValues: [] });
+      console.log(`🆕 Created new sheet: ${sheetName}`);
+    }
+
     const headers = [
       "email",
       "username",
@@ -73,18 +75,14 @@ export async function savePendingUserToSheet(user) {
       "lastUpdated",
     ];
 
-    // Load sheet info and check if header row exists
-    await sheet.loadCells("A1:Z1");
+    // ✅ Ensure header row exists
     if (!sheet.headerValues || sheet.headerValues.length === 0) {
       await sheet.setHeaderRow(headers);
       console.log(`📝 Header row set for sheet: ${sheetName}`);
-      await sheet.loadHeaderRow(); // reload after setting headers
     }
 
-    // ----------------------
-    // Add/update row
-    // ----------------------
-    const rows = await sheet.getRows(); // now safe
+    // Reload rows after headers are guaranteed
+    const rows = await sheet.getRows();
     const existing = rows.find((r) => r.email === user.email);
 
     const rowData = {
