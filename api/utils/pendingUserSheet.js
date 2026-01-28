@@ -1,4 +1,3 @@
-// utils/pendingUserSheet.js
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
 
@@ -46,22 +45,31 @@ export async function savePendingUserToSheet(user) {
         ? "Freelancers_Pending"
         : "Clients_Pending";
 
-    const sheet = doc.sheetsByTitle[sheetName];
+    let sheet = doc.sheetsByTitle[sheetName];
     if (!sheet) return console.warn(`Sheet not found: ${sheetName}`);
 
-    // ✅ Load header row before using it
-    await sheet.loadHeaderRow();
+    // ----------------------
+    // Ensure headers exist
+    // ----------------------
+    await sheet.loadCells("A1:Z1"); // Load first row
+    const firstRowEmpty = sheet.headerValues?.length === 0 || !sheet.headerValues;
 
-    if (!sheet.headerValues?.length) {
-      const headers = [
-        "email","username","fullName","phone","accountType","isSeller","tier",
-        "country","stateOfResidence","countryOfResidence","yearsOfExperience",
-        "languages","services","nextOfKinName","nextOfKinPhone","organizationName",
-        "organizationIndustry","organizationSize","status","lastUpdated"
-      ];
+    const headers = [
+      "email","username","fullName","phone","accountType","isSeller","tier",
+      "country","stateOfResidence","countryOfResidence","yearsOfExperience",
+      "languages","services","nextOfKinName","nextOfKinPhone","organizationName",
+      "organizationIndustry","organizationSize","status","lastUpdated"
+    ];
+
+    if (firstRowEmpty) {
       await sheet.setHeaderRow(headers);
+      console.log(`📝 Header row set for sheet: ${sheetName}`);
+      await sheet.loadHeaderRow(); // reload headers before using
     }
 
+    // ----------------------
+    // Add/update row
+    // ----------------------
     const rows = await sheet.getRows();
     const existing = rows.find((r) => r.email === user.email);
 
@@ -100,4 +108,3 @@ export async function savePendingUserToSheet(user) {
     console.error("Spreadsheet logging failed:", err.message);
   }
 }
-
