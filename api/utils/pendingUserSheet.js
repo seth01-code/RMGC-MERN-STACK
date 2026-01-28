@@ -35,13 +35,40 @@ export async function savePendingUserToSheet(user) {
 
     await doc.loadInfo();
 
-    const sheetName = "PendingUsers"; // your sheet tab name
+    // ----------------------
+    // Pick the right sheet
+    // ----------------------
+    const sheetName =
+      user.role === "organization"
+        ? "Organizations_Pending"
+        : user.role === "remote_worker"
+          ? "Remote_Workers_Pending"
+          : user.isSeller
+            ? "Freelancers_Pending"
+            : "Clients_Pending";
+
     const sheet = doc.sheetsByTitle[sheetName];
     if (!sheet) return console.warn(`Sheet not found: ${sheetName}`);
 
-    // ✅ No need to set headers since we did it manually
-    await sheet.loadHeaderRow(); // just to ensure headers are loaded
+    // ----------------------
+    // Ensure headers loaded
+    // ----------------------
+    await sheet.loadHeaderRow();
+    const headers = ["name", "email", "phone", "accountType"];
 
+    // If headers are missing or incomplete, set them
+    const missingHeaders = headers.some(
+      (h, i) => !sheet.headerValues[i] || sheet.headerValues[i] !== h,
+    );
+    if (missingHeaders) {
+      await sheet.setHeaderRow(headers);
+      console.log(`📝 Header row set for sheet: ${sheetName}`);
+      await sheet.loadHeaderRow(); // reload
+    }
+
+    // ----------------------
+    // Add or update row
+    // ----------------------
     const rows = await sheet.getRows();
     const existing = rows.find((r) => r.email === user.email);
 
