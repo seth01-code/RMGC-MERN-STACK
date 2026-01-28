@@ -54,7 +54,14 @@ export async function savePendingUserToSheet(user) {
     // Ensure headers loaded
     // ----------------------
     await sheet.loadHeaderRow();
-    const headers = ["name", "email", "phone", "accountType"];
+    const headers = [
+      "Name",
+      "Email",
+      "Phone",
+      "AccountType",
+      "Status",
+      "DateAdded",
+    ];
 
     // If headers are missing or incomplete, set them
     const missingHeaders = headers.some(
@@ -76,9 +83,9 @@ export async function savePendingUserToSheet(user) {
       Name: user.username || user.fullName || "",
       Email: user.email,
       Phone: user.phone || "",
-      AccountType: user.role || (user.isSeller ? "freelancer" : "client"),
+      AccountType: user.role || (user.isSeller ? "Freelancer" : "Client"),
       Status: "Pending",
-  DateAdded: new Date().toLocaleString(),
+      DateAdded: new Date().toLocaleString(),
     };
 
     if (existing) {
