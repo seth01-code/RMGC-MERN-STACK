@@ -73,10 +73,12 @@ export async function savePendingUserToSheet(user) {
     const existing = rows.find((r) => r.email === user.email);
 
     const rowData = {
-      name: user.username || user.fullName || "",
-      email: user.email,
-      phone: user.phone || "",
-      accountType: user.role || (user.isSeller ? "freelancer" : "client"),
+      Name: user.username || user.fullName || "",
+      Email: user.email,
+      Phone: user.phone || "",
+      AccountType: user.role || (user.isSeller ? "freelancer" : "client"),
+      Status: "Pending",
+  DateAdded: new Date().toLocaleString(),
     };
 
     if (existing) {
