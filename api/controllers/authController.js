@@ -10,7 +10,7 @@ import { savePendingUserToSheet } from "../utils/pendingUserSheet.js";
 
 dotenv.config();
 
-const OTP_EXPIRATION_TIME = 10 * 60 * 1000; // 2 minutes
+const OTP_EXPIRATION_TIME = 2 * 60 * 1000; // 2 minutes
 const ADMIN_DOMAIN = "@renewedmindsglobalconsult.com";
 const pendingUsers = new Map(); // Temporary storage for unverified users
 
@@ -20,11 +20,21 @@ const TOTAL_AMOUNT_NGN = BASE_AMOUNT_NGN * (1 + VAT_PERCENT / 100);
 const SUPPORTED_CURRENCIES = ["NGN", "USD", "EUR"];
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASS, // MUST be Google App Password
   },
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Email transporter error:", error);
+  } else {
+    console.log("✅ Email server ready");
+  }
 });
 
 // Generate OTP
@@ -359,83 +369,76 @@ export const register = async (req, res, next) => {
     if (existingUser) return next(createError(400, "Email already in use"));
 
     const otp = generateOTP();
-    const hashedOtp = hashOTP(otp);
-    const otpExpires = Date.now() + 10 * 60 * 1000;
+const hashedOtp = await bcrypt.hash(otp, 10);
 
-    // Store pending user (UNCHANGED)
-    pendingUsers.set(email, {
-      username: username?.trim(),
-      email,
-      password: bcrypt.hashSync(password, 5),
-      isSeller,
-      img,
-      phone,
-      desc,
-      country,
-      portfolioLink,
-      languages,
-      fullName,
-      dob,
-      address,
-      yearsOfExperience,
-      stateOfResidence,
-      countryOfResidence,
-      services,
-
-      nextOfKin: {
-        fullName: nextOfKin?.fullName || "",
-        dob: nextOfKin?.dob || null,
-        stateOfResidence: nextOfKin?.stateOfResidence || "",
-        countryOfResidence: nextOfKin?.countryOfResidence || "",
-        email: nextOfKin?.email || "",
-        address: nextOfKin?.address || "",
-        phone: nextOfKin?.phone || "",
-      },
-
-      role:
-        role === "organization"
-          ? "organization"
-          : role === "remote_worker"
-          ? "remote_worker"
-          : null,
-
-      tier:
-        role === "remote_worker" && tier?.toLowerCase() === "vip"
-          ? "vip"
-          : "free",
-
-      organization:
-        role === "organization"
-          ? {
-              name: organizationName || "",
-              regNumber: organizationRegNumber || "",
-              website: organizationWebsite || "",
-              description: organizationDescription || "",
-              verified: false,
-              contactEmail: organizationContactEmail || email,
-              contactPhone: organizationContactPhone || "",
-              logo: organizationLogo || "",
-              address: address || "",
-              state: organizationState || "",
-              country: organizationCountry || "",
-              industry: organizationIndustry || "",
-              companySize: organizationCompanySize || "",
-              socialLinks: {
-                linkedin: organizationSocialLinks?.linkedin || "",
-                twitter: organizationSocialLinks?.twitter || "",
-                facebook: organizationSocialLinks?.facebook || "",
-              },
-            }
-          : null,
-
-      hashedOtp,
-      otpExpires,
-    });
+pendingUsers.set(email, {
+  username: username?.trim(),
+  email,
+  password: await bcrypt.hash(password, 10),
+  isSeller,
+  img,
+  phone,
+  desc,
+  country,
+  portfolioLink,
+  languages,
+  fullName,
+  dob,
+  address,
+  yearsOfExperience,
+  stateOfResidence,
+  countryOfResidence,
+  services,
+  nextOfKin: {
+    fullName: nextOfKin?.fullName || "",
+    dob: nextOfKin?.dob || null,
+    stateOfResidence: nextOfKin?.stateOfResidence || "",
+    countryOfResidence: nextOfKin?.countryOfResidence || "",
+    email: nextOfKin?.email || "",
+    address: nextOfKin?.address || "",
+    phone: nextOfKin?.phone || "",
+  },
+  role:
+    role === "organization"
+      ? "organization"
+      : role === "remote_worker"
+      ? "remote_worker"
+      : null,
+  tier:
+    role === "remote_worker" && tier?.toLowerCase() === "vip"
+      ? "vip"
+      : "free",
+  organization:
+    role === "organization"
+      ? {
+          name: organizationName || "",
+          regNumber: organizationRegNumber || "",
+          website: organizationWebsite || "",
+          description: organizationDescription || "",
+          verified: false,
+          contactEmail: organizationContactEmail || email,
+          contactPhone: organizationContactPhone || "",
+          logo: organizationLogo || "",
+          address: address || "",
+          state: organizationState || "",
+          country: organizationCountry || "",
+          industry: organizationIndustry || "",
+          companySize: organizationCompanySize || "",
+          socialLinks: {
+            linkedin: organizationSocialLinks?.linkedin || "",
+            twitter: organizationSocialLinks?.twitter || "",
+            facebook: organizationSocialLinks?.facebook || "",
+          },
+        }
+      : null,
+  hashedOtp,
+  otpExpires: Date.now() + OTP_EXPIRATION_TIME,
+});
 
     // ✅ NEW: Save to spreadsheet (safe + non-blocking)
     await savePendingUserToSheet(pendingUsers.get(email));
 
-    await sendOtpEmail(email, username, otp);
+   await sendOtpEmail(email, username, otp);
 
     res.status(201).json({
       message: "OTP sent. Please verify.",
@@ -533,9 +536,7 @@ export const verifyOtp = async (req, res, next) => {
     const { email, otp } = req.body;
 
     if (!pendingUsers.has(email)) {
-      return next(
-        createError(404, "No pending registration found for this email")
-      );
+      return next(createError(404, "No pending registration found"));
     }
 
     const userData = pendingUsers.get(email);
@@ -545,10 +546,12 @@ export const verifyOtp = async (req, res, next) => {
       return next(createError(400, "OTP expired. Please register again"));
     }
 
-    const isMatch = bcrypt.compareSync(otp, userData.hashedOtp);
-    if (!isMatch) return next(createError(400, "Invalid OTP"));
+    const isMatch = await bcrypt.compare(otp, userData.hashedOtp);
 
-    // ✅ Create the user in DB
+    if (!isMatch) {
+      return next(createError(400, "Invalid OTP"));
+    }
+
     const newUser = new User({
       username: userData.username,
       email: userData.email,
@@ -569,12 +572,8 @@ export const verifyOtp = async (req, res, next) => {
       countryOfResidence: userData.countryOfResidence,
       services: userData.services,
       nextOfKin: userData.nextOfKin,
-
-      // ✅ Include role and tier
       role: userData.role,
       tier: userData.role === "remote_worker" ? userData.tier : null,
-
-      // ✅ Organization info if applicable
       organization:
         userData.role === "organization" ? userData.organization : null,
     });
@@ -591,13 +590,13 @@ export const verifyOtp = async (req, res, next) => {
       userData.tier
     );
 
-    // ✅ Return the role and tier in the response
     res.status(200).json({
       message: "OTP verified. Account created successfully.",
-      role: newUser.role, // "remote_worker", "organization", or null
-      tier: newUser.role === "remote_worker" ? newUser.tier : null, // "free" or "vip"
+      role: newUser.role,
+      tier: newUser.role === "remote_worker" ? newUser.tier : null,
     });
   } catch (err) {
+    console.error("❌ verifyOtp error:", err);
     next(err);
   }
 };
@@ -678,37 +677,29 @@ export const login = async (req, res) => {
 // Resend OTP
 export const resendOtp = async (req, res, next) => {
   try {
-    console.log("Request Body:", req.body); // Debugging step
-
     const { email } = req.body;
-    const { username } = req.body;
-    if (!email) return next(createError(400, "Email is required"));
+
+    if (!email)
+      return next(createError(400, "Email is required"));
 
     if (!pendingUsers.has(email)) {
-      return next(
-        createError(404, "No pending registration found for this email")
-      );
+      return next(createError(404, "No pending registration found"));
     }
 
-    const userData = pendingUsers.get(email, username);
+    const userData = pendingUsers.get(email);
 
-    // Generate a new OTP
     const otp = generateOTP();
-    const hashedOtp = hashOTP(otp);
-    const otpExpires = Date.now() + OTP_EXPIRATION_TIME;
 
-    // Update only the OTP-related details
-    userData.hashedOtp = hashedOtp;
-    userData.otpExpires = otpExpires;
+    userData.hashedOtp = await bcrypt.hash(otp, 10);
+    userData.otpExpires = Date.now() + OTP_EXPIRATION_TIME;
 
-    // Save the updated userData back into pendingUsers
     pendingUsers.set(email, userData);
 
-    // Send OTP via email
-    await sendOtpEmail(email, username, otp);
+    await sendOtpEmail(email, userData.username, otp);
 
-    return res.status(200).json({ message: "New OTP sent successfully" });
+    res.status(200).json({ message: "New OTP sent successfully" });
   } catch (err) {
+    console.error("❌ resendOtp error:", err);
     next(err);
   }
 };
