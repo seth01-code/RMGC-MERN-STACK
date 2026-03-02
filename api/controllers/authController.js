@@ -603,37 +603,75 @@ export const verifyOtp = async (req, res, next) => {
 
 // ✅ Login
 
+
 export const login = async (req, res) => {
   try {
     const { email, username, password } = req.body;
 
-    const trimmedUsername = username?.replace(/\s+$/, "");
+    // ------------------------
+    // Basic validation
+    // ------------------------
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
 
-    const user = await User.findOne({
-      $or: [
-        { email },
-        { username: { $regex: `^${trimmedUsername}$`, $options: "i" } },
-      ],
-    });
+    if (!email && !username) {
+      return res
+        .status(400)
+        .json({ error: "Email or username is required" });
+    }
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    // ------------------------
+    // Build dynamic query safely
+    // ------------------------
+    const query = [];
 
-    const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Incorrect password" });
+    if (email) {
+      query.push({ email: email.trim().toLowerCase() });
+    }
 
+    if (username) {
+      query.push({
+        username: {
+          $regex: `^${username.trim()}$`,
+          $options: "i",
+        },
+      });
+    }
+
+    const user = await User.findOne({ $or: query });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // ------------------------
+    // Compare password
+    // ------------------------
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ error: "Incorrect password" });
+    }
+
+    // ------------------------
     // Determine role
+    // ------------------------
     let role = "user";
+
     if (user.isAdmin) role = "admin";
     else if (user.isSeller) role = "seller";
     else if (user.role === "organization" || user.organization?.regNumber)
       role = "organization";
     else if (user.role === "remote_worker") role = "remote_worker";
 
-    // Sign JWT with correct role
+    // ------------------------
+    // Create JWT
+    // ------------------------
     const token = jwt.sign(
       {
         id: user._id,
-        role, // <-- include role explicitly
+        role,
         isSeller: user.isSeller,
         isAdmin: user.isAdmin,
         isOrganization: role === "organization",
@@ -643,14 +681,19 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Set cookie
+    // ------------------------
+    // Set Cookie
+    // ------------------------
     res.cookie("accessToken", token, {
       httpOnly: true,
-      sameSite: "None", // set to "Lax" if localhost
-      secure: true, // set to false if testing on localhost without HTTPS
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
 
-    // Respond with user info
+    // ------------------------
+    // Send Response
+    // ------------------------
     res.status(200).json({
       id: user._id,
       username: user.username,
