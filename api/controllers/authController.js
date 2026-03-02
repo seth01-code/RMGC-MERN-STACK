@@ -604,70 +604,70 @@ export const verifyOtp = async (req, res, next) => {
 // ✅ Login
 
 
+// Escape regex special characters (security best practice)
+const escapeRegex = (text) => {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 export const login = async (req, res) => {
   try {
-    const { email, username, password } = req.body;
+    const { identifier, password } = req.body;
 
-    // ------------------------
-    // Basic validation
-    // ------------------------
-    if (!password) {
-      return res.status(400).json({ error: "Password is required" });
-    }
-
-    if (!email && !username) {
-      return res
-        .status(400)
-        .json({ error: "Email or username is required" });
-    }
-
-    // ------------------------
-    // Build dynamic query safely
-    // ------------------------
-    const query = [];
-
-    if (email) {
-      query.push({ email: email.trim().toLowerCase() });
-    }
-
-    if (username) {
-      query.push({
-        username: {
-          $regex: `^${username.trim()}$`,
-          $options: "i",
-        },
+    // -------------------------
+    // Validation
+    // -------------------------
+    if (!identifier || !password) {
+      return res.status(400).json({
+        error: "Email/Username and password are required",
       });
     }
 
-    const user = await User.findOne({ $or: query });
+    const cleanIdentifier = identifier.trim();
+
+    // -------------------------
+    // Build query (email OR username)
+    // -------------------------
+    const user = await User.findOne({
+      $or: [
+        { email: cleanIdentifier.toLowerCase() },
+        {
+          username: {
+            $regex: `^${escapeRegex(cleanIdentifier)}$`,
+            $options: "i",
+          },
+        },
+      ],
+    });
 
     if (!user) {
+      // You may optionally change to 401 for better auth semantics
       return res.status(404).json({ error: "User not found" });
     }
 
-    // ------------------------
+    // -------------------------
     // Compare password
-    // ------------------------
+    // -------------------------
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({ error: "Incorrect password" });
     }
 
-    // ------------------------
+    // -------------------------
     // Determine role
-    // ------------------------
+    // -------------------------
     let role = "user";
 
     if (user.isAdmin) role = "admin";
     else if (user.isSeller) role = "seller";
     else if (user.role === "organization" || user.organization?.regNumber)
       role = "organization";
-    else if (user.role === "remote_worker") role = "remote_worker";
+    else if (user.role === "remote_worker")
+      role = "remote_worker";
 
-    // ------------------------
+    // -------------------------
     // Create JWT
-    // ------------------------
+    // -------------------------
     const token = jwt.sign(
       {
         id: user._id,
@@ -681,9 +681,9 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // ------------------------
-    // Set Cookie
-    // ------------------------
+    // -------------------------
+    // Set secure cookie
+    // -------------------------
     res.cookie("accessToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -691,10 +691,10 @@ export const login = async (req, res) => {
         process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
 
-    // ------------------------
-    // Send Response
-    // ------------------------
-    res.status(200).json({
+    // -------------------------
+    // Send response
+    // -------------------------
+    return res.status(200).json({
       id: user._id,
       username: user.username,
       email: user.email,
@@ -711,9 +711,12 @@ export const login = async (req, res) => {
       },
       organization: user.organization || null,
     });
+
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({
+      error: "Internal server error",
+    });
   }
 };
 
