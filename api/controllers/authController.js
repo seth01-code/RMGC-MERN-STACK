@@ -604,6 +604,7 @@ export const verifyOtp = async (req, res, next) => {
 // ✅ Login
 
 
+
 // Escape regex special characters (security best practice)
 const escapeRegex = (text) => {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -611,28 +612,30 @@ const escapeRegex = (text) => {
 
 export const login = async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const { email, username, identifier, password } = req.body;
 
-    // -------------------------
-    // Validation
-    // -------------------------
-    if (!identifier || !password) {
+    // -----------------------------------
+    // Determine which login field was sent
+    // -----------------------------------
+    const loginValue = identifier || email || username;
+
+    if (!loginValue || !password) {
       return res.status(400).json({
         error: "Email/Username and password are required",
       });
     }
 
-    const cleanIdentifier = identifier.trim();
+    const cleanValue = loginValue.trim();
 
-    // -------------------------
-    // Build query (email OR username)
-    // -------------------------
+    // -----------------------------------
+    // Build query safely
+    // -----------------------------------
     const user = await User.findOne({
       $or: [
-        { email: cleanIdentifier.toLowerCase() },
+        { email: cleanValue.toLowerCase() },
         {
           username: {
-            $regex: `^${escapeRegex(cleanIdentifier)}$`,
+            $regex: `^${escapeRegex(cleanValue)}$`,
             $options: "i",
           },
         },
@@ -640,22 +643,21 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      // You may optionally change to 401 for better auth semantics
       return res.status(404).json({ error: "User not found" });
     }
 
-    // -------------------------
+    // -----------------------------------
     // Compare password
-    // -------------------------
+    // -----------------------------------
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({ error: "Incorrect password" });
     }
 
-    // -------------------------
+    // -----------------------------------
     // Determine role
-    // -------------------------
+    // -----------------------------------
     let role = "user";
 
     if (user.isAdmin) role = "admin";
@@ -665,9 +667,9 @@ export const login = async (req, res) => {
     else if (user.role === "remote_worker")
       role = "remote_worker";
 
-    // -------------------------
+    // -----------------------------------
     // Create JWT
-    // -------------------------
+    // -----------------------------------
     const token = jwt.sign(
       {
         id: user._id,
@@ -681,9 +683,9 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // -------------------------
+    // -----------------------------------
     // Set secure cookie
-    // -------------------------
+    // -----------------------------------
     res.cookie("accessToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -691,9 +693,9 @@ export const login = async (req, res) => {
         process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
 
-    // -------------------------
+    // -----------------------------------
     // Send response
-    // -------------------------
+    // -----------------------------------
     return res.status(200).json({
       id: user._id,
       username: user.username,
