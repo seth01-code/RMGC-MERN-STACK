@@ -6,7 +6,7 @@ import {
   clearPortfolio,
   getTopPortfolioUsers,
   upload,
-} from "../controllers/portfolioController.js";
+} from "../controllers/Portfoliocontroller.js";
 import { verifyToken } from "../middleware/jwt.js";
 import { verifyAdmin } from "../middleware/verifyAdmin.js";
 
