@@ -47,7 +47,6 @@ const hashOTP = (otp) => bcrypt.hashSync(otp, 5);
 // Send OTP Email (No-Reply & Prevent Grouping)
 const sendOtpEmail = async (email, username, otp) => {
   console.log(`📧 Sending OTP to ${email}...`);
-
   try {
     await transporter.sendMail({
       from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
@@ -59,23 +58,84 @@ const sendOtpEmail = async (email, username, otp) => {
         References: null,
       },
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #4CAF50;">Verify Your Account</h2>
-          <p>Dear <b>${username}</b>,</p>
-          <p>Use the One-Time Password (OTP) below to complete your sign-up:</p>
-          
-          <div style="font-size: 24px; font-weight: bold; color: #333; background: #f4f4f4; padding: 10px; text-align: center; border-radius: 5px;">
-            ${otp}
-          </div>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
-          <p>This OTP is valid for <b>2 minutes</b>. Do not share this OTP with anyone.</p>
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#FF6B00 0%,#FF9500 100%);padding:40px 48px 36px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:10px;padding:8px 16px;margin-bottom:20px;">
+                    <span style="color:#fff;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Security Verification</span>
+                  </div>
+                  <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;line-height:1.2;">Verify your account</h1>
+                  <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:15px;">One-time password for ${username}</p>
+                </td>
+                <td align="right" style="vertical-align:top;">
+                  <div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;line-height:56px;text-align:center;">🔐</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-          <p>Best Regards,<br>
-          <b>Renewed Minds Global Consult Team</b></p>
-        </div>
-      `,
+        <!-- Body -->
+        <tr>
+          <td style="padding:48px;">
+            <p style="margin:0 0 8px;color:#666;font-size:14px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Your one-time password</p>
+
+            <!-- OTP Box -->
+            <div style="background:#fafafa;border:2px solid #FF6B00;border-radius:14px;padding:28px;text-align:center;margin:16px 0 32px;">
+              <div style="letter-spacing:12px;font-size:42px;font-weight:900;color:#111;font-variant-numeric:tabular-nums;padding-left:12px;">${otp}</div>
+            </div>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+              <tr>
+                <td style="background:#fff8f0;border-left:4px solid #FF6B00;border-radius:0 8px 8px 0;padding:16px 20px;">
+                  <p style="margin:0;color:#333;font-size:14px;line-height:1.6;">
+                    ⏱ This OTP expires in <strong>2 minutes</strong>.<br>
+                    🔒 Never share this code with anyone — our team will never ask for it.
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;color:#888;font-size:13px;line-height:1.7;">
+              If you didn't create an account with Renewed Minds Global Consult, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#fafafa;border-top:1px solid #f0f0f0;padding:28px 48px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <p style="margin:0 0 4px;color:#111;font-size:13px;font-weight:700;">Renewed Minds Global Consult</p>
+                  <p style="margin:0;color:#aaa;font-size:12px;">© ${new Date().getFullYear()} All rights reserved.</p>
+                </td>
+                <td align="right">
+                  <a href="mailto:support@renewedmindsglobalconsult.com" style="color:#FF6B00;font-size:12px;text-decoration:none;font-weight:600;">Need help?</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
     });
-
     console.log(`✅ OTP sent successfully to ${email}`);
   } catch (error) {
     console.error(`❌ Failed to send OTP to ${email}:`, error);
@@ -84,39 +144,105 @@ const sendOtpEmail = async (email, username, otp) => {
 
 const sendResetPasswordEmail = async (email, username, resetLink) => {
   console.log(`📧 Sending password reset link to ${email}...`);
-
   try {
     await transporter.sendMail({
       from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
       to: email,
-      subject: "Reset Your Password",
+      subject: "Reset Your Password — Renewed Minds",
       headers: {
         "Message-ID": `<${Date.now()}@renewedmindsglobalconsult.com>`,
         "In-Reply-To": null,
         References: null,
       },
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #ff9800;">Reset Your Password</h2>
-          <p>Dear <b>${username}</b>,</p>
-          <p>We received a request to reset your password. Click the button below to proceed:</p>
-          
-          <div style="text-align: center; margin: 20px 0;">
-            <a href="${resetLink}" style="background: #ff9800; color: #fff; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">
-              Reset Password
-            </a>
-          </div>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
-          <p>If you didn’t request a password reset, please ignore this email.</p>
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%);padding:40px 48px 36px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <div style="display:inline-block;background:rgba(255,107,0,0.2);border:1px solid rgba(255,107,0,0.4);border-radius:10px;padding:8px 16px;margin-bottom:20px;">
+                    <span style="color:#FF6B00;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Account Security</span>
+                  </div>
+                  <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;line-height:1.2;">Reset your password</h1>
+                  <p style="margin:8px 0 0;color:rgba(255,255,255,0.6);font-size:15px;">We received a request for ${username}</p>
+                </td>
+                <td align="right" style="vertical-align:top;">
+                  <div style="width:56px;height:56px;background:rgba(255,107,0,0.15);border:1px solid rgba(255,107,0,0.3);border-radius:14px;font-size:28px;line-height:56px;text-align:center;">🔑</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-          <p>This link is valid for <b>1 hour</b>.</p>
+        <!-- Body -->
+        <tr>
+          <td style="padding:48px;">
+            <p style="margin:0 0 24px;color:#444;font-size:15px;line-height:1.7;">
+              Hi <strong>${username}</strong>, someone requested a password reset for your Renewed Minds account. Click the button below to choose a new password.
+            </p>
 
-          <p>Best Regards,<br>
-          <b>Renewed Minds Global Consult Team</b></p>
-        </div>
-      `,
+            <!-- CTA Button -->
+            <table cellpadding="0" cellspacing="0" style="margin:0 auto 32px;">
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#FF6B00,#FF9500);border-radius:12px;">
+                  <a href="${resetLink}" style="display:inline-block;padding:16px 40px;color:#fff;font-size:15px;font-weight:800;text-decoration:none;letter-spacing:0.3px;">
+                    Reset my password →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback link -->
+            <div style="background:#fafafa;border-radius:10px;padding:16px 20px;margin-bottom:32px;word-break:break-all;">
+              <p style="margin:0 0 6px;color:#999;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Or copy this link</p>
+              <a href="${resetLink}" style="color:#FF6B00;font-size:13px;text-decoration:none;">${resetLink}</a>
+            </div>
+
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background:#fff8f0;border-left:4px solid #FF6B00;border-radius:0 8px 8px 0;padding:16px 20px;">
+                  <p style="margin:0;color:#333;font-size:14px;line-height:1.6;">
+                    ⏱ This link expires in <strong>1 hour</strong>.<br>
+                    🚫 If you didn't request this, please ignore — your password won't change.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#fafafa;border-top:1px solid #f0f0f0;padding:28px 48px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <p style="margin:0 0 4px;color:#111;font-size:13px;font-weight:700;">Renewed Minds Global Consult</p>
+                  <p style="margin:0;color:#aaa;font-size:12px;">© ${new Date().getFullYear()} All rights reserved.</p>
+                </td>
+                <td align="right">
+                  <a href="mailto:support@renewedmindsglobalconsult.com" style="color:#FF6B00;font-size:12px;text-decoration:none;font-weight:600;">Need help?</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
     });
-
     console.log(`✅ Password reset email sent successfully to ${email}`);
   } catch (error) {
     console.error(`❌ Failed to send password reset email to ${email}:`, error);
@@ -124,197 +250,227 @@ const sendResetPasswordEmail = async (email, username, resetLink) => {
 };
 
 // Send Welcome Email (Professional UI)
-const sendWelcomeEmail = async (
-  email,
-  username,
-  isSeller,
-  isAdmin,
-  role,
-  tier
-) => {
+const sendWelcomeEmail = async (email, username, isSeller, isAdmin, role, tier) => {
   console.log(`📧 Sending Welcome Email to ${email}...`);
-
   try {
     let subject;
-    let userMessage;
+    let headerLabel;
+    let headerEmoji;
+    let headerBg;
+    let headline;
+    let subline;
+    let features;
+    let ctaText;
+    let ctaLink = "https://www.renewedmindsglobalconsult.com/login";
+    let note = null;
 
-    console.log("🧩 Welcome Email Context →", {
-      email,
-      username,
-      isSeller,
-      isAdmin,
-      role,
-      tier,
-    });
+    console.log("🧩 Welcome Email Context →", { email, username, isSeller, isAdmin, role, tier });
 
-    // ✅ Organization welcome email (check first)
     if (role === "organization") {
-      subject =
-        "🏢 Welcome to Renewed Minds Global Consult – Organization Account Created!";
-      userMessage = `
-        <p>Dear <b>${username}</b>,</p>
-        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-        <p>Your <b>Organization Account</b> has been successfully created.</p>
-        <p>Here’s what you can do as an Organization:</p>
-        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-          <li>📝 Post remote job opportunities</li>
-          <li>💼 Connect with verified remote professionals</li>
-          <li>💳 Manage applications and hire talent securely</li>
-        </ul>
-        <p>Note: To activate job posting privileges, please complete your organization verification and payment.</p>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login"
-             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-            🏢 Access Organization Dashboard
-          </a>
-        </div>
-      `;
+      subject = "Welcome to Renewed Minds Global Consult – Organization Account Created!";
+      headerLabel = "Organization Account";
+      headerEmoji = "🏢";
+      headerBg = "linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%)";
+      headline = "Your organization is live";
+      subline = "Start connecting with verified remote professionals";
+      features = [
+        ["📝", "Post remote job opportunities to a verified talent pool"],
+        ["💼", "Connect with skilled professionals across Africa and beyond"],
+        ["💳", "Manage applications and hire talent securely"],
+      ];
+      ctaText = "Access Organization Dashboard →";
+      note = "Complete your organization verification to activate job posting privileges.";
+
+    } else if (role === "remote_worker" && tier === "vip") {
+      subject = "Welcome to Renewed Minds – VIP Remote Worker Activated!";
+      headerLabel = "VIP Member";
+      headerEmoji = "🌟";
+      headerBg = "linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)";
+      headline = "VIP access unlocked";
+      subline = `Welcome aboard, ${username}. Your full access is ready.`;
+      features = [
+        ["💰", "All remote job listings — no pay range restrictions"],
+        ["📬", "Direct applications and priority matching"],
+        ["🚀", "Boosted visibility so recruiters find you first"],
+      ];
+      ctaText = "Open VIP Dashboard →";
+
+    } else if (role === "remote_worker") {
+      subject = "Welcome to Renewed Minds – Remote Worker Account Created!";
+      headerLabel = "Remote Worker";
+      headerEmoji = "💼";
+      headerBg = "linear-gradient(135deg,#0369a1 0%,#0ea5e9 100%)";
+      headline = "Your remote career starts here";
+      subline = `Good to have you, ${username}`;
+      features = [
+        ["🪙", "Access remote jobs in the $1–$200 pay range"],
+        ["📈", "Build a profile that stands out to global clients"],
+        ["🎯", "Upgrade to VIP anytime for unlimited job access"],
+      ];
+      ctaText = "Go to Dashboard →";
+
+    } else if (isAdmin) {
+      subject = "Welcome to Renewed Minds – Admin Access Granted!";
+      headerLabel = "Administrator";
+      headerEmoji = "👑";
+      headerBg = "linear-gradient(135deg,#1a1a1a 0%,#374151 100%)";
+      headline = "Admin access granted";
+      subline = "You have full oversight of the platform";
+      features = [
+        ["🛠", "Manage users, sellers, and service providers"],
+        ["📊", "Monitor platform analytics and transactions"],
+        ["💬", "Facilitate communication and resolve disputes"],
+      ];
+      ctaText = "Access Admin Dashboard →";
+
+    } else if (isSeller) {
+      subject = "Welcome to Renewed Minds Global Consult – You're Now a Service Provider!";
+      headerLabel = "Service Provider";
+      headerEmoji = "🚀";
+      headerBg = "linear-gradient(135deg,#FF6B00 0%,#FF9500 100%)";
+      headline = `Welcome, ${username}!`;
+      subline = "Your freelancer profile is ready to go live";
+      features = [
+        ["💼", "Create and showcase your services to thousands of clients"],
+        ["📈", "Get discovered by businesses looking for your exact skills"],
+        ["💰", "Earn, grow, and build your freelance business"],
+      ];
+      ctaText = "Go to Your Dashboard →";
+
+    } else {
+      subject = "Welcome to Renewed Minds Global Consult!";
+      headerLabel = "New Member";
+      headerEmoji = "🎉";
+      headerBg = "linear-gradient(135deg,#FF6B00 0%,#FF9500 100%)";
+      headline = `Great to have you, ${username}!`;
+      subline = "Your account is ready";
+      features = [
+        ["✅", "High-quality consulting and professional guidance"],
+        ["✅", "A supportive and engaging community"],
+        ["✅", "Exclusive resources and expert insights"],
+      ];
+      ctaText = "Login to Your Account →";
     }
 
-    // ✅ Remote Worker welcome email (second)
-    else if (role === "remote_worker") {
-      const tierText =
-        tier === "vip"
-          ? "🌟 VIP Remote Worker Subscription Activated!"
-          : "💼 Free Tier Remote Worker Account Created!";
-      subject = `🌍 Welcome to Renewed Minds Global Consult – ${tierText}`;
+    const featureRows = features.map(([emoji, text]) => `
+      <tr>
+        <td style="padding:14px 0;border-bottom:1px solid #f5f5f5;">
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="width:40px;vertical-align:middle;">
+                <div style="width:36px;height:36px;background:#fff8f0;border-radius:10px;text-align:center;line-height:36px;font-size:18px;">${emoji}</div>
+              </td>
+              <td style="padding-left:14px;vertical-align:middle;">
+                <p style="margin:0;color:#333;font-size:14px;line-height:1.5;">${text}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `).join("");
 
-      if (tier === "vip") {
-        userMessage = `
-          <p>Dear <b>${username}</b>,</p>
-          <p>Welcome aboard as a <b>VIP Remote Worker</b>! 🌟</p>
-          <p>As a VIP member, you now have full access to:</p>
-          <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-            <li>💰 All remote job listings, regardless of pay range</li>
-            <li>📬 Direct applications and faster matching</li>
-            <li>🚀 Priority visibility for recruiters</li>
-          </ul>
-          <div style="text-align: center; margin-top: 20px;">
-            <a href="https://www.renewedmindsglobalconsult.com/login"
-               style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-              🌟 Access Your VIP Dashboard
-            </a>
-          </div>
-        `;
-      } else {
-        userMessage = `
-          <p>Dear <b>${username}</b>,</p>
-          <p>Welcome to <b>Renewed Minds Global Consult</b> as a <b>Remote Worker (Free Tier)</b>! 💼</p>
-          <p>Here’s what’s available to you right now:</p>
-          <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-            <li>🪙 Access remote jobs between $1 – $200</li>
-            <li>📈 Build your remote career profile</li>
-            <li>🎯 Upgrade to VIP anytime for full job access</li>
-          </ul>
-          <div style="text-align: center; margin-top: 20px;">
-            <a href="https://www.renewedmindsglobalconsult.com/login"
-               style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-              💼 Go to Your Remote Dashboard
-            </a>
-          </div>
-        `;
-      }
-    }
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
-    // ✅ Admin welcome email
-    else if (isAdmin) {
-      subject =
-        "👑 Welcome to Renewed Minds Global Consult – Admin Access Granted!";
-      userMessage = `
-        <p>Dear <b>${username}</b>,</p>
-        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-        <p>As an <b>Administrator</b>, you have special privileges to oversee platform activities. 🔥</p>
-        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-          <li>🛠 Manage users and service providers</li>
-          <li>📊 Monitor platform analytics and transactions</li>
-          <li>💬 Facilitate communication and issue resolution</li>
-        </ul>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login"
-             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-            🔑 Access Admin Dashboard
-          </a>
-        </div>
-      `;
-    }
+        <!-- Header -->
+        <tr>
+          <td style="background:${headerBg};padding:40px 48px 36px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:10px;padding:8px 16px;margin-bottom:20px;">
+                    <span style="color:#fff;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">${headerLabel}</span>
+                  </div>
+                  <h1 style="margin:0;color:#ffffff;font-size:30px;font-weight:800;line-height:1.2;">${headline}</h1>
+                  <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">${subline}</p>
+                </td>
+                <td align="right" style="vertical-align:top;">
+                  <div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:14px;font-size:28px;line-height:56px;text-align:center;">${headerEmoji}</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-    // ✅ Seller (freelancer) welcome email
-    else if (isSeller) {
-      subject =
-        "🚀 Welcome to Renewed Minds Global Consult – As A Service Provider!";
-      userMessage = `
-        <p>Dear <b>${username}</b>,</p>
-        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-        <p>We’re excited to have you as a <b>service provider</b> on our platform. 🌟</p>
-        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-          <li>💼 Create & showcase your services</li>
-          <li>📈 Get discovered by clients worldwide</li>
-          <li>💰 Earn and grow your business</li>
-        </ul>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login"
-             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-            🚀 Go to Your Dashboard
-          </a>
-        </div>
-      `;
-    }
+        <!-- Body -->
+        <tr>
+          <td style="padding:48px;">
 
-    // ✅ General user fallback
-    else {
-      subject = "🎉 Welcome to Renewed Minds Global Consult!";
-      userMessage = `
-        <p>Dear <b>${username}</b>,</p>
-        <p>Welcome to <b>Renewed Minds Global Consult</b>! 🎉</p>
-        <p>We’re thrilled to have you join our community. 🚀</p>
-        <p>As a valued member, you’ll gain access to:</p>
-        <ul style="background: #f9f9f9; padding: 15px; border-radius: 5px; color: #555;">
-          <li>✅ High-quality consulting & professional guidance</li>
-          <li>✅ A supportive and engaging community</li>
-          <li>✅ Exclusive resources and expert insights</li>
-        </ul>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="https://www.renewedmindsglobalconsult.com/login"
-             style="background: #FFA500; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">
-            🚀 Login to Your Account
-          </a>
-        </div>
-      `;
-    }
+            <p style="margin:0 0 8px;color:#999;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">What you get</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:36px;">
+              ${featureRows}
+            </table>
 
-    const emailBody = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
-        <div style="background: #FFA500; color: #fff; padding: 15px; text-align: center; border-top-left-radius: 10px; border-top-right-radius: 10px;">
-          <h1>${subject}</h1>
-        </div>
+            ${note ? `
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+              <tr>
+                <td style="background:#fff8f0;border-left:4px solid #FF6B00;border-radius:0 8px 8px 0;padding:16px 20px;">
+                  <p style="margin:0;color:#333;font-size:14px;line-height:1.6;">📌 ${note}</p>
+                </td>
+              </tr>
+            </table>` : ""}
 
-        <div style="padding: 20px; color: #333;">
-          ${userMessage}
+            <!-- CTA -->
+            <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+              <tr>
+                <td align="center" style="background:linear-gradient(135deg,#FF6B00,#FF9500);border-radius:12px;">
+                  <a href="${ctaLink}" style="display:inline-block;padding:16px 40px;color:#fff;font-size:15px;font-weight:800;text-decoration:none;letter-spacing:0.3px;">
+                    ${ctaText}
+                  </a>
+                </td>
+              </tr>
+            </table>
 
-          <p style="margin-top: 30px;">If you have any questions, feel free to 
-            <a href="mailto:support@renewedmindsglobalconsult.com" 
-               style="color: #4CAF50; text-decoration: none; font-weight: bold;">
-               contact our support team
-            </a>.
-          </p>
+          </td>
+        </tr>
 
-          <p>Once again, welcome! We can’t wait to see you thrive. 🌟</p>
+        <!-- Divider -->
+        <tr><td style="padding:0 48px;"><div style="height:1px;background:#f0f0f0;"></div></td></tr>
 
-          <p>Best Regards,</p>
-          <p><b>The Renewed Minds Global Consult Team</b></p>
-        </div>
+        <!-- Support strip -->
+        <tr>
+          <td style="padding:24px 48px;">
+            <p style="margin:0;color:#888;font-size:13px;line-height:1.7;text-align:center;">
+              Questions? Reach us at
+              <a href="mailto:support@renewedmindsglobalconsult.com" style="color:#FF6B00;text-decoration:none;font-weight:600;">support@renewedmindsglobalconsult.com</a>
+            </p>
+          </td>
+        </tr>
 
-        <div style="background: #FFA500; color: #fff; text-align: center; padding: 10px; font-size: 12px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-          &copy; ${new Date().getFullYear()} Renewed Minds Global Consult. All rights reserved.
-        </div>
-      </div>
-    `;
+        <!-- Footer -->
+        <tr>
+          <td style="background:#fafafa;border-top:1px solid #f0f0f0;padding:28px 48px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <p style="margin:0 0 4px;color:#111;font-size:13px;font-weight:700;">Renewed Minds Global Consult</p>
+                  <p style="margin:0;color:#aaa;font-size:12px;">© ${new Date().getFullYear()} All rights reserved.</p>
+                </td>
+                <td align="right">
+                  <p style="margin:0;color:#aaa;font-size:12px;">We can't wait to see you thrive 🌟</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 
     await transporter.sendMail({
       from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
       to: email,
       subject,
-      html: emailBody,
+      html,
     });
 
     console.log(`✅ Welcome Email sent successfully to ${email}`);
@@ -349,6 +505,7 @@ export const register = async (req, res, next) => {
       services = [],
       role,
       tier,
+      portfolio,
 
       // Organization fields
       organizationName,
@@ -369,76 +526,75 @@ export const register = async (req, res, next) => {
     if (existingUser) return next(createError(400, "Email already in use"));
 
     const otp = generateOTP();
-const hashedOtp = await bcrypt.hash(otp, 10);
+    const hashedOtp = await bcrypt.hash(otp, 10);
 
-pendingUsers.set(email, {
-  username: username?.trim(),
-  email,
-  password: await bcrypt.hash(password, 10),
-  isSeller,
-  img,
-  phone,
-  desc,
-  country,
-  portfolioLink,
-  languages,
-  fullName,
-  dob,
-  address,
-  yearsOfExperience,
-  stateOfResidence,
-  countryOfResidence,
-  services,
-  nextOfKin: {
-    fullName: nextOfKin?.fullName || "",
-    dob: nextOfKin?.dob || null,
-    stateOfResidence: nextOfKin?.stateOfResidence || "",
-    countryOfResidence: nextOfKin?.countryOfResidence || "",
-    email: nextOfKin?.email || "",
-    address: nextOfKin?.address || "",
-    phone: nextOfKin?.phone || "",
-  },
-  role:
-    role === "organization"
-      ? "organization"
-      : role === "remote_worker"
-      ? "remote_worker"
-      : null,
-  tier:
-    role === "remote_worker" && tier?.toLowerCase() === "vip"
-      ? "vip"
-      : "free",
-  organization:
-    role === "organization"
-      ? {
-          name: organizationName || "",
-          regNumber: organizationRegNumber || "",
-          website: organizationWebsite || "",
-          description: organizationDescription || "",
-          verified: false,
-          contactEmail: organizationContactEmail || email,
-          contactPhone: organizationContactPhone || "",
-          logo: organizationLogo || "",
-          address: address || "",
-          state: organizationState || "",
-          country: organizationCountry || "",
-          industry: organizationIndustry || "",
-          companySize: organizationCompanySize || "",
-          socialLinks: {
-            linkedin: organizationSocialLinks?.linkedin || "",
-            twitter: organizationSocialLinks?.twitter || "",
-            facebook: organizationSocialLinks?.facebook || "",
-          },
-        }
-      : null,
-  hashedOtp,
-  otpExpires: Date.now() + OTP_EXPIRATION_TIME,
-});
+    pendingUsers.set(email, {
+      username: username?.trim(),
+      email,
+      password: await bcrypt.hash(password, 10),
+      isSeller,
+      img,
+      phone,
+      desc,
+      country,
+      portfolioLink,
+      languages,
+      fullName,
+      dob,
+      address,
+      yearsOfExperience,
+      stateOfResidence,
+      countryOfResidence,
+      services,
+      portfolio: portfolio || null,
+      nextOfKin: {
+        fullName: nextOfKin?.fullName || "",
+        dob: nextOfKin?.dob || null,
+        stateOfResidence: nextOfKin?.stateOfResidence || "",
+        countryOfResidence: nextOfKin?.countryOfResidence || "",
+        email: nextOfKin?.email || "",
+        address: nextOfKin?.address || "",
+        phone: nextOfKin?.phone || "",
+      },
+      role:
+        role === "organization"
+          ? "organization"
+          : role === "remote_worker"
+          ? "remote_worker"
+          : null,
+      tier:
+        role === "remote_worker" && tier?.toLowerCase() === "vip"
+          ? "vip"
+          : "free",
+      organization:
+        role === "organization"
+          ? {
+              name: organizationName || "",
+              regNumber: organizationRegNumber || "",
+              website: organizationWebsite || "",
+              description: organizationDescription || "",
+              verified: false,
+              contactEmail: organizationContactEmail || email,
+              contactPhone: organizationContactPhone || "",
+              logo: organizationLogo || "",
+              address: address || "",
+              state: organizationState || "",
+              country: organizationCountry || "",
+              industry: organizationIndustry || "",
+              companySize: organizationCompanySize || "",
+              socialLinks: {
+                linkedin: organizationSocialLinks?.linkedin || "",
+                twitter: organizationSocialLinks?.twitter || "",
+                facebook: organizationSocialLinks?.facebook || "",
+              },
+            }
+          : null,
+      hashedOtp,
+      otpExpires: Date.now() + OTP_EXPIRATION_TIME,
+    });
 
-    // ✅ NEW: Save to spreadsheet (safe + non-blocking)
     await savePendingUserToSheet(pendingUsers.get(email));
-
-   await sendOtpEmail(email, username, otp);
+    await sendOtpEmail(email, username, otp);
 
     res.status(201).json({
       message: "OTP sent. Please verify.",
@@ -576,6 +732,7 @@ export const verifyOtp = async (req, res, next) => {
       tier: userData.role === "remote_worker" ? userData.tier : null,
       organization:
         userData.role === "organization" ? userData.organization : null,
+      portfolio: userData.portfolio || null,
     });
 
     await newUser.save();

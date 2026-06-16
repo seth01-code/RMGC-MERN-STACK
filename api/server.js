@@ -185,6 +185,7 @@ import jobRoute from "./routes/jobRoute.js";
 import applicationRoute from "./routes/applicationRoute.js";
 import webhookRoute from "./routes/webhookRoute.js";
 import flutterwaveFreelancerRoute from "./routes/flutterwaveFreelancerRoute.js";
+import Portfolioroute from "./routes/Portfolioroute.js";
 
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
@@ -201,6 +202,7 @@ app.use("/api/jobs", jobRoute);
 app.use("/api/application", applicationRoute);
 app.use("/api/webhook", webhookRoute);
 app.use("/api/flutterwave", flutterwaveFreelancerRoute);
+app.use("/api/portfolio", Portfolioroute);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {

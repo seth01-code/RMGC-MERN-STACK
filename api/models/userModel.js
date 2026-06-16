@@ -15,7 +15,25 @@ const UserSchema = new mongoose.Schema(
     country: { type: String, default: "" },
     phone: { type: String, default: "" },
     desc: { type: String, default: "" },
-    portfolioLink: { type: [String], default: [] },
+
+    // ── CHANGED: was [String], now a Mixed object storing AI-extracted portfolio
+    // Structure:
+    // {
+    //   status: "pending" | "processing" | "completed" | "failed",
+    //   headline: String,
+    //   experience: Number,
+    //   skills: [String],
+    //   services: [String],
+    //   industries: [String],
+    //   certifications: [String],
+    //   projects: [{ name, description, technologies, outcomes }],
+    //   analyzedAt: Date,
+    // }
+    portfolio: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+
     languages: { type: [String], default: [] },
 
     isVerified: { type: Boolean, default: false },
@@ -44,67 +62,45 @@ const UserSchema = new mongoose.Schema(
 
     services: { type: [String], default: [] },
 
-    // ===== New RMGC Fields =====
-
-    /**
-     * ROLE:
-     * - null → Freelancer (default, backward-compatible)
-     * - "organization"
-     * - "remote_worker"
-     */
     role: {
       type: String,
       enum: ["organization", "remote_worker", null],
       default: null,
     },
 
-    /**
-     * TIER:
-     * - null → Not a remote worker (freelancer or organization)
-     * - "free" → Remote worker (free tier)
-     * - "vip" → Remote worker (VIP tier, uses vipSubscription)
-     */
     tier: {
       type: String,
       enum: ["free", "vip", null],
       default: null,
     },
 
-    /**
-     * VIP SUBSCRIPTION:
-     * Used only when tier === "vip"
-     */
     vipSubscription: {
       startDate: { type: Date },
       endDate: { type: Date },
       active: { type: Boolean, default: false },
-
-      paymentReference: { type: String }, // tx_ref
-      transactionId: { type: String }, // flw_ref
+      paymentReference: { type: String },
+      transactionId: { type: String },
       gateway: {
         type: String,
         enum: ["paystack", "flutterwave", "stripe", null],
         default: null,
       },
-
       amount: { type: Number },
       currency: { type: String },
       cardToken: { type: String },
-
       invoices: [
         {
-          invoiceId: { type: String }, // flw_ref or generated ID
+          invoiceId: { type: String },
           txRef: { type: String },
           amount: { type: Number },
           currency: { type: String },
-          status: { type: String }, // successful | failed
+          status: { type: String },
           chargedAt: { type: Date },
           processorResponse: { type: String },
           appFee: { type: Number },
           merchantFee: { type: Number },
         },
       ],
-
       lastCharge: {
         amount: { type: Number },
         currency: { type: String },
@@ -116,7 +112,6 @@ const UserSchema = new mongoose.Schema(
       },
     },
 
-    // ===== Organization Fields =====
     organization: {
       name: { type: String },
       regNumber: { type: String },
@@ -126,13 +121,11 @@ const UserSchema = new mongoose.Schema(
       contactEmail: { type: String },
       contactPhone: { type: String },
       logo: { type: String },
-
       address: { type: String },
       state: { type: String },
       country: { type: String },
       industry: { type: String },
       companySize: { type: String },
-
       socialLinks: {
         linkedin: { type: String, default: "" },
         twitter: { type: String, default: "" },
@@ -142,7 +135,7 @@ const UserSchema = new mongoose.Schema(
 
     postedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
