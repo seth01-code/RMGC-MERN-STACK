@@ -31,7 +31,11 @@ const transporter = nodemailer.createTransport({
 
 transporter.verify((error, success) => {
   if (error) {
-    console.error("❌ Email transporter error:", error);
+    console.error("❌ Email transporter error:", error.message);
+    console.error("❌ Email config:", {
+      user: process.env.EMAIL_USER ? "SET" : "MISSING",
+      pass: process.env.EMAIL_PASS ? "SET" : "MISSING",
+    });
   } else {
     console.log("✅ Email server ready");
   }
