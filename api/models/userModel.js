@@ -26,7 +26,13 @@ const UserSchema = new mongoose.Schema(
     //   services: [String],
     //   industries: [String],
     //   certifications: [String],
-    //   projects: [{ name, description, technologies, outcomes }],
+    //   projects: [{
+    //     name, description, technologies, outcomes,
+    //     link: String,        // single project URL (GitHub repo, live demo, case study) — null if none found
+    //     images: [String],   // Cloudinary URLs matched to this project specifically
+    //   }],
+    //   gallery: [String],    // extracted images that didn't map to one specific
+    //                         // project (skills/tools graphics, cert badges, etc.)
     //   analyzedAt: Date,
     // }
     portfolio: {
@@ -61,6 +67,15 @@ const UserSchema = new mongoose.Schema(
     },
 
     services: { type: [String], default: [] },
+    // ─────────────────────────────────────────────────────────────
+    // ADD THESE FIELDS to your existing UserSchema in models/User.js
+    // Place them alongside the other top-level fields (e.g. after `services`)
+    // ─────────────────────────────────────────────────────────────
+
+    // Suspension
+    suspended: { type: Boolean, default: false },
+    suspendedAt: { type: Date, default: null },
+    suspendReason: { type: String, default: null },
 
     role: {
       type: String,

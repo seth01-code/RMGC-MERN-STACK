@@ -48,97 +48,156 @@ const generateOTP = () =>
 // Hash OTP
 const hashOTP = (otp) => bcrypt.hashSync(otp, 5);
 
-// Send OTP Email (No-Reply & Prevent Grouping)
-const sendOtpEmail = async (email, username, otp) => {
-  console.log(`📧 Sending OTP to ${email}...`);
-  try {
-    await transporter.sendMail({
-      from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
-      to: email,
-      subject: "Your Renewed Minds OTP Code",
-      headers: {
-        "Message-ID": `<${Date.now()}@renewedmindsglobalconsult.com>`,
-        "In-Reply-To": null,
-        References: null,
-      },
-      html: `
+/* ════════════════════════════════════════════════════════════════════════
+   EMAIL DESIGN SYSTEM
+   Orange + white only. Forced light-mode rendering via meta tags + literal
+   bgcolor attributes (more reliable than prefers-color-scheme overrides
+   for guaranteeing the same look on every device/theme). No icons/emoji.
+   ════════════════════════════════════════════════════════════════════════ */
+
+const BRAND = {
+  name: "Renewed Minds Global Consult",
+  supportEmail: "support@renewedmindsglobalconsult.com",
+  from: '"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>',
+  orange: "#FF6B00",
+  orangeSoft: "#FF9500",
+};
+
+const PALETTE = {
+  pageBg: "#fff7f0", // soft warm white — the outer page
+  cardBg: "#ffffff", // pure white — the card itself
+  border: "#f3e6da", // hairline divider, warm-tinted
+  heading: "#171717", // near-black, for headings only
+  body: "#4a4a4a", // dark gray body copy (legibility — see note above)
+  muted: "#9a9a9a", // light gray for labels/timestamps
+  surface: "#fff3e8", // light orange tint — replaces old gray surfaces
+  glow: "rgba(255,107,0,0.18)",
+};
+
+// Forces every client to render this as a fixed light-mode email regardless
+// of the device's system theme. `color-scheme: light only` tells compliant
+// clients (Apple Mail, new Outlook apps, etc.) not to auto-invert it. Every
+// background below is ALSO set via the literal `bgcolor` HTML attribute (in
+// addition to CSS) as a fallback for clients that strip <style> tags or
+// ignore the meta directive — they'll still see real white/orange, not a
+// half-inverted mismatch.
+const renderHeader = ({ eyebrow, title, subtitle }) => `
+  <tr>
+    <td bgcolor="${PALETTE.cardBg}" style="background-color:${PALETTE.cardBg};background-image:radial-gradient(ellipse 520px 220px at 50% -70px, ${PALETTE.glow}, rgba(255,255,255,0) 70%);padding:44px 48px 32px;">
+      <div style="width:28px;height:3px;background-color:${BRAND.orange};border-radius:2px;margin-bottom:14px;"></div>
+      <span style="display:block;color:${BRAND.orange};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">${eyebrow}</span>
+      <h1 style="margin:0;color:${PALETTE.heading};font-size:26px;font-weight:800;line-height:1.3;">${title}</h1>
+      <p style="margin:8px 0 0;color:${PALETTE.muted};font-size:15px;">${subtitle}</p>
+    </td>
+  </tr>
+`;
+
+const renderCallout = (html) => `
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+    <tr>
+      <td bgcolor="${PALETTE.surface}" style="background-color:${PALETTE.surface};border-left:4px solid ${BRAND.orange};border-radius:0 8px 8px 0;padding:16px 20px;">
+        <p style="margin:0;color:${PALETTE.body};font-size:14px;line-height:1.6;">${html}</p>
+      </td>
+    </tr>
+  </table>
+`;
+
+const renderCtaButton = (href, label) => `
+  <table cellpadding="0" cellspacing="0" style="margin:0 auto 8px;">
+    <tr>
+      <td bgcolor="${BRAND.orange}" align="center" style="background-color:${BRAND.orange};background-image:linear-gradient(135deg,${BRAND.orange},${BRAND.orangeSoft});border-radius:12px;">
+        <a href="${href}" style="display:inline-block;padding:16px 40px;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;letter-spacing:0.3px;">
+          ${label}
+        </a>
+      </td>
+    </tr>
+  </table>
+`;
+
+const renderFooter = () => `
+  <tr>
+    <td bgcolor="${PALETTE.cardBg}" style="background-color:${PALETTE.cardBg};border-top:1px solid ${PALETTE.border};padding:24px 48px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td>
+            <p style="margin:0 0 4px;color:${PALETTE.heading};font-size:13px;font-weight:700;">${BRAND.name}</p>
+            <p style="margin:0;color:${PALETTE.muted};font-size:12px;">© ${new Date().getFullYear()} All rights reserved.</p>
+          </td>
+          <td align="right">
+            <a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.orange};font-size:12px;text-decoration:none;font-weight:600;">Need help?</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+`;
+
+const renderShell = (bodyHtml) => `
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 16px;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <style>body{margin:0;padding:0;}</style>
+</head>
+<body bgcolor="${PALETTE.pageBg}" style="margin:0;padding:0;background-color:${PALETTE.pageBg};font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" bgcolor="${PALETTE.pageBg}" style="background-color:${PALETTE.pageBg};padding:40px 16px;">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-
-        <!-- Header -->
-        <tr>
-          <td style="background:linear-gradient(135deg,#FF6B00 0%,#FF9500 100%);padding:40px 48px 36px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:10px;padding:8px 16px;margin-bottom:20px;">
-                    <span style="color:#fff;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Security Verification</span>
-                  </div>
-                  <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;line-height:1.2;">Verify your account</h1>
-                  <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:15px;">One-time password for ${username}</p>
-                </td>
-                <td align="right" style="vertical-align:top;">
-                  <div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;line-height:56px;text-align:center;">🔐</div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="padding:48px;">
-            <p style="margin:0 0 8px;color:#666;font-size:14px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Your one-time password</p>
-
-            <!-- OTP Box -->
-            <div style="background:#fafafa;border:2px solid #FF6B00;border-radius:14px;padding:28px;text-align:center;margin:16px 0 32px;">
-              <div style="letter-spacing:12px;font-size:42px;font-weight:900;color:#111;font-variant-numeric:tabular-nums;padding-left:12px;">${otp}</div>
-            </div>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
-              <tr>
-                <td style="background:#fff8f0;border-left:4px solid #FF6B00;border-radius:0 8px 8px 0;padding:16px 20px;">
-                  <p style="margin:0;color:#333;font-size:14px;line-height:1.6;">
-                    ⏱ This OTP expires in <strong>2 minutes</strong>.<br>
-                    🔒 Never share this code with anyone — our team will never ask for it.
-                  </p>
-                </td>
-              </tr>
-            </table>
-
-            <p style="margin:0;color:#888;font-size:13px;line-height:1.7;">
-              If you didn't create an account with Renewed Minds Global Consult, you can safely ignore this email.
-            </p>
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="background:#fafafa;border-top:1px solid #f0f0f0;padding:28px 48px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <p style="margin:0 0 4px;color:#111;font-size:13px;font-weight:700;">Renewed Minds Global Consult</p>
-                  <p style="margin:0;color:#aaa;font-size:12px;">© ${new Date().getFullYear()} All rights reserved.</p>
-                </td>
-                <td align="right">
-                  <a href="mailto:support@renewedmindsglobalconsult.com" style="color:#FF6B00;font-size:12px;text-decoration:none;font-weight:600;">Need help?</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
+      <table width="600" cellpadding="0" cellspacing="0" bgcolor="${PALETTE.cardBg}" style="max-width:600px;width:100%;background-color:${PALETTE.cardBg};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+        ${bodyHtml}
       </table>
     </td></tr>
   </table>
 </body>
-</html>`,
+</html>`;
+
+const noReplyHeaders = () => ({
+  "Message-ID": `<${Date.now()}@renewedmindsglobalconsult.com>`,
+  "In-Reply-To": null,
+  References: null,
+});
+
+/* ─── 1. OTP EMAIL ─────────────────────────────────────────────────────── */
+
+const sendOtpEmail = async (email, username, otp) => {
+  console.log(`📧 Sending OTP to ${email}...`);
+  try {
+    const body = `
+      ${renderHeader({
+        eyebrow: "Security verification",
+        title: "Verify your account",
+        subtitle: `One-time password for ${username}`,
+      })}
+      <tr>
+        <td style="padding:8px 48px 44px;">
+          <p style="margin:0 0 10px;color:${PALETTE.muted};font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">
+            Your one-time password
+          </p>
+
+          <div style="background-color:${PALETTE.surface};border:2px solid ${BRAND.orange};border-radius:14px;padding:28px;text-align:center;margin:8px 0 32px;">
+            <div style="letter-spacing:12px;font-size:42px;font-weight:900;color:${PALETTE.heading};font-variant-numeric:tabular-nums;padding-left:12px;">
+              ${otp}
+            </div>
+          </div>
+
+          ${renderCallout(`This OTP expires in <strong>2 minutes</strong>.<br>Never share this code with anyone — our team will never ask for it.`)}
+
+          <p style="margin:0;color:${PALETTE.muted};font-size:13px;line-height:1.7;">
+            If you didn't create an account with ${BRAND.name}, you can safely ignore this email.
+          </p>
+        </td>
+      </tr>
+      ${renderFooter()}
+    `;
+
+    await transporter.sendMail({
+      from: BRAND.from,
+      to: email,
+      subject: "Your Renewed Minds OTP Code",
+      headers: noReplyHeaders(),
+      html: renderShell(body),
     });
     console.log(`✅ OTP sent successfully to ${email}`);
   } catch (error) {
@@ -146,106 +205,44 @@ const sendOtpEmail = async (email, username, otp) => {
   }
 };
 
+/* ─── 2. RESET PASSWORD EMAIL ──────────────────────────────────────────── */
+
 const sendResetPasswordEmail = async (email, username, resetLink) => {
   console.log(`📧 Sending password reset link to ${email}...`);
   try {
+    const body = `
+      ${renderHeader({
+        eyebrow: "Account security",
+        title: "Reset your password",
+        subtitle: `We received a request for ${username}`,
+      })}
+      <tr>
+        <td style="padding:8px 48px 44px;">
+          <p style="margin:0 0 24px;color:${PALETTE.body};font-size:15px;line-height:1.7;">
+            Hi <strong>${username}</strong>, someone requested a password reset for your ${BRAND.name} account. Click the button below to choose a new password.
+          </p>
+
+          ${renderCtaButton(resetLink, "Reset my password →")}
+
+          <div style="margin-top:24px;background-color:${PALETTE.surface};border-radius:10px;padding:16px 20px;margin-bottom:32px;word-break:break-all;">
+            <p style="margin:0 0 6px;color:${PALETTE.muted};font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
+              Or copy this link
+            </p>
+            <a href="${resetLink}" style="color:${BRAND.orange};font-size:13px;text-decoration:none;">${resetLink}</a>
+          </div>
+
+          ${renderCallout(`This link expires in <strong>1 hour</strong>.<br>If you didn't request this, please ignore — your password won't change.`)}
+        </td>
+      </tr>
+      ${renderFooter()}
+    `;
+
     await transporter.sendMail({
-      from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
+      from: BRAND.from,
       to: email,
       subject: "Reset Your Password — Renewed Minds",
-      headers: {
-        "Message-ID": `<${Date.now()}@renewedmindsglobalconsult.com>`,
-        "In-Reply-To": null,
-        References: null,
-      },
-      html: `
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 16px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-
-        <!-- Header -->
-        <tr>
-          <td style="background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%);padding:40px 48px 36px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <div style="display:inline-block;background:rgba(255,107,0,0.2);border:1px solid rgba(255,107,0,0.4);border-radius:10px;padding:8px 16px;margin-bottom:20px;">
-                    <span style="color:#FF6B00;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Account Security</span>
-                  </div>
-                  <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;line-height:1.2;">Reset your password</h1>
-                  <p style="margin:8px 0 0;color:rgba(255,255,255,0.6);font-size:15px;">We received a request for ${username}</p>
-                </td>
-                <td align="right" style="vertical-align:top;">
-                  <div style="width:56px;height:56px;background:rgba(255,107,0,0.15);border:1px solid rgba(255,107,0,0.3);border-radius:14px;font-size:28px;line-height:56px;text-align:center;">🔑</div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="padding:48px;">
-            <p style="margin:0 0 24px;color:#444;font-size:15px;line-height:1.7;">
-              Hi <strong>${username}</strong>, someone requested a password reset for your Renewed Minds account. Click the button below to choose a new password.
-            </p>
-
-            <!-- CTA Button -->
-            <table cellpadding="0" cellspacing="0" style="margin:0 auto 32px;">
-              <tr>
-                <td align="center" style="background:linear-gradient(135deg,#FF6B00,#FF9500);border-radius:12px;">
-                  <a href="${resetLink}" style="display:inline-block;padding:16px 40px;color:#fff;font-size:15px;font-weight:800;text-decoration:none;letter-spacing:0.3px;">
-                    Reset my password →
-                  </a>
-                </td>
-              </tr>
-            </table>
-
-            <!-- Fallback link -->
-            <div style="background:#fafafa;border-radius:10px;padding:16px 20px;margin-bottom:32px;word-break:break-all;">
-              <p style="margin:0 0 6px;color:#999;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Or copy this link</p>
-              <a href="${resetLink}" style="color:#FF6B00;font-size:13px;text-decoration:none;">${resetLink}</a>
-            </div>
-
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="background:#fff8f0;border-left:4px solid #FF6B00;border-radius:0 8px 8px 0;padding:16px 20px;">
-                  <p style="margin:0;color:#333;font-size:14px;line-height:1.6;">
-                    ⏱ This link expires in <strong>1 hour</strong>.<br>
-                    🚫 If you didn't request this, please ignore — your password won't change.
-                  </p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="background:#fafafa;border-top:1px solid #f0f0f0;padding:28px 48px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <p style="margin:0 0 4px;color:#111;font-size:13px;font-weight:700;">Renewed Minds Global Consult</p>
-                  <p style="margin:0;color:#aaa;font-size:12px;">© ${new Date().getFullYear()} All rights reserved.</p>
-                </td>
-                <td align="right">
-                  <a href="mailto:support@renewedmindsglobalconsult.com" style="color:#FF6B00;font-size:12px;text-decoration:none;font-weight:600;">Need help?</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+      headers: noReplyHeaders(),
+      html: renderShell(body),
     });
     console.log(`✅ Password reset email sent successfully to ${email}`);
   } catch (error) {
@@ -253,228 +250,160 @@ const sendResetPasswordEmail = async (email, username, resetLink) => {
   }
 };
 
-// Send Welcome Email (Professional UI)
-const sendWelcomeEmail = async (email, username, isSeller, isAdmin, role, tier) => {
+/* ─── 3. WELCOME EMAIL ─────────────────────────────────────────────────── */
+
+const sendWelcomeEmail = async (
+  email,
+  username,
+  isSeller,
+  isAdmin,
+  role,
+  tier,
+) => {
   console.log(`📧 Sending Welcome Email to ${email}...`);
   try {
-    let subject;
-    let headerLabel;
-    let headerEmoji;
-    let headerBg;
-    let headline;
-    let subline;
-    let features;
-    let ctaText;
-    let ctaLink = "https://www.renewedmindsglobalconsult.com/login";
+    let subject, eyebrow, headline, subline, features;
+    const ctaLink = "https://www.renewedmindsglobalconsult.com/login";
+    let ctaText = "Login to your account →";
     let note = null;
 
-    console.log("🧩 Welcome Email Context →", { email, username, isSeller, isAdmin, role, tier });
+    console.log("🧩 Welcome Email Context →", {
+      email,
+      username,
+      isSeller,
+      isAdmin,
+      role,
+      tier,
+    });
 
     if (role === "organization") {
-      subject = "Welcome to Renewed Minds Global Consult – Organization Account Created!";
-      headerLabel = "Organization Account";
-      headerEmoji = "🏢";
-      headerBg = "linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%)";
+      subject =
+        "Welcome to Renewed Minds Global Consult – Organization Account Created!";
+      eyebrow = "Organization account";
       headline = "Your organization is live";
       subline = "Start connecting with verified remote professionals";
       features = [
-        ["📝", "Post remote job opportunities to a verified talent pool"],
-        ["💼", "Connect with skilled professionals across Africa and beyond"],
-        ["💳", "Manage applications and hire talent securely"],
+        "Post remote job opportunities to a verified talent pool",
+        "Connect with skilled professionals across Africa and beyond",
+        "Manage applications and hire talent securely",
       ];
-      ctaText = "Access Organization Dashboard →";
-      note = "Complete your organization verification to activate job posting privileges.";
-
+      ctaText = "Access organization dashboard →";
+      note =
+        "Complete your organization verification to activate job posting privileges.";
     } else if (role === "remote_worker" && tier === "vip") {
       subject = "Welcome to Renewed Minds – VIP Remote Worker Activated!";
-      headerLabel = "VIP Member";
-      headerEmoji = "🌟";
-      headerBg = "linear-gradient(135deg,#7c3aed 0%,#a855f7 100%)";
+      eyebrow = "VIP member";
       headline = "VIP access unlocked";
       subline = `Welcome aboard, ${username}. Your full access is ready.`;
       features = [
-        ["💰", "All remote job listings — no pay range restrictions"],
-        ["📬", "Direct applications and priority matching"],
-        ["🚀", "Boosted visibility so recruiters find you first"],
+        "All remote job listings — no pay range restrictions",
+        "Direct applications and priority matching",
+        "Boosted visibility so recruiters find you first",
       ];
-      ctaText = "Open VIP Dashboard →";
-
+      ctaText = "Open VIP dashboard →";
     } else if (role === "remote_worker") {
       subject = "Welcome to Renewed Minds – Remote Worker Account Created!";
-      headerLabel = "Remote Worker";
-      headerEmoji = "💼";
-      headerBg = "linear-gradient(135deg,#0369a1 0%,#0ea5e9 100%)";
+      eyebrow = "Remote worker";
       headline = "Your remote career starts here";
       subline = `Good to have you, ${username}`;
       features = [
-        ["🪙", "Access remote jobs in the $1–$200 pay range"],
-        ["📈", "Build a profile that stands out to global clients"],
-        ["🎯", "Upgrade to VIP anytime for unlimited job access"],
+        "Access remote jobs in the $1–$200 pay range",
+        "Build a profile that stands out to global clients",
+        "Upgrade to VIP anytime for unlimited job access",
       ];
-      ctaText = "Go to Dashboard →";
-
+      ctaText = "Go to dashboard →";
     } else if (isAdmin) {
       subject = "Welcome to Renewed Minds – Admin Access Granted!";
-      headerLabel = "Administrator";
-      headerEmoji = "👑";
-      headerBg = "linear-gradient(135deg,#1a1a1a 0%,#374151 100%)";
+      eyebrow = "Administrator";
       headline = "Admin access granted";
       subline = "You have full oversight of the platform";
       features = [
-        ["🛠", "Manage users, sellers, and service providers"],
-        ["📊", "Monitor platform analytics and transactions"],
-        ["💬", "Facilitate communication and resolve disputes"],
+        "Manage users, sellers, and service providers",
+        "Monitor platform analytics and transactions",
+        "Facilitate communication and resolve disputes",
       ];
-      ctaText = "Access Admin Dashboard →";
-
+      ctaText = "Access admin dashboard →";
     } else if (isSeller) {
-      subject = "Welcome to Renewed Minds Global Consult – You're Now a Service Provider!";
-      headerLabel = "Service Provider";
-      headerEmoji = "🚀";
-      headerBg = "linear-gradient(135deg,#FF6B00 0%,#FF9500 100%)";
+      subject =
+        "Welcome to Renewed Minds Global Consult – You're Now a Service Provider!";
+      eyebrow = "Service provider";
       headline = `Welcome, ${username}!`;
       subline = "Your freelancer profile is ready to go live";
       features = [
-        ["💼", "Create and showcase your services to thousands of clients"],
-        ["📈", "Get discovered by businesses looking for your exact skills"],
-        ["💰", "Earn, grow, and build your freelance business"],
+        "Create and showcase your services to thousands of clients",
+        "Get discovered by businesses looking for your exact skills",
+        "Earn, grow, and build your freelance business",
       ];
-      ctaText = "Go to Your Dashboard →";
-
+      ctaText = "Go to your dashboard →";
     } else {
       subject = "Welcome to Renewed Minds Global Consult!";
-      headerLabel = "New Member";
-      headerEmoji = "🎉";
-      headerBg = "linear-gradient(135deg,#FF6B00 0%,#FF9500 100%)";
+      eyebrow = "New member";
       headline = `Great to have you, ${username}!`;
       subline = "Your account is ready";
       features = [
-        ["✅", "High-quality consulting and professional guidance"],
-        ["✅", "A supportive and engaging community"],
-        ["✅", "Exclusive resources and expert insights"],
+        "High-quality consulting and professional guidance",
+        "A supportive and engaging community",
+        "Exclusive resources and expert insights",
       ];
-      ctaText = "Login to Your Account →";
     }
 
-    const featureRows = features.map(([emoji, text]) => `
+    const featureRows = features
+      .map(
+        (text) => `
       <tr>
-        <td style="padding:14px 0;border-bottom:1px solid #f5f5f5;">
+        <td style="padding:12px 0;border-bottom:1px solid ${PALETTE.border};">
           <table cellpadding="0" cellspacing="0">
             <tr>
-              <td style="width:40px;vertical-align:middle;">
-                <div style="width:36px;height:36px;background:#fff8f0;border-radius:10px;text-align:center;line-height:36px;font-size:18px;">${emoji}</div>
+              <td style="width:18px;vertical-align:middle;">
+                <div style="width:6px;height:6px;border-radius:50%;background-color:${BRAND.orange};"></div>
               </td>
               <td style="padding-left:14px;vertical-align:middle;">
-                <p style="margin:0;color:#333;font-size:14px;line-height:1.5;">${text}</p>
+                <p style="margin:0;color:${PALETTE.body};font-size:14px;line-height:1.5;">${text}</p>
               </td>
             </tr>
           </table>
         </td>
       </tr>
-    `).join("");
+    `,
+      )
+      .join("");
 
-    const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f4f0;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f0;padding:40px 16px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    const body = `
+      ${renderHeader({ eyebrow, title: headline, subtitle: subline })}
+      <tr>
+        <td style="padding:8px 48px;">
+          <p style="margin:0 0 6px;color:${PALETTE.muted};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">
+            What you get
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            ${featureRows}
+          </table>
 
-        <!-- Header -->
-        <tr>
-          <td style="background:${headerBg};padding:40px 48px 36px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:10px;padding:8px 16px;margin-bottom:20px;">
-                    <span style="color:#fff;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">${headerLabel}</span>
-                  </div>
-                  <h1 style="margin:0;color:#ffffff;font-size:30px;font-weight:800;line-height:1.2;">${headline}</h1>
-                  <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">${subline}</p>
-                </td>
-                <td align="right" style="vertical-align:top;">
-                  <div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:14px;font-size:28px;line-height:56px;text-align:center;">${headerEmoji}</div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+          ${note ? renderCallout(note) : ""}
 
-        <!-- Body -->
-        <tr>
-          <td style="padding:48px;">
+          ${renderCtaButton(ctaLink, ctaText)}
+        </td>
+      </tr>
 
-            <p style="margin:0 0 8px;color:#999;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">What you get</p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:36px;">
-              ${featureRows}
-            </table>
+      <tr><td style="padding:8px 48px 0;"><div style="height:1px;background-color:${PALETTE.border};"></div></td></tr>
 
-            ${note ? `
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
-              <tr>
-                <td style="background:#fff8f0;border-left:4px solid #FF6B00;border-radius:0 8px 8px 0;padding:16px 20px;">
-                  <p style="margin:0;color:#333;font-size:14px;line-height:1.6;">📌 ${note}</p>
-                </td>
-              </tr>
-            </table>` : ""}
+      <tr>
+        <td style="padding:24px 48px;">
+          <p style="margin:0;color:${PALETTE.muted};font-size:13px;line-height:1.7;text-align:center;">
+            Questions? Reach us at
+            <a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.orange};text-decoration:none;font-weight:600;">${BRAND.supportEmail}</a>
+          </p>
+        </td>
+      </tr>
 
-            <!-- CTA -->
-            <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
-              <tr>
-                <td align="center" style="background:linear-gradient(135deg,#FF6B00,#FF9500);border-radius:12px;">
-                  <a href="${ctaLink}" style="display:inline-block;padding:16px 40px;color:#fff;font-size:15px;font-weight:800;text-decoration:none;letter-spacing:0.3px;">
-                    ${ctaText}
-                  </a>
-                </td>
-              </tr>
-            </table>
-
-          </td>
-        </tr>
-
-        <!-- Divider -->
-        <tr><td style="padding:0 48px;"><div style="height:1px;background:#f0f0f0;"></div></td></tr>
-
-        <!-- Support strip -->
-        <tr>
-          <td style="padding:24px 48px;">
-            <p style="margin:0;color:#888;font-size:13px;line-height:1.7;text-align:center;">
-              Questions? Reach us at
-              <a href="mailto:support@renewedmindsglobalconsult.com" style="color:#FF6B00;text-decoration:none;font-weight:600;">support@renewedmindsglobalconsult.com</a>
-            </p>
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="background:#fafafa;border-top:1px solid #f0f0f0;padding:28px 48px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td>
-                  <p style="margin:0 0 4px;color:#111;font-size:13px;font-weight:700;">Renewed Minds Global Consult</p>
-                  <p style="margin:0;color:#aaa;font-size:12px;">© ${new Date().getFullYear()} All rights reserved.</p>
-                </td>
-                <td align="right">
-                  <p style="margin:0;color:#aaa;font-size:12px;">We can't wait to see you thrive 🌟</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+      ${renderFooter()}
+    `;
 
     await transporter.sendMail({
-      from: `"Renewed Minds Global Consult" <no-reply@renewedmindsglobalconsult.com>`,
+      from: BRAND.from,
       to: email,
       subject,
-      html,
+      html: renderShell(body),
     });
 
     console.log(`✅ Welcome Email sent successfully to ${email}`);
@@ -564,8 +493,8 @@ export const register = async (req, res, next) => {
         role === "organization"
           ? "organization"
           : role === "remote_worker"
-          ? "remote_worker"
-          : null,
+            ? "remote_worker"
+            : null,
       tier:
         role === "remote_worker" && tier?.toLowerCase() === "vip"
           ? "vip"
@@ -641,7 +570,7 @@ export const flutterwaveFreelancerIntent = async (req, res) => {
           Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     const paymentLink = response?.data?.data?.link;
@@ -652,11 +581,13 @@ export const flutterwaveFreelancerIntent = async (req, res) => {
 
     return res.status(200).json({ paymentLink });
   } catch (err) {
-    console.error("Flutterwave intent error:", err?.response?.data || err.message);
+    console.error(
+      "Flutterwave intent error:",
+      err?.response?.data || err.message,
+    );
     return res.status(500).json("Error creating Flutterwave payment intent");
   }
 };
-
 
 export const freelancerPaymentSuccess = async (req, res, next) => {
   const { email, txRef, flwRef, amount, currency } = req.body;
@@ -748,7 +679,7 @@ export const verifyOtp = async (req, res, next) => {
       userData.isSeller,
       userData.isAdmin,
       userData.role,
-      userData.tier
+      userData.tier,
     );
 
     res.status(200).json({
@@ -763,9 +694,6 @@ export const verifyOtp = async (req, res, next) => {
 };
 
 // ✅ Login
-
-
-
 // Escape regex special characters (security best practice)
 const escapeRegex = (text) => {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -816,6 +744,15 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: "Incorrect password" });
     }
 
+
+// ── Suspension check ──────────────────────────────────────────
+if (user.suspended) {
+  return res.status(403).json({
+    error: "account_suspended",
+    reason: user.suspendReason || "Your account has been suspended. Please contact support.",
+  });
+}
+
     // -----------------------------------
     // Determine role
     // -----------------------------------
@@ -825,8 +762,7 @@ export const login = async (req, res) => {
     else if (user.isSeller) role = "seller";
     else if (user.role === "organization" || user.organization?.regNumber)
       role = "organization";
-    else if (user.role === "remote_worker")
-      role = "remote_worker";
+    else if (user.role === "remote_worker") role = "remote_worker";
 
     // -----------------------------------
     // Create JWT
@@ -841,7 +777,7 @@ export const login = async (req, res) => {
         isRemoteWorker: role === "remote_worker",
       },
       process.env.JWT_KEY,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     // -----------------------------------
@@ -850,8 +786,7 @@ export const login = async (req, res) => {
     res.cookie("accessToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production" ? "None" : "Lax",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
 
     // -----------------------------------
@@ -874,7 +809,6 @@ export const login = async (req, res) => {
       },
       organization: user.organization || null,
     });
-
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({
@@ -888,8 +822,7 @@ export const resendOtp = async (req, res, next) => {
   try {
     const { email } = req.body;
 
-    if (!email)
-      return next(createError(400, "Email is required"));
+    if (!email) return next(createError(400, "Email is required"));
 
     if (!pendingUsers.has(email)) {
       return next(createError(404, "No pending registration found"));
@@ -989,5 +922,5 @@ export const logout = async (req, res) => {
     sameSite: "None",
     secure: true,
   });
-  res.status(200).send("Logged out successfully.");
+  res.status(200).json({ redirectUrl: "http://localhost:3000/login" });
 };

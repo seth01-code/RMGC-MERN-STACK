@@ -1,8 +1,8 @@
 import Conversation from "../models/conversationModel.js";
+import User from "../models/userModel.js";
 import mongoose from "mongoose";
 
 // Create or get an existing conversation
-
 export const createOrGetConversation = async (req, res) => {
   try {
     let { userId, otherUserId } = req.body;
@@ -16,6 +16,24 @@ export const createOrGetConversation = async (req, res) => {
 
     userId = new mongoose.Types.ObjectId(userId);
     otherUserId = new mongoose.Types.ObjectId(otherUserId);
+
+    // Block conversation if either party is suspended
+    const [user, otherUser] = await Promise.all([
+      User.findById(userId).select("suspended isAdmin"),
+      User.findById(otherUserId).select("suspended isAdmin"),
+    ]);
+
+    if (!user || !otherUser) {
+      return res.status(404).json({ error: "One or both users not found." });
+    }
+
+    if (user.suspended && !user.isAdmin) {
+      return res.status(403).json({ error: "Your account has been suspended." });
+    }
+
+    if (otherUser.suspended && !otherUser.isAdmin) {
+      return res.status(404).json({ error: "User not found." });
+    }
 
     let conversation = await Conversation.findOne({
       participants: { $all: [userId, otherUserId] },
@@ -44,21 +62,30 @@ export const getConversations = async (req, res) => {
   try {
     const conversations = await Conversation.find({
       participants: userId,
-    }).populate("participants", "username img"); // Populate participants' username and image
+    }).populate("participants", "username img suspended isAdmin");
 
-    // Format conversations to exclude the logged-in user from participants
-    const formattedConversations = conversations.map((conversation) => {
-      const otherParticipant = conversation.participants.find(
-        (participant) => participant._id.toString() !== userId
-      );
+    // Filter out conversations where the other participant is suspended,
+    // then format to exclude the logged-in user from the participants list
+    const formattedConversations = conversations
+      .filter((conversation) => {
+        const other = conversation.participants.find(
+          (p) => p._id.toString() !== userId
+        );
+        // Keep the conversation only if the other user exists and isn't suspended
+        return other && (!other.suspended || other.isAdmin);
+      })
+      .map((conversation) => {
+        const otherParticipant = conversation.participants.find(
+          (p) => p._id.toString() !== userId
+        );
 
-      return {
-        _id: conversation._id,
-        otherParticipant, // The other user's info (id, username, img)
-        lastMessage: conversation.lastMessage,
-        updatedAt: conversation.updatedAt,
-      };
-    });
+        return {
+          _id: conversation._id,
+          otherParticipant,
+          lastMessage: conversation.lastMessage,
+          updatedAt: conversation.updatedAt,
+        };
+      });
 
     res.status(200).json(formattedConversations);
   } catch (error) {
@@ -70,12 +97,10 @@ export const getConversations = async (req, res) => {
 
 export const getAllConversations = async (req, res) => {
   try {
-    // Ensure only admins can access this route
-
-    // Fetch all conversations, including participants
+    // Admins see everything — no suspension filter here
     const conversations = await Conversation.find({})
-      .populate("participants", "username img") // Populate participants' details
-      .sort({ updatedAt: -1 }); // Sort by latest updates
+      .populate("participants", "username img suspended")
+      .sort({ updatedAt: -1 });
 
     res.status(200).json(conversations);
   } catch (error) {
@@ -94,10 +119,18 @@ export const getSingleConversation = async (req, res) => {
     }
 
     const conversation = await Conversation.findById(conversationId)
-      .populate("participants", "username img") // Populate participants' username and image
+      .populate("participants", "username img suspended isAdmin")
       .exec();
 
     if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found." });
+    }
+
+    // Hide the conversation if any non-admin participant is suspended
+    const hasSuspended = conversation.participants.some(
+      (p) => p.suspended && !p.isAdmin
+    );
+    if (hasSuspended) {
       return res.status(404).json({ error: "Conversation not found." });
     }
 

@@ -9,10 +9,10 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
-import { Server } from "socket.io";
 import Message from "./models/messageModel.js";
 import Conversation from "./models/conversationModel.js";
 import prerender from "prerender-node";
+import { initSocket } from "./socket.js";
 
 // Models
 import User from "./models/userModel.js";
@@ -34,18 +34,8 @@ console.log("PRIVATE_KEY length:", process.env.GOOGLE_PRIVATE_KEY?.length);
 prerender.set("prerenderToken", "VN3i1Er0OnKphdok5ICr"); // Replace with your token
 app.use(prerender);
 
-// Initialize Socket.io
-export const io = new Server(server, {
-  cors: {
-    origin: [
-      "http://localhost:3000", // <--- add this
-      "https://www.renewedmindsglobalconsult.com",
-      "https://renewedmindsglobalconsult.com",
-    ],
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
+// Initialize Socket.io (moved into socket.js to avoid circular imports with meetingController.js)
+const io = initSocket(server);
 
 // Get current directory using import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -186,6 +176,9 @@ import applicationRoute from "./routes/applicationRoute.js";
 import webhookRoute from "./routes/webhookRoute.js";
 import flutterwaveFreelancerRoute from "./routes/flutterwaveFreelancerRoute.js";
 import Portfolioroute from "./routes/Portfolioroute.js";
+import meetingRoute from "./routes/meetingRoute.js";
+import WorkRoute from "./routes/Workrouter.js";
+import AnalyticsRoute from "./routes/analyticsRoutes.js";
 
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
@@ -203,6 +196,9 @@ app.use("/api/application", applicationRoute);
 app.use("/api/webhook", webhookRoute);
 app.use("/api/flutterwave", flutterwaveFreelancerRoute);
 app.use("/api/portfolio", Portfolioroute);
+app.use("/api/meetings", meetingRoute);
+app.use("/api/work", WorkRoute);
+app.use("/api/analytics", AnalyticsRoute);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
@@ -223,6 +219,7 @@ io.on("connection", (socket) => {
   socket.on("join", (userId) => {
     if (userId) {
       onlineUsers.set(userId, socket.id);
+      socket.join(userId); // NEW — lets meetingController target io.to(userId) for meeting events
       console.log("✅ User joined:", userId);
       io.emit("updateOnlineUsers", Array.from(onlineUsers.keys()));
       io.emit("onlineStatus", { userId, status: "online" }); // Emit online status
@@ -299,6 +296,128 @@ io.on("connection", (socket) => {
     const receiverSocketId = onlineUsers.get(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("callEnded", { callerId });
+    }
+  });
+
+  // ── Meeting video call signaling (WebRTC) ──
+  socket.on("meeting:join", ({ roomId, userId }) => {
+    socket.join(roomId);
+    socket.to(roomId).emit("meeting:peer-joined", { userId });
+  });
+
+  socket.on("meeting:offer", ({ roomId, sdp }) => {
+    socket.to(roomId).emit("meeting:offer", { sdp });
+  });
+
+  socket.on("meeting:answer", ({ roomId, sdp }) => {
+    socket.to(roomId).emit("meeting:answer", { sdp });
+  });
+
+  socket.on("meeting:ice-candidate", ({ roomId, candidate }) => {
+    socket.to(roomId).emit("meeting:ice-candidate", { candidate });
+  });
+
+  socket.on("meeting:leave", ({ roomId, userId }) => {
+    socket.leave(roomId);
+    socket.to(roomId).emit("meeting:peer-left", { userId });
+  });
+
+  socket.on("call:offer", ({ to, from, fromUsername, callType, sdp }) => {
+    const receiverSocketId = onlineUsers.get(to);
+    if (receiverSocketId) {
+      // Receiver is online — tell the caller they're ringing
+      socket.emit("call:ringing", { from: to });
+
+      // Forward the offer to the receiver
+      io.to(receiverSocketId).emit("call:offer", {
+        from,
+        fromUsername,
+        callType,
+        sdp,
+      });
+    }
+    // If receiver is offline, no call:ringing is emitted.
+    // The caller's 30s timeout in useCallManager handles the auto-cancel.
+  });
+
+  socket.on("call:answer", ({ to, sdp }) => {
+    const callerSocketId = onlineUsers.get(to);
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("call:answer", { sdp });
+    }
+  });
+
+  socket.on("call:ice-candidate", ({ to, candidate }) => {
+    const targetSocketId = onlineUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("call:ice-candidate", { candidate });
+    }
+  });
+
+  // Caller timed out waiting — notify receiver so they see a missed call
+  socket.on("call:timeout", async ({ to, from, callType }) => {
+    try {
+      // Find the conversation between the two users
+      const conversation = await Conversation.findOne({
+        participants: { $all: [from, to] },
+      });
+
+      if (conversation) {
+        // Save missed call as a real message
+        const missedMsg = new Message({
+          conversationId: conversation._id,
+          senderId: from,
+          text: `Missed ${callType === "video" ? "video" : "voice"} call`,
+          media: null,
+          messageStatus: "sent",
+          mediaType: "missed_call",
+          callType: callType || "audio",
+        });
+
+        await missedMsg.save();
+
+        await Conversation.findByIdAndUpdate(conversation._id, {
+          lastMessage: {
+            text: `Missed ${callType === "video" ? "video" : "voice"} call`,
+            mediaType: "missed_call",
+          },
+        });
+
+        const populatedMsg = await Message.findById(missedMsg._id).populate(
+          "senderId",
+          "username img",
+        );
+
+        // Emit to both caller and receiver so both see it immediately
+        const receiverSocketId = onlineUsers.get(to);
+        const callerSocketId = onlineUsers.get(from);
+
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("receiveMessage", {
+            ...populatedMsg.toObject(),
+            senderId: { _id: from },
+          });
+          io.to(receiverSocketId).emit("call:missed");
+        }
+        if (callerSocketId) {
+          io.to(callerSocketId).emit("receiveMessage", {
+            ...populatedMsg.toObject(),
+            senderId: { _id: from },
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error saving missed call message:", err);
+    }
+
+    // Notify caller UI to show missed state
+    socket.emit("call:missed");
+  });
+
+  socket.on("call:end", ({ to }) => {
+    const targetSocketId = onlineUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("call:end");
     }
   });
 

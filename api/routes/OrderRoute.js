@@ -14,6 +14,9 @@ import {
   getAllCompletedOrders,
   paystackWebhook,
   verifyFlutterWavePayment,
+  workIntent,
+  workFlutterWaveIntent,
+  verifyPayment,
   // flutterwaveWebhook,
 } from "../controllers/orderController.js";
 
@@ -22,12 +25,20 @@ const router = express.Router();
 // Fetch all orders for logged-in user
 router.get("/", verifyToken, getOrder);
 
-// Payment intent for creating orders (for Paystack)
+// Payment intent for creating orders (for Paystack) — gig flow
 router.post("/create-payment-intent/:id", verifyToken, intent);
 router.post("/paystack-webhook", paystackWebhook);
 // router.post("/flutterwave-webhook", flutterwaveWebhook);
 router.post("/create-flutterwave-intent/:id", verifyToken, flutterWaveIntent);
-router.get("/verify", verifyFlutterWavePayment);
+router.get("/verify", verifyPayment);
+
+// Payment intent for booking a job (work flow) — :id is the Work _id
+router.post("/create-work-payment-intent/:id", verifyToken, workIntent);
+router.post(
+  "/create-work-flutterwave-intent/:id",
+  verifyToken,
+  workFlutterWaveIntent
+);
 
 // Mark order as completed
 router.put("/:id/complete", verifyToken, completeOrder);

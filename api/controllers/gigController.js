@@ -1,18 +1,19 @@
 import Gig from "../models/gigModel.js";
 import Order from "../models/orderModel.js";
 import Review from "../models/reviewModel.js";
+import User from "../models/userModel.js";           // ← ADD
 import createError from "../utils/createError.js";
 
 export const createGig = async (req, res, next) => {
   console.log("Incoming request body:", req.body);
-  console.log("User from token:", req.user); // Debugging step
+  console.log("User from token:", req.user);
 
   if (!req.user.isSeller) {
     return next(createError(403, "Only sellers can create a gig"));
   }
 
   const newGig = new Gig({
-    userId: req.user.id, // ✅ Uses req.user.id instead of req.userId
+    userId: req.user.id,
     ...req.body,
   });
 
@@ -27,27 +28,20 @@ export const createGig = async (req, res, next) => {
 
 export const deleteGig = async (req, res, next) => {
   try {
-    // Find the gig by ID
     const gig = await Gig.findById(req.params.id);
 
     if (!gig) {
       return next(createError(404, "Gig not found"));
     }
 
-    // Check if the current user is the owner of the gig
     if (gig.userId !== req.user.id) {
       return next(createError(403, "You can only delete your Gig"));
     }
 
-    // Delete related reviews, comments, or orders that reference the gig
     await Review.deleteMany({ gigId: req.params.id });
-    // await Comment.deleteMany({ gigId: req.params.id });
     await Order.deleteMany({ gigId: req.params.id });
-
-    // Delete the gig itself
     await Gig.findByIdAndDelete(req.params.id);
 
-    // Send success response
     res.status(200).send("Gig and related data have been deleted");
   } catch (err) {
     next(err);
@@ -57,7 +51,14 @@ export const deleteGig = async (req, res, next) => {
 export const getGig = async (req, res, next) => {
   try {
     const gig = await Gig.findById(req.params.id);
-    if (!gig) next(createError(404, "Gig not found"));
+    if (!gig) return next(createError(404, "Gig not found"));
+
+    // Hide gig if owner is suspended
+    const owner = await User.findById(gig.userId).select("suspended");
+    if (!owner || owner.suspended) {
+      return next(createError(404, "Gig not found"));
+    }
+
     res.status(200).send(gig);
   } catch (err) {
     next(err);
@@ -73,11 +74,9 @@ export const getGigs = async (req, res, next) => {
     search,
     sort = "createdAt",
     order = "desc",
-    userCurrency, // Add user currency as a parameter
-    exchangeRate, // Add exchange rate to convert prices
+    exchangeRate,
   } = req.query;
 
-  // Convert min and max to user's local currency if exchange rate is provided
   let minConverted = min;
   let maxConverted = max;
 
@@ -88,7 +87,7 @@ export const getGigs = async (req, res, next) => {
 
   const filters = {
     ...(userId && { userId }),
-    ...(cat && { cat: { $regex: cat, $options: "i" } }), // Make category case-insensitive
+    ...(cat && { cat: { $regex: cat, $options: "i" } }),
     ...(minConverted || maxConverted
       ? {
           price: {
@@ -105,37 +104,49 @@ export const getGigs = async (req, res, next) => {
     }),
   };
 
-  const sortOrder = order === "asc" ? 1 : -1; // Ascending or descending
-  const sortField = sort || "createdAt"; // Default to "createdAt" if not specified
+  const sortOrder = order === "asc" ? 1 : -1;
+  const sortField = sort || "createdAt";
 
   try {
-    const gigs = await Gig.find(filters).sort({ [sortField]: sortOrder });
+    // Get IDs of all suspended users so we can exclude their gigs
+    const suspendedUsers = await User.find({ suspended: true }).select("_id");
+    const suspendedIds = suspendedUsers.map((u) => u._id);
+
+    const gigs = await Gig.find({
+      ...filters,
+      userId: {
+        ...(filters.userId ? { $eq: filters.userId } : {}),
+        $nin: suspendedIds,   // exclude suspended sellers
+      },
+    }).sort({ [sortField]: sortOrder });
+
     res.status(200).json(gigs);
   } catch (err) {
-    next(err); // Properly pass the error to middleware
+    next(err);
   }
 };
 
 export const getGigWithSales = async (req, res, next) => {
   try {
     const gig = await Gig.findById(req.params.id);
-    if (!gig) {
+    if (!gig) return next(createError(404, "Gig not found"));
+
+    // Hide gig if owner is suspended
+    const owner = await User.findById(gig.userId).select("suspended");
+    if (!owner || owner.suspended) {
       return next(createError(404, "Gig not found"));
     }
 
-    // Count the total orders for this gig
     const salesCount = await Order.countDocuments({ gigId: gig._id });
-
-    // Send gig details with calculated sales
     res.status(200).json({ ...gig.toObject(), sales: salesCount });
   } catch (err) {
     next(createError(500, "Error fetching gig"));
   }
 };
 
-// Get all gigs of a seller, including sales data
 export const getGigsWithSales = async (req, res, next) => {
   try {
+    // This is a seller viewing their own gigs — suspension doesn't apply here
     const gigs = await Gig.find({ userId: req.userId });
 
     const gigsWithSales = await Promise.all(
@@ -148,5 +159,23 @@ export const getGigsWithSales = async (req, res, next) => {
     res.status(200).json(gigsWithSales);
   } catch (err) {
     next(createError(500, "Error fetching gigs"));
+  }
+};
+
+export const getUserGigs = async (req, res, next) => {
+  try {
+    // If the seller is suspended, return empty — don't expose their profile
+    const owner = await User.findById(req.params.userId).select("suspended");
+    if (!owner || owner.suspended) {
+      return res.status(200).json([]);
+    }
+
+    const gigs = await Gig.find({ userId: req.params.userId }).sort({
+      createdAt: -1,
+    });
+
+    res.status(200).json(gigs);
+  } catch (err) {
+    next(err);
   }
 };

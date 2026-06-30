@@ -6,7 +6,11 @@ import {
   getGigs,
   getGigsWithSales,
   getGigWithSales,
+  getUserGigs,
 } from "../controllers/gigController.js";
+
+import gigMediaRouter from "./gigMediaRouter.js";
+
 
 import { verifySeller, verifyToken } from "../middleware/jwt.js";
 
@@ -18,6 +22,11 @@ router.get("/single/:id", getGig);
 router.get("/", getGigs);
 // router.get("/sales/:id", getGigWithSales);
 router.get("/gig/:id", verifySeller, getGigWithSales);
+
+router.get("/user/:userId", getUserGigs);
+
+// after your existing routes:
+router.use("/media", gigMediaRouter);
 
 // Get all gigs of a seller with sales data
 router.get("/gigs", verifySeller, getGigsWithSales);

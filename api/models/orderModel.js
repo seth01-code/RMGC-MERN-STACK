@@ -5,7 +5,17 @@ const OrderSchema = new Schema(
   {
     gigId: {
       type: String,
-      required: true,
+      // Required unless this order came from a job booking instead of a gig.
+      required: function () {
+        return !this.workId;
+      },
+    },
+    workId: {
+      type: String,
+      // Required unless this order came from a gig purchase instead of a job.
+      required: function () {
+        return !this.gigId;
+      },
     },
     img: {
       type: String,

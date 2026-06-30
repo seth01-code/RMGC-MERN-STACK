@@ -75,10 +75,32 @@ const GigSchema = new Schema(
       type: Number,
       default: 0,
     },
+    aiExtracted: {
+      type: {
+        suggestedTitle: String,
+        suggestedDescription: String,
+        suggestedCategory: String,
+        tags: [String],
+        extractedSamples: [{ label: String, note: String }],
+      },
+      default: null,
+    },
+    priceCents: {
+      type: Number,
+      default: null,
+    },
+    originalPrice: {
+      type: Number,
+      default: null,
+    },
+    originalCurrency: {
+      type: String,
+      default: "USD",
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.model("Gig", GigSchema);

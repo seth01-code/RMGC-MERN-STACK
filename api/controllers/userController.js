@@ -8,6 +8,7 @@ import Review from "../models/reviewModel.js";
 import bcrypt from "bcryptjs";
 
 // Get specific user's data by user ID
+// Get specific user's data by user ID
 export const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
@@ -16,14 +17,17 @@ export const getUser = async (req, res, next) => {
       return next(createError(404, "User not found"));
     }
 
-    // Respond with the user's data
+    // Block suspended profiles from non-admins
+    if (user.suspended && !req.user?.isAdmin) {
+      return next(createError(404, "User not found"));
+    }
+
     res.status(200).send(user);
   } catch (err) {
     next(err);
   }
 };
 
-// Get logged-in user's data (current user)
 // controllers/userController.js
 const countryToLanguageMap = {
   US: "en", // United States - English
@@ -42,15 +46,12 @@ export const getUserData = async (req, res, next) => {
   try {
     let user = null;
 
-    // Check if user is authenticated
     if (req.user?.id) {
       user = await User.findById(req.user.id).select(
         "-password -resetPasswordToken -resetPasswordExpires"
       );
-      // Removes sensitive fields
     }
 
-    // If user is NOT logged in → return guest defaults
     if (!user) {
       return res.status(200).json({
         id: null,
@@ -71,10 +72,18 @@ export const getUserData = async (req, res, next) => {
       });
     }
 
-    // Auto-detect language
+    // If the logged-in user themselves is suspended and not an admin,
+    // return a stripped-down suspended response so the frontend
+    // can redirect/show a suspension message
+    if (user.suspended && !user.isAdmin) {
+      return res.status(403).json({
+        error: "account_suspended",
+        reason: user.suspendReason || "Your account has been suspended. Please contact support.",
+      });
+    }
+
     const language = getLanguageFromCountry(user.country);
 
-    // Return complete profile
     return res.status(200).json({
       id: user._id,
       username: user.username,
@@ -96,7 +105,6 @@ export const getUserData = async (req, res, next) => {
       role: user.role,
       tier: user.tier,
 
-      // Next of Kin
       nextOfKin: {
         fullName: user?.nextOfKin?.fullName || "",
         dob: user?.nextOfKin?.dob || null,
@@ -107,7 +115,6 @@ export const getUserData = async (req, res, next) => {
         phone: user?.nextOfKin?.phone || "",
       },
 
-      // Organization Data
       organization: user.organization
         ? {
             name: user.organization.name,
@@ -127,8 +134,6 @@ export const getUserData = async (req, res, next) => {
           }
         : null,
 
-      // VIP Subscription
-      // VIP Subscription
       vipSubscription: user.vipSubscription
         ? {
             startDate: user.vipSubscription.startDate,
@@ -140,20 +145,15 @@ export const getUserData = async (req, res, next) => {
             amount: user.vipSubscription.amount,
             currency: user.vipSubscription.currency,
             cardToken: user.vipSubscription.cardToken,
-
-            // FIXED: Return the invoice array
             invoices: Array.isArray(user.vipSubscription.invoices)
               ? user.vipSubscription.invoices
               : [],
-
-            // FIXED: Return last charge
             lastCharge: user.vipSubscription.lastCharge || null,
           }
         : null,
 
       services: user.services || [],
       postedJobs: user.postedJobs || [],
-
       language,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -215,12 +215,16 @@ export const deleteUser = async (req, res, next) => {
 
 export const getSellers = async (req, res, next) => {
   try {
-    const sellers = await User.find({ isSeller: true }).select("-password"); // Fetch only sellers without passwords
+    const sellers = await User.find({
+      isSeller: true,
+      suspended: { $ne: true },   // ← exclude suspended sellers
+    }).select("-password");
     res.status(200).json(sellers);
   } catch (err) {
     next(err);
   }
 };
+
 
 // Get all users
 export const getUsers = async (req, res, next) => {
@@ -238,6 +242,14 @@ export const getUserProfile = async (req, res) => {
     const user = await User.findById(req.user.id).select("-password");
 
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    // A suspended non-admin viewing their own profile gets the suspension error
+    if (user.suspended && !user.isAdmin) {
+      return res.status(403).json({
+        error: "account_suspended",
+        reason: user.suspendReason || "Your account has been suspended. Please contact support.",
+      });
+    }
 
     res.status(200).json(user);
   } catch (error) {
@@ -375,3 +387,197 @@ export const getTotalRevenue = async (req, res, next) => {
     next(err);
   }
 };
+
+// ─────────────────────────────────────────────────────────────
+// ADD THESE to your existing userController.js
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/users/admin/all
+// Returns all users with pagination, search, and role filters
+// ─────────────────────────────────────────────────────────────
+// ADD THESE to your existing userController.js
+// Also ensure `createError` is imported at the top of that file
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/users/admin/stats
+export const adminUserStats = async (req, res, next) => {
+  try {
+    const [
+      total,
+      sellers,
+      buyers,
+      remoteWorkers,
+      organizations,
+      admins,
+      suspended,
+      verified,
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ isSeller: true }),
+      // Clients: not a seller, not admin, role is null (excludes remote_worker + organization)
+      User.countDocuments({
+        isSeller: false,
+        isAdmin: false,
+        role: { $nin: ["organization", "remote_worker"] },
+      }),
+      User.countDocuments({ role: "remote_worker" }),
+      User.countDocuments({ role: "organization" }),
+      User.countDocuments({ isAdmin: true }),
+      User.countDocuments({ suspended: true }),
+      User.countDocuments({ isVerified: true }),
+    ]);
+
+    res.status(200).json({
+      total,
+      sellers,
+      buyers,
+      remoteWorkers,
+      organizations,
+      admins,
+      suspended,
+      verified,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/users/admin/all
+export const adminGetAllUsers = async (req, res, next) => {
+  try {
+    const {
+      page   = 1,
+      limit  = 15,
+      search = "",
+      role   = "all",    // "all"|"buyer"|"seller"|"remote_worker"|"organization"|"admin"
+      status = "all",    // "all"|"active"|"suspended"
+      sort   = "newest", // "newest"|"oldest"|"az"|"za"
+    } = req.query;
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // ── Filter ──────────────────────────────────────────────
+    const filter = {};
+
+    if (search.trim()) {
+      filter.$or = [
+        { username: { $regex: search.trim(), $options: "i" } },
+        { email:    { $regex: search.trim(), $options: "i" } },
+      ];
+    }
+
+    switch (role) {
+      case "seller":
+        filter.isSeller = true;
+        break;
+      case "buyer":
+        // Clients: isSeller false, not admin, role is null
+        filter.isSeller = false;
+        filter.isAdmin  = false;
+        filter.role     = { $nin: ["organization", "remote_worker"] };
+        break;
+      case "remote_worker":
+        filter.role = "remote_worker";
+        break;
+      case "organization":
+        filter.role = "organization";
+        break;
+      case "admin":
+        filter.isAdmin = true;
+        break;
+      // "all" → no extra filter
+    }
+
+    if (status === "suspended") filter.suspended = true;
+    if (status === "active")    filter.suspended = { $ne: true };
+
+    // ── Sort ────────────────────────────────────────────────
+    const sortMap = {
+      newest: { createdAt: -1 },
+      oldest: { createdAt:  1 },
+      az:     { username:   1 },
+      za:     { username:  -1 },
+    };
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("-password -resetPasswordToken -resetPasswordExpires -otp -otpExpires")
+        .sort(sortMap[sort] || { createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      User.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      users,
+      total,
+      page:  Number(page),
+      pages: Math.ceil(total / Number(limit)),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/users/admin/:id/suspend  — toggle suspend/unsuspend
+export const adminSuspendUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return next(createError(404, "User not found"));
+    if (user.isAdmin) return next(createError(403, "Cannot suspend an admin"));
+
+    user.suspended     = !user.suspended;
+    user.suspendedAt   = user.suspended ? new Date() : null;
+    user.suspendReason = user.suspended ? (req.body.reason || "") : null;
+    await user.save();
+
+    res.status(200).json({
+      message:   user.suspended ? "User suspended" : "User unsuspended",
+      suspended: user.suspended,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/users/admin/:id/verify  — manually verify account
+export const adminVerifyUser = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { isVerified: true } },
+      { new: true }
+    ).select("-password -resetPasswordToken -resetPasswordExpires");
+
+    if (!user) return next(createError(404, "User not found"));
+
+    res.status(200).json({ message: "User verified", user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/users/admin/:id/role  — change role flags
+export const adminUpdateUserRole = async (req, res, next) => {
+  try {
+    const { isSeller, isAdmin, role } = req.body;
+
+    const update = {};
+    if (isSeller !== undefined) update.isSeller = isSeller;
+    if (isAdmin  !== undefined) update.isAdmin  = isAdmin;
+    if (role     !== undefined) update.role     = role;
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true }
+    ).select("-password -resetPasswordToken -resetPasswordExpires");
+
+    if (!user) return next(createError(404, "User not found"));
+
+    res.status(200).json({ message: "Role updated", user });
+  } catch (err) {
+    next(err);
+  }
+};
+

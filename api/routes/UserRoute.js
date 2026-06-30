@@ -9,6 +9,11 @@ import {
   updateUser,
   getTotalRevenue,
   updateOrganization,
+   adminGetAllUsers,
+  adminSuspendUser,
+  adminUpdateUserRole,
+  adminVerifyUser,
+  adminUserStats,
 } from "../controllers/userController.js";
 
 import {
@@ -47,9 +52,16 @@ router.get("/revenue", verifySeller, getTotalRevenue);
 
 router.get("/", verifyToken, getUsers);
 router.get("/sellers", getSellers);
+router.get("/freelancers", getSellers);  // ← add this
+
+router.get(  "/admin/stats",          verifyToken, verifyAdmin, adminUserStats      );
+router.get(  "/admin/all",            verifyToken, verifyAdmin, adminGetAllUsers    );
 
 // ───────── DYNAMIC ROUTES (must always be last) ─────────
 router.get("/:id", verifyToken, getUser);
 router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
+router.patch("/admin/:id/suspend",    verifyToken, verifyAdmin, adminSuspendUser    );
+router.patch("/admin/:id/role",       verifyToken, verifyAdmin, adminUpdateUserRole );
+router.patch("/admin/:id/verify",     verifyToken, verifyAdmin, adminVerifyUser     );
 
 export default router;

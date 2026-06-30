@@ -17,29 +17,34 @@ const messageSchema = new mongoose.Schema(
       trim: true,
     },
     media: {
-      type: String, // URL to Cloudinary media file (image, video, document, etc.)
-      default: null, // Make it optional
+      type: String,
+      default: null,
     },
     messageStatus: {
-      type: String, // 'sent', 'delivered', 'seen'
+      type: String,
       default: "sent",
+    },
+    mediaType: {
+      type: String,
+      enum: ["image", "video", "audio", "document", "missed_call", null],
+      default: null,
+    },
+    callType: {
+      type: String,
+      enum: ["audio", "video", null],
+      default: null,
     },
     reactions: [
       {
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         emoji: String,
       },
     ],
-
     deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
 
-// Check if the model already exists, if so, don't redefine it
 const Message =
   mongoose.models.Message || mongoose.model("Message", messageSchema);
 
