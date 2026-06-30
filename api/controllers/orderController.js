@@ -163,7 +163,7 @@ export const intent = async (req, res, next) => {
         amount: Math.round(convertedPrice * 100),
         email: user.email,
         currency: buyerCurrency,
-        callback_url: `http://localhost:3000/payment-processing`,
+        callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
         metadata: {
           gigId: gig._id,
           buyerId: userId,
@@ -258,7 +258,7 @@ export const workIntent = async (req, res, next) => {
         amount: Math.round(convertedPrice * 100),
         email: user.email,
         currency: buyerCurrency,
-        callback_url: `http://localhost:3000/payment-processing`,
+        callback_url: `https://www.renewedmindsglobalconsult.com/payment-processing`,
         metadata: {
           workId: work._id,
           proposalId: proposal._id,
@@ -401,7 +401,7 @@ export const flutterWaveIntent = async (req, res, next) => {
         tx_ref: transactionReference,
         amount: convertedPrice, // local currency for checkout display
         currency: buyerCurrency,
-        redirect_url: `http://localhost:3000/payment-processing?tx_ref=${transactionReference}`,
+        redirect_url: `https://www.renewedmindsglobalconsult.com/payment-processing?tx_ref=${transactionReference}`,
         customer: { email: user.email },
         customizations: {
           title: gig.title,
@@ -492,7 +492,7 @@ export const workFlutterWaveIntent = async (req, res, next) => {
         tx_ref: transactionReference,
         amount: convertedPrice, // local currency for checkout display
         currency: buyerCurrency,
-        redirect_url: `http://localhost:3000/payment-processing?tx_ref=${transactionReference}`,
+        redirect_url: `https://www.renewedmindsglobalconsult.com/payment-processing?tx_ref=${transactionReference}`,
         customer: { email: user.email },
         customizations: {
           title: work.title,
