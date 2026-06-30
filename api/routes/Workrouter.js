@@ -19,7 +19,7 @@ import {
   likeWork,
   getSavedWork,
   getLikedWork,
-} from "../controllers/workController.js";
+} from "../controllers/Workcontroller.js";
 import { verifyToken, verifyTokenOptional } from "../middleware/jwt.js";
 
 const router = express.Router();
