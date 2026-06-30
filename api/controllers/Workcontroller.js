@@ -1,4 +1,4 @@
-import Work from "../models/workModel.js";
+import Work from "../models/WorkModel.js";
 import createError from "../utils/createError.js";
 
 export const createWork = async (req, res, next) => {
