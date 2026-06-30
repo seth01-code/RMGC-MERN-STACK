@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 import createError from "../utils/createError.js";
 import User from "../models/userModel.js";
@@ -19,34 +20,112 @@ const VAT_PERCENT = 7.5;
 const TOTAL_AMOUNT_NGN = BASE_AMOUNT_NGN * (1 + VAT_PERCENT / 100);
 const SUPPORTED_CURRENCIES = ["NGN", "USD", "EUR"];
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
+/* ════════════════════════════════════════════════════════════════════════
+   EMAIL TRANSPORT LAYER
+   Resend is the primary sender (fast, good deliverability, simple API).
+   If the Resend API call throws OR returns an error payload, we
+   automatically fall back to Nodemailer over SMTP so emails still go out.
+   ════════════════════════════════════════════════════════════════════════ */
+
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
+
+const smtpTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: Number(process.env.SMTP_PORT) || 587,
   secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // MUST be Google App Password
+    pass: process.env.EMAIL_PASS, // MUST be Google App Password (or SMTP creds)
   },
 });
 
-transporter.verify((error, success) => {
+smtpTransporter.verify((error) => {
   if (error) {
-    console.error("❌ Email transporter error:", error.message);
+    console.error("❌ SMTP fallback transporter error:", error.message);
     console.error("❌ Email config:", {
       user: process.env.EMAIL_USER ? "SET" : "MISSING",
       pass: process.env.EMAIL_PASS ? "SET" : "MISSING",
     });
   } else {
-    console.log("✅ Email server ready");
+    console.log("✅ SMTP fallback transporter ready");
   }
 });
+
+if (!resend) {
+  console.warn(
+    "⚠️  RESEND_API_KEY not set — all emails will go straight to the SMTP fallback.",
+  );
+}
+
+/**
+ * Unified email sender.
+ * Tries Resend first. If Resend throws, or returns an `error` in its
+ * response payload, falls back to Nodemailer/SMTP automatically.
+ *
+ * @param {Object} opts
+ * @param {string} opts.to
+ * @param {string} opts.subject
+ * @param {string} opts.html
+ * @param {string} [opts.from]              defaults to BRAND.from
+ * @param {Object} [opts.headers]           extra headers (used by SMTP path)
+ * @param {string} [opts.replyTo]
+ */
+const sendEmail = async ({ to, subject, html, from, headers, replyTo }) => {
+  const fromAddress = from || BRAND.from;
+
+  // ─── 1. Try Resend ───────────────────────────────────────────────
+  if (resend) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: fromAddress,
+        to,
+        subject,
+        html,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+        ...(headers ? { headers } : {}),
+      });
+
+      if (error) {
+        throw new Error(
+          typeof error === "string" ? error : JSON.stringify(error),
+        );
+      }
+
+      console.log(`✅ [Resend] Email sent to ${to} (id: ${data?.id})`);
+      return { provider: "resend", success: true, id: data?.id };
+    } catch (resendErr) {
+      console.error(
+        `⚠️  [Resend] Failed to send to ${to}, falling back to SMTP:`,
+        resendErr?.message || resendErr,
+      );
+      // fall through to SMTP
+    }
+  }
+
+  // ─── 2. Fallback: Nodemailer / SMTP ─────────────────────────────
+  try {
+    const info = await smtpTransporter.sendMail({
+      from: fromAddress,
+      to,
+      subject,
+      html,
+      ...(replyTo ? { replyTo } : {}),
+      ...(headers ? { headers } : {}),
+    });
+
+    console.log(`✅ [SMTP] Email sent to ${to} (messageId: ${info.messageId})`);
+    return { provider: "smtp", success: true, id: info.messageId };
+  } catch (smtpErr) {
+    console.error(`❌ [SMTP] Failed to send to ${to}:`, smtpErr?.message || smtpErr);
+    return { provider: "smtp", success: false, error: smtpErr?.message || String(smtpErr) };
+  }
+};
 
 // Generate OTP
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
-
-// Hash OTP
-const hashOTP = (otp) => bcrypt.hashSync(otp, 5);
 
 /* ════════════════════════════════════════════════════════════════════════
    EMAIL DESIGN SYSTEM
@@ -155,99 +234,105 @@ const renderShell = (bodyHtml) => `
 
 const noReplyHeaders = () => ({
   "Message-ID": `<${Date.now()}@renewedmindsglobalconsult.com>`,
-  "In-Reply-To": null,
-  References: null,
 });
 
 /* ─── 1. OTP EMAIL ─────────────────────────────────────────────────────── */
 
 const sendOtpEmail = async (email, username, otp) => {
   console.log(`📧 Sending OTP to ${email}...`);
-  try {
-    const body = `
-      ${renderHeader({
-        eyebrow: "Security verification",
-        title: "Verify your account",
-        subtitle: `One-time password for ${username}`,
-      })}
-      <tr>
-        <td style="padding:8px 48px 44px;">
-          <p style="margin:0 0 10px;color:${PALETTE.muted};font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">
-            Your one-time password
-          </p>
 
-          <div style="background-color:${PALETTE.surface};border:2px solid ${BRAND.orange};border-radius:14px;padding:28px;text-align:center;margin:8px 0 32px;">
-            <div style="letter-spacing:12px;font-size:42px;font-weight:900;color:${PALETTE.heading};font-variant-numeric:tabular-nums;padding-left:12px;">
-              ${otp}
-            </div>
+  const body = `
+    ${renderHeader({
+      eyebrow: "Security verification",
+      title: "Verify your account",
+      subtitle: `One-time password for ${username}`,
+    })}
+    <tr>
+      <td style="padding:8px 48px 44px;">
+        <p style="margin:0 0 10px;color:${PALETTE.muted};font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">
+          Your one-time password
+        </p>
+
+        <div style="background-color:${PALETTE.surface};border:2px solid ${BRAND.orange};border-radius:14px;padding:28px;text-align:center;margin:8px 0 32px;">
+          <div style="letter-spacing:12px;font-size:42px;font-weight:900;color:${PALETTE.heading};font-variant-numeric:tabular-nums;padding-left:12px;">
+            ${otp}
           </div>
+        </div>
 
-          ${renderCallout(`This OTP expires in <strong>2 minutes</strong>.<br>Never share this code with anyone — our team will never ask for it.`)}
+        ${renderCallout(`This OTP expires in <strong>2 minutes</strong>.<br>Never share this code with anyone — our team will never ask for it.`)}
 
-          <p style="margin:0;color:${PALETTE.muted};font-size:13px;line-height:1.7;">
-            If you didn't create an account with ${BRAND.name}, you can safely ignore this email.
-          </p>
-        </td>
-      </tr>
-      ${renderFooter()}
-    `;
+        <p style="margin:0;color:${PALETTE.muted};font-size:13px;line-height:1.7;">
+          If you didn't create an account with ${BRAND.name}, you can safely ignore this email.
+        </p>
+      </td>
+    </tr>
+    ${renderFooter()}
+  `;
 
-    await transporter.sendMail({
-      from: BRAND.from,
-      to: email,
-      subject: "Your Renewed Minds OTP Code",
-      headers: noReplyHeaders(),
-      html: renderShell(body),
-    });
-    console.log(`✅ OTP sent successfully to ${email}`);
-  } catch (error) {
-    console.error(`❌ Failed to send OTP to ${email}:`, error);
+  const result = await sendEmail({
+    to: email,
+    subject: "Your Renewed Minds OTP Code",
+    html: renderShell(body),
+    headers: noReplyHeaders(),
+  });
+
+  if (result.success) {
+    console.log(`✅ OTP sent successfully to ${email} via ${result.provider}`);
+  } else {
+    console.error(`❌ Failed to send OTP to ${email} on all providers`);
   }
+
+  return result;
 };
 
 /* ─── 2. RESET PASSWORD EMAIL ──────────────────────────────────────────── */
 
 const sendResetPasswordEmail = async (email, username, resetLink) => {
   console.log(`📧 Sending password reset link to ${email}...`);
-  try {
-    const body = `
-      ${renderHeader({
-        eyebrow: "Account security",
-        title: "Reset your password",
-        subtitle: `We received a request for ${username}`,
-      })}
-      <tr>
-        <td style="padding:8px 48px 44px;">
-          <p style="margin:0 0 24px;color:${PALETTE.body};font-size:15px;line-height:1.7;">
-            Hi <strong>${username}</strong>, someone requested a password reset for your ${BRAND.name} account. Click the button below to choose a new password.
+
+  const body = `
+    ${renderHeader({
+      eyebrow: "Account security",
+      title: "Reset your password",
+      subtitle: `We received a request for ${username}`,
+    })}
+    <tr>
+      <td style="padding:8px 48px 44px;">
+        <p style="margin:0 0 24px;color:${PALETTE.body};font-size:15px;line-height:1.7;">
+          Hi <strong>${username}</strong>, someone requested a password reset for your ${BRAND.name} account. Click the button below to choose a new password.
+        </p>
+
+        ${renderCtaButton(resetLink, "Reset my password →")}
+
+        <div style="margin-top:24px;background-color:${PALETTE.surface};border-radius:10px;padding:16px 20px;margin-bottom:32px;word-break:break-all;">
+          <p style="margin:0 0 6px;color:${PALETTE.muted};font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
+            Or copy this link
           </p>
+          <a href="${resetLink}" style="color:${BRAND.orange};font-size:13px;text-decoration:none;">${resetLink}</a>
+        </div>
 
-          ${renderCtaButton(resetLink, "Reset my password →")}
+        ${renderCallout(`This link expires in <strong>1 hour</strong>.<br>If you didn't request this, please ignore — your password won't change.`)}
+      </td>
+    </tr>
+    ${renderFooter()}
+  `;
 
-          <div style="margin-top:24px;background-color:${PALETTE.surface};border-radius:10px;padding:16px 20px;margin-bottom:32px;word-break:break-all;">
-            <p style="margin:0 0 6px;color:${PALETTE.muted};font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
-              Or copy this link
-            </p>
-            <a href="${resetLink}" style="color:${BRAND.orange};font-size:13px;text-decoration:none;">${resetLink}</a>
-          </div>
+  const result = await sendEmail({
+    to: email,
+    subject: "Reset Your Password — Renewed Minds",
+    html: renderShell(body),
+    headers: noReplyHeaders(),
+  });
 
-          ${renderCallout(`This link expires in <strong>1 hour</strong>.<br>If you didn't request this, please ignore — your password won't change.`)}
-        </td>
-      </tr>
-      ${renderFooter()}
-    `;
-
-    await transporter.sendMail({
-      from: BRAND.from,
-      to: email,
-      subject: "Reset Your Password — Renewed Minds",
-      headers: noReplyHeaders(),
-      html: renderShell(body),
-    });
-    console.log(`✅ Password reset email sent successfully to ${email}`);
-  } catch (error) {
-    console.error(`❌ Failed to send password reset email to ${email}:`, error);
+  if (result.success) {
+    console.log(
+      `✅ Password reset email sent successfully to ${email} via ${result.provider}`,
+    );
+  } else {
+    console.error(`❌ Failed to send password reset email to ${email} on all providers`);
   }
+
+  return result;
 };
 
 /* ─── 3. WELCOME EMAIL ─────────────────────────────────────────────────── */
@@ -261,155 +346,157 @@ const sendWelcomeEmail = async (
   tier,
 ) => {
   console.log(`📧 Sending Welcome Email to ${email}...`);
-  try {
-    let subject, eyebrow, headline, subline, features;
-    const ctaLink = "https://www.renewedmindsglobalconsult.com/login";
-    let ctaText = "Login to your account →";
-    let note = null;
 
-    console.log("🧩 Welcome Email Context →", {
-      email,
-      username,
-      isSeller,
-      isAdmin,
-      role,
-      tier,
-    });
+  let subject, eyebrow, headline, subline, features;
+  const ctaLink = "https://www.renewedmindsglobalconsult.com/login";
+  let ctaText = "Login to your account →";
+  let note = null;
 
-    if (role === "organization") {
-      subject =
-        "Welcome to Renewed Minds Global Consult – Organization Account Created!";
-      eyebrow = "Organization account";
-      headline = "Your organization is live";
-      subline = "Start connecting with verified remote professionals";
-      features = [
-        "Post remote job opportunities to a verified talent pool",
-        "Connect with skilled professionals across Africa and beyond",
-        "Manage applications and hire talent securely",
-      ];
-      ctaText = "Access organization dashboard →";
-      note =
-        "Complete your organization verification to activate job posting privileges.";
-    } else if (role === "remote_worker" && tier === "vip") {
-      subject = "Welcome to Renewed Minds – VIP Remote Worker Activated!";
-      eyebrow = "VIP member";
-      headline = "VIP access unlocked";
-      subline = `Welcome aboard, ${username}. Your full access is ready.`;
-      features = [
-        "All remote job listings — no pay range restrictions",
-        "Direct applications and priority matching",
-        "Boosted visibility so recruiters find you first",
-      ];
-      ctaText = "Open VIP dashboard →";
-    } else if (role === "remote_worker") {
-      subject = "Welcome to Renewed Minds – Remote Worker Account Created!";
-      eyebrow = "Remote worker";
-      headline = "Your remote career starts here";
-      subline = `Good to have you, ${username}`;
-      features = [
-        "Access remote jobs in the $1–$200 pay range",
-        "Build a profile that stands out to global clients",
-        "Upgrade to VIP anytime for unlimited job access",
-      ];
-      ctaText = "Go to dashboard →";
-    } else if (isAdmin) {
-      subject = "Welcome to Renewed Minds – Admin Access Granted!";
-      eyebrow = "Administrator";
-      headline = "Admin access granted";
-      subline = "You have full oversight of the platform";
-      features = [
-        "Manage users, sellers, and service providers",
-        "Monitor platform analytics and transactions",
-        "Facilitate communication and resolve disputes",
-      ];
-      ctaText = "Access admin dashboard →";
-    } else if (isSeller) {
-      subject =
-        "Welcome to Renewed Minds Global Consult – You're Now a Service Provider!";
-      eyebrow = "Service provider";
-      headline = `Welcome, ${username}!`;
-      subline = "Your freelancer profile is ready to go live";
-      features = [
-        "Create and showcase your services to thousands of clients",
-        "Get discovered by businesses looking for your exact skills",
-        "Earn, grow, and build your freelance business",
-      ];
-      ctaText = "Go to your dashboard →";
-    } else {
-      subject = "Welcome to Renewed Minds Global Consult!";
-      eyebrow = "New member";
-      headline = `Great to have you, ${username}!`;
-      subline = "Your account is ready";
-      features = [
-        "High-quality consulting and professional guidance",
-        "A supportive and engaging community",
-        "Exclusive resources and expert insights",
-      ];
-    }
+  console.log("🧩 Welcome Email Context →", {
+    email,
+    username,
+    isSeller,
+    isAdmin,
+    role,
+    tier,
+  });
 
-    const featureRows = features
-      .map(
-        (text) => `
-      <tr>
-        <td style="padding:12px 0;border-bottom:1px solid ${PALETTE.border};">
-          <table cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="width:18px;vertical-align:middle;">
-                <div style="width:6px;height:6px;border-radius:50%;background-color:${BRAND.orange};"></div>
-              </td>
-              <td style="padding-left:14px;vertical-align:middle;">
-                <p style="margin:0;color:${PALETTE.body};font-size:14px;line-height:1.5;">${text}</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    `,
-      )
-      .join("");
-
-    const body = `
-      ${renderHeader({ eyebrow, title: headline, subtitle: subline })}
-      <tr>
-        <td style="padding:8px 48px;">
-          <p style="margin:0 0 6px;color:${PALETTE.muted};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">
-            What you get
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-            ${featureRows}
-          </table>
-
-          ${note ? renderCallout(note) : ""}
-
-          ${renderCtaButton(ctaLink, ctaText)}
-        </td>
-      </tr>
-
-      <tr><td style="padding:8px 48px 0;"><div style="height:1px;background-color:${PALETTE.border};"></div></td></tr>
-
-      <tr>
-        <td style="padding:24px 48px;">
-          <p style="margin:0;color:${PALETTE.muted};font-size:13px;line-height:1.7;text-align:center;">
-            Questions? Reach us at
-            <a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.orange};text-decoration:none;font-weight:600;">${BRAND.supportEmail}</a>
-          </p>
-        </td>
-      </tr>
-
-      ${renderFooter()}
-    `;
-
-    await transporter.sendMail({
-      from: BRAND.from,
-      to: email,
-      subject,
-      html: renderShell(body),
-    });
-
-    console.log(`✅ Welcome Email sent successfully to ${email}`);
-  } catch (error) {
-    console.error(`❌ Failed to send Welcome Email to ${email}:`, error);
+  if (role === "organization") {
+    subject =
+      "Welcome to Renewed Minds Global Consult – Organization Account Created!";
+    eyebrow = "Organization account";
+    headline = "Your organization is live";
+    subline = "Start connecting with verified remote professionals";
+    features = [
+      "Post remote job opportunities to a verified talent pool",
+      "Connect with skilled professionals across Africa and beyond",
+      "Manage applications and hire talent securely",
+    ];
+    ctaText = "Access organization dashboard →";
+    note =
+      "Complete your organization verification to activate job posting privileges.";
+  } else if (role === "remote_worker" && tier === "vip") {
+    subject = "Welcome to Renewed Minds – VIP Remote Worker Activated!";
+    eyebrow = "VIP member";
+    headline = "VIP access unlocked";
+    subline = `Welcome aboard, ${username}. Your full access is ready.`;
+    features = [
+      "All remote job listings — no pay range restrictions",
+      "Direct applications and priority matching",
+      "Boosted visibility so recruiters find you first",
+    ];
+    ctaText = "Open VIP dashboard →";
+  } else if (role === "remote_worker") {
+    subject = "Welcome to Renewed Minds – Remote Worker Account Created!";
+    eyebrow = "Remote worker";
+    headline = "Your remote career starts here";
+    subline = `Good to have you, ${username}`;
+    features = [
+      "Access remote jobs in the $1–$200 pay range",
+      "Build a profile that stands out to global clients",
+      "Upgrade to VIP anytime for unlimited job access",
+    ];
+    ctaText = "Go to dashboard →";
+  } else if (isAdmin) {
+    subject = "Welcome to Renewed Minds – Admin Access Granted!";
+    eyebrow = "Administrator";
+    headline = "Admin access granted";
+    subline = "You have full oversight of the platform";
+    features = [
+      "Manage users, sellers, and service providers",
+      "Monitor platform analytics and transactions",
+      "Facilitate communication and resolve disputes",
+    ];
+    ctaText = "Access admin dashboard →";
+  } else if (isSeller) {
+    subject =
+      "Welcome to Renewed Minds Global Consult – You're Now a Service Provider!";
+    eyebrow = "Service provider";
+    headline = `Welcome, ${username}!`;
+    subline = "Your freelancer profile is ready to go live";
+    features = [
+      "Create and showcase your services to thousands of clients",
+      "Get discovered by businesses looking for your exact skills",
+      "Earn, grow, and build your freelance business",
+    ];
+    ctaText = "Go to your dashboard →";
+  } else {
+    subject = "Welcome to Renewed Minds Global Consult!";
+    eyebrow = "New member";
+    headline = `Great to have you, ${username}!`;
+    subline = "Your account is ready";
+    features = [
+      "High-quality consulting and professional guidance",
+      "A supportive and engaging community",
+      "Exclusive resources and expert insights",
+    ];
   }
+
+  const featureRows = features
+    .map(
+      (text) => `
+    <tr>
+      <td style="padding:12px 0;border-bottom:1px solid ${PALETTE.border};">
+        <table cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="width:18px;vertical-align:middle;">
+              <div style="width:6px;height:6px;border-radius:50%;background-color:${BRAND.orange};"></div>
+            </td>
+            <td style="padding-left:14px;vertical-align:middle;">
+              <p style="margin:0;color:${PALETTE.body};font-size:14px;line-height:1.5;">${text}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `,
+    )
+    .join("");
+
+  const body = `
+    ${renderHeader({ eyebrow, title: headline, subtitle: subline })}
+    <tr>
+      <td style="padding:8px 48px;">
+        <p style="margin:0 0 6px;color:${PALETTE.muted};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">
+          What you get
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+          ${featureRows}
+        </table>
+
+        ${note ? renderCallout(note) : ""}
+
+        ${renderCtaButton(ctaLink, ctaText)}
+      </td>
+    </tr>
+
+    <tr><td style="padding:8px 48px 0;"><div style="height:1px;background-color:${PALETTE.border};"></div></td></tr>
+
+    <tr>
+      <td style="padding:24px 48px;">
+        <p style="margin:0;color:${PALETTE.muted};font-size:13px;line-height:1.7;text-align:center;">
+          Questions? Reach us at
+          <a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.orange};text-decoration:none;font-weight:600;">${BRAND.supportEmail}</a>
+        </p>
+      </td>
+    </tr>
+
+    ${renderFooter()}
+  `;
+
+  const result = await sendEmail({
+    to: email,
+    subject,
+    html: renderShell(body),
+  });
+
+  if (result.success) {
+    console.log(`✅ Welcome Email sent successfully to ${email} via ${result.provider}`);
+  } else {
+    console.error(`❌ Failed to send Welcome Email to ${email} on all providers`);
+  }
+
+  return result;
 };
 
 // Register User (Save only in Memory)
